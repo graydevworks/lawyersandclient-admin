@@ -1,19 +1,29 @@
 <script setup lang="ts">
 const isSidebarOpen = useState('isSidebarOpen', () => false)
+const isTabletSheetOpen = useState('isTabletSheetOpen', () => false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F8F9FB] flex">
-    <!-- Sidebar for desktop -->
-    <div class="hidden lg:block">
+  <div class="min-h-screen bg-[#F8F9FB] flex relative">
+    <!-- Sidebar for desktop (lg and above) -->
+    <div class="hidden lg:block px-[24px]! pt-[16px]">
       <PartialsSidebar />
     </div>
 
-    <!-- Mobile Sidebar (Slideover) -->
+    <!-- Tablet Sidebar (USheet) -->
+    <USheet
+      v-model="isTabletSheetOpen"
+      side="left"
+      class="md:hidden lg:hidden"
+    >
+      <PartialsSidebar class="w-full! relative!" />
+    </USheet>
+
+    <!-- Mobile Sidebar (USlideover) -->
     <USlideover
       v-model="isSidebarOpen"
       side="left"
-      class="lg:hidden"
+      class="md:hidden"
     >
       <PartialsSidebar class="w-full! relative!" />
     </USlideover>
@@ -21,11 +31,14 @@ const isSidebarOpen = useState('isSidebarOpen', () => false)
     <!-- Main Content -->
     <div
       class="flex-1 flex flex-col min-h-screen transition-all duration-300"
-      :class="[isSidebarOpen ? '' : 'lg:ml-64']"
+      :class="[isSidebarOpen || isTabletSheetOpen ? '' : 'lg:ml-64']"
     >
-      <PartialsTopBar @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+      <PartialsTopBar
+        @toggle-sidebar="isSidebarOpen = !isSidebarOpen"
+        @toggle-tablet-sidebar="isTabletSheetOpen = !isTabletSheetOpen"
+      />
 
-      <main class="flex-1 p-4 md:p-8">
+      <main class="flex-1 pr-[12px] pt-[100px]!">
         <slot />
       </main>
     </div>

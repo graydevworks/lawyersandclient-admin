@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineEmits(['close'])
+
 const navGroups = [
   {
     label: 'MAIN',
@@ -30,17 +32,21 @@ const navGroups = [
 </script>
 
 <template>
-  <aside class="w-64 h-screen bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-0 lg:top-0 z-50">
-    <div class="p-6">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-[#003357] rounded-lg flex items-center justify-center text-white font-bold text-xl">
-          C
-        </div>
-        <div class="w-24 h-4 bg-gray-100 rounded" /> <!-- Logo placeholder text -->
-      </div>
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-[12px] lg:top-[95px] rounded-[12px] z-50">
+    <!-- Close button for mobile/tablet -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
+      <h2 class="text-lg font-semibold text-gray-900">
+        Menu
+      </h2>
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        @click="$emit('close')"
+      />
     </div>
-
-    <nav class="flex-1 overflow-y-auto py-4">
+    <nav class="flex-1 overflow-y-auto p-[16px]">
       <div
         v-for="group in navGroups"
         :key="group.label"
@@ -54,7 +60,7 @@ const navGroups = [
             v-for="item in group.items"
             :key="item.label"
             :to="item.to"
-            class="flex items-center gap-3 px-6 py-2.5 text-sm font-medium transition-colors"
+            class="flex items-center gap-3 px-[13px] py-2.5 text-sm font-medium transition-colors rounded-[6px]"
             active-class="bg-[#003357] text-white"
             inactive-class="text-[#64748B] hover:bg-gray-50 hover:text-gray-900"
           >

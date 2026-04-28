@@ -18,12 +18,6 @@ const trendColorClass = computed(() => {
   return 'text-amber-500'
 })
 
-const trendIcon = computed(() => {
-  if (props.trendType === 'positive') return 'i-lucide-trending-up'
-  if (props.trendType === 'negative') return 'i-lucide-trending-down'
-  return ''
-})
-
 // Optional Sparkline options using ApexCharts
 const chartOptions = {
   chart: {
@@ -50,10 +44,13 @@ const series = computed(() => [
 </script>
 
 <template>
-  <UCard class="h-full">
-    <div class="space-y-4">
+  <UCard
+    class="h-full border-0 ring-0 rounded-[10px]"
+    :ui="{ body: 'p-[16px]!' }"
+  >
+    <div class="space-y-[10px]">
       <div class="flex justify-between items-start">
-        <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <h4 class="text-[15px] font-normal captitalize">
           {{ title }}
         </h4>
         <div
@@ -73,29 +70,23 @@ const series = computed(() => [
       </div>
 
       <div class="flex items-baseline gap-2">
-        <span class="text-3xl font-bold text-gray-900 tracking-tight">{{ value }}</span>
+        <span class="text-2xl font-semibold text-gray-900 tracking-tight">{{ value }}</span>
       </div>
 
       <div
         v-if="trend"
-        class="flex items-center gap-1.5 text-xs font-medium"
+        class="flex items-center gap-1.5 text-[14px] font-medium"
       >
         <span
           :class="trendColorClass"
-          class="flex items-center gap-0.5"
-        >
-          <UIcon
-            v-if="trendIcon"
-            :name="trendIcon"
-            class="w-3.5 h-3.5"
-          />
-          {{ trend }}
-        </span>
+          class="flex items-center space-x-[10px] gap-0.5"
+          v-html="trend"
+        />
         <span class="text-gray-400 font-normal">{{ trendSuffix }}</span>
       </div>
       <div
         v-else-if="trendType === 'neutral'"
-        class="text-amber-500 text-xs font-medium"
+        class="text-amber-500 text-[14px] font-medium"
       >
         Needs attention
       </div>

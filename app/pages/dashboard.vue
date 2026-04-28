@@ -11,17 +11,19 @@ const stats: StatItem[] = [
   { title: 'Total Users', value: '4,281', trend: '+12%', trendType: 'positive', trendSuffix: 'vs last month' },
   { title: 'Verified Lawyers', value: '634', trend: '+8%', trendType: 'positive', trendSuffix: 'this week' },
   { title: 'Pending Verification', value: '7', trendType: 'neutral' },
-  { title: 'Available Online', value: '211', trend: '43 lawyers 168 clients', trendType: 'neutral', trendSuffix: '' }
+  { title: 'Available Online', value: '211', trend: '<span class="text-primary mr-1">43</span> lawyers <span class="text-primary mr-1 ml-[20px]">168</span> clients', trendType: 'positive', trendSuffix: '' }
 ]
+
+const filterDate = ref('This week')
 
 const signUpsSeries = [
   {
     name: 'Clients',
-    data: [18, 14, 23, 11, 21, 8, 10]
+    data: [18, 14, 23, 11, 21, 8, 10, 22]
   },
   {
     name: 'Lawyers',
-    data: [11, 19, 18, 15, 17, 21, 18]
+    data: [11, 19, 18, 15, 17, 21, 18, 26]
   }
 ]
 
@@ -31,21 +33,29 @@ const signUpsOptions = {
     toolbar: { show: false },
     stacked: false
   },
-  colors: ['#003357', '#93E2FF'],
+  colors: ['#013355', '#8BCFFE'],
   plotOptions: {
     bar: {
-      columnWidth: '55%',
-      borderRadius: 4
+      columnWidth: '90%',
+      borderRadius: 8
     }
   },
   dataLabels: { enabled: false },
   xaxis: {
-    categories: ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thur'],
+    categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     axisBorder: { show: false },
-    axisIcons: { show: false }
+    axisIcons: { show: false },
+    labels: {
+      style: {
+        fontSize: '13px'
+      }
+    }
   },
   yaxis: {
     labels: {
+      style: {
+        fontSize: '16px'
+      },
       formatter: (val: number) => `${val}k`
     }
   },
@@ -56,6 +66,11 @@ const signUpsOptions = {
   legend: {
     position: 'top',
     horizontalAlign: 'left'
+  },
+  stroke: {
+    show: true,
+    width: 3,
+    colors: ['#fff']
   }
 }
 
@@ -85,17 +100,17 @@ const verificationQueue = [
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-[24px]">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
       </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
         variant="solid"
-        class="shadow-sm"
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
@@ -117,28 +132,26 @@ const verificationQueue = [
     </div>
 
     <!-- Charts & Online Now -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <UCard class="lg:col-span-2">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">
-              Sign ups
-            </h3>
-            <div class="flex items-center gap-4">
-              <USelect
-                :options="['This week', 'Last week', 'Last month']"
-                size="sm"
-                variant="outline"
-                class="w-32"
-              />
-            </div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-[16px]">
+      <UCard class="lg:col-span-8 rounded-[18px] border-0 ring-0">
+        <div class="flex items-center justify-between">
+          <h3 class="text-[16px] font-semibold text-gray-900">
+            Sign ups
+          </h3>
+          <div class="flex items-center gap-4">
+            <USelect
+              v-model="filterDate"
+              :items="['This week', 'Last week', 'Last month']"
+              variant="outline"
+              class="w-28 rounded-[36px] text-[16px] py-[7px]"
+            />
           </div>
-        </template>
-        <div class="h-80 w-full overflow-hidden">
+        </div>
+        <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
           <ClientOnly>
             <apexchart
               type="bar"
-              height="320"
+              :height="373"
               :options="signUpsOptions"
               :series="signUpsSeries"
             />
@@ -146,40 +159,38 @@ const verificationQueue = [
         </div>
       </UCard>
 
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">
-              Online now
-            </h3>
-            <ULink
-              to="/online"
-              class="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            >See all</ULink>
-          </div>
-        </template>
+      <UCard class="lg:col-span-4 rounded-[18px] p-0!" :ui="{ header: 'border-[#f7f7f7]' }">
+        <div class="flex items-center justify-between border-b border-[#ECECEC] pb-[10px] mb-[20px]">
+          <h3 class="text-[16px] font-semibold text-gray-900">
+            Online now
+          </h3>
+          <ULink
+            to="/online"
+            class="text-[14px] text-gray-400 hover:text-gray-600 transition-colors"
+          >See all</ULink>
+        </div>
         <div class="space-y-6">
           <div
-            v-for="user in onlineNow"
+            v-for="(user, index) in onlineNow"
             :key="user.name"
-            class="flex items-center justify-between group cursor-pointer"
+            class="flex items-start justify-between group cursor-pointer"
+            :class="{ 'border-b border-[#f7f7f7]': index !== onlineNow.length - 1 }"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 pb-[16px]">
               <UAvatar
                 :src="user.avatar"
-                size="sm"
-                class="group-hover:scale-110 transition-transform"
+                class="size-[36px] group-hover:scale-110 transition-transform"
               />
               <div>
-                <p class="text-sm font-semibold text-gray-900 leading-tight">
+                <p class="text-[14px] font-semibold text-gray-900 leading-tight">
                   {{ user.name }}
                 </p>
-                <p class="text-xs text-blue-500 font-medium">
+                <p class="text-[13px] text-[#013355] font-medium">
                   {{ user.role }}
                 </p>
               </div>
             </div>
-            <span class="text-xs text-gray-400 font-medium">{{ user.time }}</span>
+            <span class="text-[14px] font-medium">{{ user.time }}</span>
           </div>
         </div>
       </UCard>
@@ -187,15 +198,15 @@ const verificationQueue = [
 
     <!-- Activity & Verification Queue -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <UCard>
+      <UCard class="rounded-[18px] border-[#f3f3f3]" :ui="{ header: 'border-[#f7f7f7]' }">
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">
+            <h3 class="text-[16px] font-semibold text-gray-900">
               Recent activity
             </h3>
             <ULink
               to="/logs"
-              class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4"
+              class="text-[14px] text-[#013355] font-medium flex items-center gap-1 hover:underline underline-offset-4"
             >
               View all logs <UIcon name="i-lucide-arrow-up-right" />
             </ULink>
@@ -203,19 +214,21 @@ const verificationQueue = [
         </template>
         <div class="space-y-6">
           <div
-            v-for="activity in recentActivity"
+            v-for="(activity, index) in recentActivity"
             :key="activity.name"
-            class="flex items-start gap-4 p-2 -m-2 rounded-lg hover:bg-gray-50 transition-colors"
+            class="flex items-start gap-4 p-2 -m-2 hover:bg-gray-50 transition-colors pb-[18px]"
+            :class="{ 'border-b border-[#f7f7f7] mb-[10px]': index !== recentActivity.length - 1 }"
           >
             <UAvatar
               :src="activity.avatar"
               size="sm"
+              class="size-[36px]"
             />
             <div class="flex-1 min-w-0">
-              <p class="text-sm text-gray-600 leading-relaxed">
-                <span class="font-bold text-gray-900">{{ activity.name }}</span> {{ activity.action }}
+              <p class="text-[14px] text-gray-600 leading-relaxed">
+                <span class="font-semibold text-gray-900">{{ activity.name }}</span> {{ activity.action }}
               </p>
-              <p class="text-xs text-gray-400 mt-1">
+              <p class="text-[13px] text-gray-400">
                 {{ activity.time }}
               </p>
             </div>
@@ -223,15 +236,18 @@ const verificationQueue = [
         </div>
       </UCard>
 
-      <UCard>
+      <UCard
+        class="rounded-[18px] p-0!"
+        :ui="{ header: 'border-[#f7f7f7]' }"
+      >
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">
+            <h3 class="text-[16px] font-semibold text-gray-900">
               Verification queue
             </h3>
             <ULink
               to="/verification-queue"
-              class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4"
+              class="text-[14px] text-gray-400 hover:text-gray-600 transition-colors"
             >
               Open full queue <UIcon name="i-lucide-arrow-up-right" />
             </ULink>
@@ -239,31 +255,33 @@ const verificationQueue = [
         </template>
         <div class="space-y-6">
           <div
-            v-for="item in verificationQueue"
+            v-for="(item, index) in verificationQueue"
             :key="item.name"
-            class="flex items-center justify-between group"
+            class="flex items-start justify-between group cursor-pointer"
+            :class="{ 'border-b border-[#f7f7f7]': index !== onlineNow.length - 1 }"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 pb-[16px]">
               <UAvatar
                 :src="item.avatar"
                 size="sm"
+                class="size-[36px]"
               />
-              <div>
-                <p class="text-sm font-bold text-gray-900 leading-tight">
-                  {{ item.name }}
+              <div class="flex-1 min-w-0">
+                <p class="text-[14px] text-gray-600 leading-relaxed">
+                  <span class="font-semibold text-gray-900">{{ item.name }}</span> {{ item.specialty }}
                 </p>
-                <p class="text-xs text-gray-400 font-medium">
-                  {{ item.specialty }}
+                <p class="text-[13px] text-gray-400">
+                  {{ item.time }}
                 </p>
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <span class="text-xs text-gray-400 font-medium">{{ item.time }}</span>
+              <span class="text-[13px] text-gray-400 font-medium">{{ item.time }}</span>
               <UButton
                 label="View"
-                size="xs"
                 variant="outline"
                 color="neutral"
+                class="py-[9px] px-[12px] text-[12px]"
               />
             </div>
           </div>
