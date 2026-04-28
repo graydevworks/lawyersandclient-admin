@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Total Lawyers', value: '634', trend: '+8%', trendType: 'positive', trendSuffix: 'this week' },
   { title: 'Active Cases', value: '1,248', trend: '+12%', trendType: 'positive', trendSuffix: 'vs last month' },
   { title: 'Pending Review', value: '7', trendType: 'neutral' },
@@ -51,7 +59,7 @@ const searchQuery = ref('')
     </div>
 
     <!-- Lawyers List Card -->
-    <UCard :ui="{ body: { padding: 'p-0' } }">
+    <UCard>
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 class="font-bold text-gray-900">

@@ -31,9 +31,9 @@ const appBanners = [
 ]
 
 const adminAccounts = [
-  { name: 'Super Admin', email: 'admin@lawyersclient.ng', role: 'Super Admin', color: 'primary' },
-  { name: 'Ops Admin', email: 'ops@lawyersclients.ng', role: 'sky', color: 'primary' },
-  { name: 'Support Admin', email: 'support@lawyersclient.ng', role: 'Support', color: 'success' }
+  { name: 'Super Admin', email: 'admin@lawyersclient.ng', role: 'Super Admin', color: 'primary' as const },
+  { name: 'Ops Admin', email: 'ops@lawyersclients.ng', role: 'Operations', color: 'primary' as const },
+  { name: 'Support Admin', email: 'support@lawyersclient.ng', role: 'Support', color: 'success' as const }
 ]
 
 const permissions = [
@@ -281,7 +281,7 @@ const sessionTimeout = ref('30 minutes')
                       <UInput
                         model-value="Get legal help from verified lawyers"
                         size="lg"
-                        :ui="{ rounded: 'rounded-lg' }"
+                        class="rounded-lg"
                       />
                     </UFormGroup>
                     <UFormGroup
@@ -291,7 +291,7 @@ const sessionTimeout = ref('30 minutes')
                       <UInput
                         model-value="https://lawtech.ng/promo"
                         size="lg"
-                        :ui="{ rounded: 'rounded-lg' }"
+                        class="rounded-lg"
                       />
                     </UFormGroup>
                   </div>
@@ -375,8 +375,7 @@ const sessionTimeout = ref('30 minutes')
                       </p>
                       <UInput
                         v-model="banner.title"
-                        class="md:col-span-2"
-                        :ui="{ rounded: 'rounded-lg' }"
+                        class="md:col-span-2 rounded-lg"
                       />
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -385,8 +384,7 @@ const sessionTimeout = ref('30 minutes')
                       </p>
                       <UInput
                         v-model="banner.subtitle"
-                        class="md:col-span-2"
-                        :ui="{ rounded: 'rounded-lg' }"
+                        class="md:col-span-2 rounded-lg"
                       />
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -395,8 +393,7 @@ const sessionTimeout = ref('30 minutes')
                       </p>
                       <UInput
                         v-model="banner.link"
-                        class="md:col-span-2"
-                        :ui="{ rounded: 'rounded-lg' }"
+                        class="md:col-span-2 rounded-lg"
                       />
                     </div>
 

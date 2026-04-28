@@ -27,7 +27,7 @@ interface CaseDetails {
     location: string
   }
   practiceArea: string
-  status: string
+  status: 'Active' | 'Stalled' | 'Pending' | 'Completed'
   openedDate: string
   timeElapsed: string
   lastActivity: string
@@ -74,7 +74,7 @@ const cases: CaseRow[] = [
   { id: '22739', date: 'Today', matter: 'New user registered', category: 'Non- Litigation practice', client: 'Toluwani Bakare', location: 'Gombe', lawyer: 'Daniel Samuel', lawyerLoc: 'Sokoto', status: 'Completed', duration: '4 Days' }
 ]
 
-const columns: Array<{ key: string, label: string }> = [
+const columns = [
   { key: 'id', label: 'Case ID' },
   { key: 'matter', label: 'Matter' },
   { key: 'client', label: 'Client' },
@@ -82,7 +82,7 @@ const columns: Array<{ key: string, label: string }> = [
   { key: 'status', label: 'Status' },
   { key: 'duration', label: 'Duration' },
   { key: 'actions', label: '' }
-]
+] as const
 
 const isModalOpen = ref(false)
 const selectedCase = ref<CaseDetails | null>(null)
@@ -101,7 +101,7 @@ const viewCase = (row: CaseRow) => {
       location: row.lawyerLoc
     },
     practiceArea: row.category,
-    status: row.status,
+    status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
     openedDate: '22 Mar 2026', // Mock fixed date
     timeElapsed: row.duration,
     lastActivity: 'Yesterday' // Mock fixed activity
@@ -161,19 +161,15 @@ const filters = ['All', 'Stalled', 'Completed']
     </div>
 
     <!-- Table Section -->
-    <UCard
-      :ui="{ body: { padding: 'p-0 sm:p-0' } }"
-      class="overflow-hidden"
-    >
+    <UCard class="overflow-hidden">
       <!-- Filter Bar -->
       <div class="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-100">
         <div class="flex-1 max-w-lg">
           <UInput
             icon="i-lucide-search"
             placeholder="Search by case ID, client, or lawyer"
-            class="w-full"
+            class="w-full bg-gray-50 border-0 focus:ring-1 focus:ring-gray-200"
             variant="ghost"
-            :ui="{ icon: { trailing: { pointer: '' } }, base: 'bg-gray-50 border-0 focus:ring-1 focus:ring-gray-200' }"
           />
         </div>
 
@@ -208,55 +204,55 @@ const filters = ['All', 'Stalled', 'Completed']
       <!-- Custom Table -->
       <UTable
         :rows="cases"
-        :columns="columns"
+        :columns="columns as any"
         :ui="{
           thead: 'bg-gray-50/50',
-          th: { base: 'text-[10px] font-bold text-gray-500 uppercase tracking-widest py-4' },
-          td: { base: 'py-5 align-top' }
-        }"
+          th: 'text-[10px] font-bold text-gray-500 uppercase tracking-widest py-4',
+          td: 'py-5 align-top'
+        } as any"
       >
         <template #id-data="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">ID: {{ row.id }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ row.date }}</span>
+            <span class="text-sm font-bold text-gray-900">ID: {{ (row as any).id }}</span>
+            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).date }}</span>
           </div>
         </template>
 
         <template #matter-data="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ row.matter }}</span>
+            <span class="text-sm font-bold text-gray-900">{{ (row as any).matter }}</span>
             <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
-              {{ row.category }}
+              {{ (row as any).category }}
             </span>
           </div>
         </template>
 
         <template #client-data="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ row.client }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ row.location }}</span>
+            <span class="text-sm font-bold text-gray-900">{{ (row as any).client }}</span>
+            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).location }}</span>
           </div>
         </template>
 
         <template #lawyer-data="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ row.lawyer }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ row.lawyerLoc }}</span>
+            <span class="text-sm font-bold text-gray-900">{{ (row as any).lawyer }}</span>
+            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).lawyerLoc }}</span>
           </div>
         </template>
 
         <template #status-data="{ row }">
           <UBadge
-            :color="getStatusColor(row.status)"
+            :color="getStatusColor((row as any).status) as any"
             variant="subtle"
             class="rounded-full px-3 py-0.5 font-bold"
           >
-            {{ row.status }}
+            {{ (row as any).status }}
           </UBadge>
         </template>
 
         <template #duration-data="{ row }">
-          <span class="text-sm font-semibold text-gray-900">{{ row.duration }}</span>
+          <span class="text-sm font-semibold text-gray-900">{{ (row as any).duration }}</span>
         </template>
 
         <template #actions-data="{ row }">
@@ -265,7 +261,7 @@ const filters = ['All', 'Stalled', 'Completed']
             variant="ghost"
             class="text-[#003357] font-bold border border-gray-100 px-4 hover:bg-gray-50"
             size="xs"
-            @click="viewCase(row)"
+            @click="viewCase(row as any)"
           />
         </template>
       </UTable>
@@ -280,11 +276,11 @@ const filters = ['All', 'Stalled', 'Completed']
           :model-value="1"
           :page-count="10"
           :ui="{
-            wrapper: 'gap-1',
+            root: 'gap-1',
             base: 'min-w-[32px] h-8 flex items-center justify-center font-bold text-xs',
             active: 'bg-[#003357] text-white',
             inactive: 'text-gray-500 hover:bg-gray-100'
-          }"
+          } as any"
         />
       </div>
     </UCard>

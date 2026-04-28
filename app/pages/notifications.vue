@@ -107,7 +107,7 @@ const recentNotifications = [
         </UCard>
 
         <!-- Recent Notifications -->
-        <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }">
+        <UCard>
           <div class="p-4 sm:p-6 pb-2">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Recent Notifications
@@ -133,14 +133,14 @@ const recentNotifications = [
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <UBadge
-                    color="gray"
+                    color="neutral"
                     variant="solid"
                     class="rounded-full bg-[#EFF6FF] text-[#003357] font-medium text-xs px-2.5 py-0.5"
                   >
                     {{ notif.target }}
                   </UBadge>
                   <UBadge
-                    color="gray"
+                    color="neutral"
                     variant="subtle"
                     class="rounded-full text-xs px-2.5 py-0.5 text-gray-500 bg-gray-100 border-none"
                   >
@@ -189,7 +189,6 @@ const recentNotifications = [
                     :value="85"
                     color="primary"
                     class="h-2"
-                    :ui="{ progress: { color: 'text-[#003357]' } }"
                   />
                 </div>
 
@@ -202,7 +201,6 @@ const recentNotifications = [
                     :value="50"
                     color="primary"
                     class="h-2"
-                    :ui="{ progress: { color: 'text-green-600' } }"
                   />
                 </div>
 
@@ -215,7 +213,6 @@ const recentNotifications = [
                     :value="50"
                     color="primary"
                     class="h-2"
-                    :ui="{ progress: { color: 'text-green-600' } }"
                   />
                 </div>
               </div>

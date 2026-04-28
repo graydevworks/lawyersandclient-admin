@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Pending Review', value: '7', trend: '2 urgent', trendType: 'neutral' },
   { title: 'Avg. Review Time', value: '14h', trend: '-2h', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'Approved Today', value: '12', trend: '+4', trendType: 'positive', trendSuffix: 'since morning' },
@@ -46,7 +54,7 @@ const queue = [
     </div>
 
     <!-- Queue List Card -->
-    <UCard :ui="{ body: { padding: 'p-0' } }">
+    <UCard>
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 class="font-bold text-gray-900">

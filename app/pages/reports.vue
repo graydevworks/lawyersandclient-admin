@@ -36,61 +36,60 @@ const resolutionNote = ref('Account suspended')
 
     <div class="flex flex-col lg:flex-row gap-6 items-start">
       <!-- Left side: Submissions list -->
-      <UCard
-        class="lg:w-[400px] flex-shrink-0"
-        :ui="{ body: { padding: 'p-4 sm:p-4' } }"
-      >
-        <h2 class="font-bold text-gray-900 text-lg mb-4">
-          Submissions
-        </h2>
+      <UCard class="lg:w-[400px] flex-shrink-0">
+        <div class="p-4 sm:p-4">
+          <h2 class="font-bold text-gray-900 text-lg mb-4">
+            Submissions
+          </h2>
 
-        <UInput
-          icon="i-lucide-search"
-          placeholder="Search reports..."
-          class="mb-6"
-        />
+          <UInput
+            icon="i-lucide-search"
+            placeholder="Search reports..."
+            class="mb-6"
+          />
 
-        <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
-          <button
-            class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-            :class="activeTab === 'All' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
-            @click="activeTab = 'All'"
-          >
-            All
-          </button>
-          <button
-            class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-            :class="activeTab === 'New' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
-            @click="activeTab = 'New'"
-          >
-            New
-          </button>
-          <button
-            class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-            :class="activeTab === 'Review' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
-            @click="activeTab = 'Review'"
-          >
-            Review
-          </button>
-        </div>
+          <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
+            <button
+              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+              :class="activeTab === 'All' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
+              @click="activeTab = 'All'"
+            >
+              All
+            </button>
+            <button
+              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+              :class="activeTab === 'New' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
+              @click="activeTab = 'New'"
+            >
+              New
+            </button>
+            <button
+              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+              :class="activeTab === 'Review' ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
+              @click="activeTab = 'Review'"
+            >
+              Review
+            </button>
+          </div>
 
-        <div class="space-y-1 -mx-4">
-          <button
-            v-for="sub in submissions"
-            :key="sub.id"
-            class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-            :class="sub.active ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-          >
-            <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
-              {{ sub.title }}
-            </h3>
-            <p class="text-xs text-gray-500 mt-1 line-clamp-1">
-              Reported by {{ sub.reporter }} • against {{ sub.against }}
-            </p>
-            <p class="text-xs text-gray-400 mt-2">
-              {{ sub.time }}
-            </p>
-          </button>
+          <div class="space-y-1 -mx-4">
+            <button
+              v-for="sub in submissions"
+              :key="sub.id"
+              class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
+              :class="sub.active ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
+            >
+              <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
+                {{ sub.title }}
+              </h3>
+              <p class="text-xs text-gray-500 mt-1 line-clamp-1">
+                Reported by {{ sub.reporter }} • against {{ sub.against }}
+              </p>
+              <p class="text-xs text-gray-400 mt-2">
+                {{ sub.time }}
+              </p>
+            </button>
+          </div>
         </div>
       </UCard>
 
@@ -145,7 +144,7 @@ const resolutionNote = ref('Account suspended')
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Priority</span>
                   <UBadge
-                    color="gray"
+                    color="neutral"
                     variant="solid"
                     class="rounded-full bg-gray-100 text-gray-600 font-medium px-3"
                   >
@@ -204,7 +203,7 @@ const resolutionNote = ref('Account suspended')
 
             <div class="flex justify-end pt-2">
               <UButton
-                color="white"
+                color="neutral"
                 variant="solid"
                 class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF]"
               >

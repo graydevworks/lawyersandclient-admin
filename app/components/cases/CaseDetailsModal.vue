@@ -30,13 +30,13 @@ const isOpen = computed({
   set: value => emit('update:modelValue', value)
 })
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'primary' | 'neutral' => {
   switch (status?.toLowerCase()) {
-    case 'active': return 'emerald'
-    case 'stalled': return 'red'
-    case 'pending': return 'orange'
-    case 'completed': return 'blue'
-    default: return 'gray'
+    case 'active': return 'success'
+    case 'stalled': return 'error'
+    case 'pending': return 'warning'
+    case 'completed': return 'primary'
+    default: return 'neutral'
   }
 }
 </script>
@@ -44,18 +44,12 @@ const getStatusColor = (status: string) => {
 <template>
   <UModal
     v-model="isOpen"
-    :ui="{ width: 'sm:max-w-md' }"
   >
     <UCard
-      :ui="{
-        header: { padding: 'px-6 py-4' },
-        body: { padding: 'p-0' },
-        footer: { padding: 'px-6 py-6' },
-        divide: 'divide-y divide-gray-100'
-      }"
+      class="overflow-hidden"
     >
       <template #header>
-        <div class="flex items-center justify-between">
+        <div class="px-6 py-4 flex items-center justify-between">
           <h3 class="text-lg font-bold text-gray-900">
             Case details
           </h3>

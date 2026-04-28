@@ -1,5 +1,14 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+  sparklineData?: number[]
+}
+
+const stats: StatItem[] = [
   { title: 'Total users', value: '4,281', trend: '+12%', trendType: 'positive', trendSuffix: 'vs 4,302 last month', sparklineData: [30, 40, 35, 50, 49, 60, 70, 91] },
   { title: 'Active users', value: '1,243', trend: '+7%', trendType: 'positive', trendSuffix: '25.8% of total base', sparklineData: [20, 30, 25, 40, 39, 50, 60, 80] },
   { title: 'Case acceptance rate', value: '38.4%', trend: '+3%', trendType: 'positive', trendSuffix: 'vs 35.2% last period', sparklineData: [10, 20, 15, 30, 29, 40, 50, 70] },
@@ -260,7 +269,7 @@ const locations = [
             />
             <UProgress
               :value="60"
-              color="sky"
+              color="primary"
               size="sm"
             />
           </div>

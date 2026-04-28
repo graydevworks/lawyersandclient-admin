@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Total New Users', value: '258', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Clients', value: '212', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Lawyers', value: '47', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
@@ -125,7 +133,7 @@ const rows = [
     </UCard>
 
     <!-- Tabs & Table -->
-    <UCard :ui="{ body: { padding: 'p-0' } }">
+    <UCard>
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <UTabs

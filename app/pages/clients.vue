@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Total Clients', value: '4,187', trend: '+12%', trendType: 'positive', trendSuffix: 'vs last month' },
   { title: 'Active', value: '634', trend: '91%', trendType: 'positive', trendSuffix: 'of total' },
   { title: 'Suspended', value: '47', trend: '+3', trendType: 'negative', trendSuffix: 'this week' },
@@ -63,7 +71,7 @@ const searchQuery = ref('')
     </div>
 
     <!-- Clients List Card -->
-    <UCard :ui="{ body: { padding: 'p-0' } }">
+    <UCard>
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 class="font-bold text-gray-900">

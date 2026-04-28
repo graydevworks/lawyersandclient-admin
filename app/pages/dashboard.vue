@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const stats = [
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Total Users', value: '4,281', trend: '+12%', trendType: 'positive', trendSuffix: 'vs last month' },
   { title: 'Verified Lawyers', value: '634', trend: '+8%', trendType: 'positive', trendSuffix: 'this week' },
   { title: 'Pending Verification', value: '7', trendType: 'neutral' },
