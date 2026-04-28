@@ -80,7 +80,9 @@ const verificationQueue = [
   <div class="space-y-8">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">Admin Dashboard</h1>
+      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        Admin Dashboard
+      </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
@@ -89,7 +91,10 @@ const verificationQueue = [
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
-          <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="ml-2 w-4 h-4"
+          />
         </template>
       </UButton>
     </div>
@@ -108,7 +113,9 @@ const verificationQueue = [
       <UCard class="lg:col-span-2">
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">Sign ups</h3>
+            <h3 class="font-bold text-gray-900">
+              Sign ups
+            </h3>
             <div class="flex items-center gap-4">
               <USelect
                 :options="['This week', 'Last week', 'Last month']"
@@ -134,17 +141,34 @@ const verificationQueue = [
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">Online now</h3>
-            <ULink to="/online" class="text-xs text-gray-400 hover:text-gray-600 transition-colors">See all</ULink>
+            <h3 class="font-bold text-gray-900">
+              Online now
+            </h3>
+            <ULink
+              to="/online"
+              class="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >See all</ULink>
           </div>
         </template>
         <div class="space-y-6">
-          <div v-for="user in onlineNow" :key="user.name" class="flex items-center justify-between group cursor-pointer">
+          <div
+            v-for="user in onlineNow"
+            :key="user.name"
+            class="flex items-center justify-between group cursor-pointer"
+          >
             <div class="flex items-center gap-3">
-              <UAvatar :src="user.avatar" size="sm" class="group-hover:scale-110 transition-transform" />
+              <UAvatar
+                :src="user.avatar"
+                size="sm"
+                class="group-hover:scale-110 transition-transform"
+              />
               <div>
-                <p class="text-sm font-semibold text-gray-900 leading-tight">{{ user.name }}</p>
-                <p class="text-xs text-blue-500 font-medium">{{ user.role }}</p>
+                <p class="text-sm font-semibold text-gray-900 leading-tight">
+                  {{ user.name }}
+                </p>
+                <p class="text-xs text-blue-500 font-medium">
+                  {{ user.role }}
+                </p>
               </div>
             </div>
             <span class="text-xs text-gray-400 font-medium">{{ user.time }}</span>
@@ -158,20 +182,34 @@ const verificationQueue = [
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">Recent activity</h3>
-            <ULink to="/logs" class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4">
+            <h3 class="font-bold text-gray-900">
+              Recent activity
+            </h3>
+            <ULink
+              to="/logs"
+              class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4"
+            >
               View all logs <UIcon name="i-lucide-arrow-up-right" />
             </ULink>
           </div>
         </template>
         <div class="space-y-6">
-          <div v-for="activity in recentActivity" :key="activity.name" class="flex items-start gap-4 p-2 -m-2 rounded-lg hover:bg-gray-50 transition-colors">
-            <UAvatar :src="activity.avatar" size="sm" />
+          <div
+            v-for="activity in recentActivity"
+            :key="activity.name"
+            class="flex items-start gap-4 p-2 -m-2 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <UAvatar
+              :src="activity.avatar"
+              size="sm"
+            />
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-600 leading-relaxed">
                 <span class="font-bold text-gray-900">{{ activity.name }}</span> {{ activity.action }}
               </p>
-              <p class="text-xs text-gray-400 mt-1">{{ activity.time }}</p>
+              <p class="text-xs text-gray-400 mt-1">
+                {{ activity.time }}
+              </p>
             </div>
           </div>
         </div>
@@ -180,24 +218,45 @@ const verificationQueue = [
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-gray-900">Verification queue</h3>
-            <ULink to="/verification-queue" class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4">
+            <h3 class="font-bold text-gray-900">
+              Verification queue
+            </h3>
+            <ULink
+              to="/verification-queue"
+              class="text-xs text-blue-500 font-medium flex items-center gap-1 hover:underline underline-offset-4"
+            >
               Open full queue <UIcon name="i-lucide-arrow-up-right" />
             </ULink>
           </div>
         </template>
         <div class="space-y-6">
-          <div v-for="item in verificationQueue" :key="item.name" class="flex items-center justify-between group">
+          <div
+            v-for="item in verificationQueue"
+            :key="item.name"
+            class="flex items-center justify-between group"
+          >
             <div class="flex items-center gap-3">
-              <UAvatar :src="item.avatar" size="sm" />
+              <UAvatar
+                :src="item.avatar"
+                size="sm"
+              />
               <div>
-                <p class="text-sm font-bold text-gray-900 leading-tight">{{ item.name }}</p>
-                <p class="text-xs text-gray-400 font-medium">{{ item.specialty }}</p>
+                <p class="text-sm font-bold text-gray-900 leading-tight">
+                  {{ item.name }}
+                </p>
+                <p class="text-xs text-gray-400 font-medium">
+                  {{ item.specialty }}
+                </p>
               </div>
             </div>
             <div class="flex items-center gap-4">
               <span class="text-xs text-gray-400 font-medium">{{ item.time }}</span>
-              <UButton label="View" size="xs" variant="outline" color="neutral" />
+              <UButton
+                label="View"
+                size="xs"
+                variant="outline"
+                color="neutral"
+              />
             </div>
           </div>
         </div>

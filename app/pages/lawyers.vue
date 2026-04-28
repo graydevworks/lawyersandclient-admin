@@ -29,7 +29,9 @@ const searchQuery = ref('')
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">Lawyers Management</h1>
+      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        Lawyers Management
+      </h1>
       <UButton
         icon="i-lucide-plus"
         color="primary"
@@ -52,7 +54,9 @@ const searchQuery = ref('')
     <UCard :ui="{ body: { padding: 'p-0' } }">
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 class="font-bold text-gray-900">Lawyers list</h3>
+          <h3 class="font-bold text-gray-900">
+            Lawyers list
+          </h3>
           <div class="flex items-center gap-4">
             <UInput
               v-model="searchQuery"
@@ -70,7 +74,10 @@ const searchQuery = ref('')
             >
               Filter
               <template #trailing>
-                <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="ml-2 w-4 h-4"
+                />
               </template>
             </UButton>
           </div>

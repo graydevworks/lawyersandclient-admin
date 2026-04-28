@@ -69,7 +69,9 @@ const rows = [
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">Admin Dashboard</h1>
+      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        Admin Dashboard
+      </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
@@ -78,7 +80,10 @@ const rows = [
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
-          <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="ml-2 w-4 h-4"
+          />
         </template>
       </UButton>
     </div>
@@ -96,7 +101,9 @@ const rows = [
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-900">Sign ups</h3>
+          <h3 class="font-bold text-gray-900">
+            Sign ups
+          </h3>
           <USelect
             :options="['This week', 'Last week']"
             size="sm"
@@ -121,8 +128,12 @@ const rows = [
     <UCard :ui="{ body: { padding: 'p-0' } }">
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <UTabs :items="items" class="min-w-64" :ui="{ content: 'hidden' }" />
-          
+          <UTabs
+            :items="items"
+            class="min-w-64"
+            :ui="{ content: 'hidden' }"
+          />
+
           <div class="flex items-center gap-4">
             <UInput
               icon="i-lucide-search"
@@ -139,7 +150,10 @@ const rows = [
             >
               Sort by
               <template #trailing>
-                <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="ml-2 w-4 h-4"
+                />
               </template>
             </UButton>
           </div>

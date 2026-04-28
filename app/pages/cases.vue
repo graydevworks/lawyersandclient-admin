@@ -1,14 +1,67 @@
 <script setup lang="ts">
 import CaseDetailsModal from '~/components/cases/CaseDetailsModal.vue'
 
-const stats = [
+interface CaseRow {
+  id: string
+  date: string
+  matter: string
+  category: string
+  client: string
+  location: string
+  lawyer: string
+  lawyerLoc: string
+  status: string
+  duration: string
+}
+
+interface CaseDetails {
+  id: string
+  matter: string
+  category: string
+  client: {
+    name: string
+    location: string
+  }
+  lawyer: {
+    name: string
+    location: string
+  }
+  practiceArea: string
+  status: string
+  openedDate: string
+  timeElapsed: string
+  lastActivity: string
+}
+
+interface StatItem {
+  title: string
+  value: string
+  trend?: string
+  trendType: 'positive' | 'neutral' | 'negative'
+  trendSuffix?: string
+}
+
+const stats: StatItem[] = [
   { title: 'Total active cases', value: '318', trend: '+24', trendType: 'positive', trendSuffix: 'this month' },
   { title: 'Completed this month', value: '91', trendType: 'neutral', trendSuffix: 'Avg. 14 days to close' },
   { title: 'Stalled cases', value: '16', trend: 'No activity 7+ days', trendType: 'negative' },
   { title: 'Avg. case duration', value: '14d', trend: '-2d', trendType: 'positive', trendSuffix: 'this month' }
 ]
 
-const cases = [
+interface CaseRow {
+  id: string
+  date: string
+  matter: string
+  category: string
+  client: string
+  location: string
+  lawyer: string
+  lawyerLoc: string
+  status: string
+  duration: string
+}
+
+const cases: CaseRow[] = [
   { id: '39635', date: 'Today', matter: 'Wrongful termination claim', category: 'Media Law', client: 'Adese Samson', location: 'Oyo', lawyer: 'Ebubechukwu Agnes', lawyerLoc: 'Cross River', status: 'Active', duration: '9 Days' },
   { id: '43178', date: 'Today', matter: 'Child custody dispute', category: 'Entertainment', client: 'Folasayo Ogunnaike', location: 'Lagos', lawyer: 'Folasayo Ogunnaike', lawyerLoc: 'Imo', status: 'Active', duration: '3 Days' },
   { id: '22739', date: 'Today', matter: 'Land title fraud recovery', category: 'Municipality/ panchayat etc', client: 'Ogunmodede Smart', location: 'Ogun', lawyer: 'Hameed Yusuf', lawyerLoc: 'Yobe', status: 'Stalled', duration: '7 Days' },
@@ -21,7 +74,7 @@ const cases = [
   { id: '22739', date: 'Today', matter: 'New user registered', category: 'Non- Litigation practice', client: 'Toluwani Bakare', location: 'Gombe', lawyer: 'Daniel Samuel', lawyerLoc: 'Sokoto', status: 'Completed', duration: '4 Days' }
 ]
 
-const columns = [
+const columns: Array<{ key: string, label: string }> = [
   { key: 'id', label: 'Case ID' },
   { key: 'matter', label: 'Matter' },
   { key: 'client', label: 'Client' },
@@ -32,9 +85,9 @@ const columns = [
 ]
 
 const isModalOpen = ref(false)
-const selectedCase = ref<any>(null)
+const selectedCase = ref<CaseDetails | null>(null)
 
-const viewCase = (row: any) => {
+const viewCase = (row: CaseRow) => {
   selectedCase.value = {
     id: row.id,
     matter: row.matter,
@@ -56,7 +109,7 @@ const viewCase = (row: any) => {
   isModalOpen.value = true
 }
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
     case 'active': return 'emerald'
     case 'stalled': return 'red'
@@ -75,8 +128,12 @@ const filters = ['All', 'Stalled', 'Completed']
     <!-- Header Section -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 leading-tight">Cases</h1>
-        <p class="text-sm text-gray-500">All active lawyer-client engagements •</p>
+        <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+          Cases
+        </h1>
+        <p class="text-sm text-gray-500">
+          All active lawyer-client engagements •
+        </p>
       </div>
       <UButton
         icon="i-lucide-calendar"
@@ -86,7 +143,10 @@ const filters = ['All', 'Stalled', 'Completed']
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
-          <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="ml-2 w-4 h-4"
+          />
         </template>
       </UButton>
     </div>
@@ -101,7 +161,10 @@ const filters = ['All', 'Stalled', 'Completed']
     </div>
 
     <!-- Table Section -->
-    <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }" class="overflow-hidden">
+    <UCard
+      :ui="{ body: { padding: 'p-0 sm:p-0' } }"
+      class="overflow-hidden"
+    >
       <!-- Filter Bar -->
       <div class="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-100">
         <div class="flex-1 max-w-lg">
@@ -113,7 +176,7 @@ const filters = ['All', 'Stalled', 'Completed']
             :ui="{ icon: { trailing: { pointer: '' } }, base: 'bg-gray-50 border-0 focus:ring-1 focus:ring-gray-200' }"
           />
         </div>
-        
+
         <div class="flex items-center gap-4">
           <USelect
             :options="['All statuses']"
@@ -127,14 +190,14 @@ const filters = ['All', 'Stalled', 'Completed']
             class="bg-gray-50/50"
             size="sm"
           />
-          
+
           <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
             <button
               v-for="filter in filters"
               :key="filter"
-              @click="activeFilter = filter"
               class="px-5 py-1.5 text-sm font-medium rounded-md transition-all"
               :class="activeFilter === filter ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+              @click="activeFilter = filter"
             >
               {{ filter }}
             </button>
@@ -143,11 +206,15 @@ const filters = ['All', 'Stalled', 'Completed']
       </div>
 
       <!-- Custom Table -->
-      <UTable :rows="cases" :columns="columns" :ui="{ 
-        thead: 'bg-gray-50/50',
-        th: { base: 'text-[10px] font-bold text-gray-500 uppercase tracking-widest py-4' },
-        td: { base: 'py-5 align-top' }
-      }">
+      <UTable
+        :rows="cases"
+        :columns="columns"
+        :ui="{
+          thead: 'bg-gray-50/50',
+          th: { base: 'text-[10px] font-bold text-gray-500 uppercase tracking-widest py-4' },
+          td: { base: 'py-5 align-top' }
+        }"
+      >
         <template #id-data="{ row }">
           <div class="flex flex-col">
             <span class="text-sm font-bold text-gray-900">ID: {{ row.id }}</span>

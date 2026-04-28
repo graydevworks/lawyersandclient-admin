@@ -36,12 +36,16 @@ const navGroups = [
         <div class="w-8 h-8 bg-[#003357] rounded-lg flex items-center justify-center text-white font-bold text-xl">
           C
         </div>
-        <div class="w-24 h-4 bg-gray-100 rounded"></div> <!-- Logo placeholder text -->
+        <div class="w-24 h-4 bg-gray-100 rounded" /> <!-- Logo placeholder text -->
       </div>
     </div>
 
     <nav class="flex-1 overflow-y-auto py-4">
-      <div v-for="group in navGroups" :key="group.label" class="mb-8">
+      <div
+        v-for="group in navGroups"
+        :key="group.label"
+        class="mb-8"
+      >
         <h3 class="px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
           {{ group.label }}
         </h3>
@@ -54,7 +58,10 @@ const navGroups = [
             active-class="bg-[#003357] text-white"
             inactive-class="text-[#64748B] hover:bg-gray-50 hover:text-gray-900"
           >
-            <UIcon :name="item.icon" class="w-5 h-5 shrink-0" />
+            <UIcon
+              :name="item.icon"
+              class="w-5 h-5 shrink-0"
+            />
             {{ item.label }}
           </ULink>
         </div>

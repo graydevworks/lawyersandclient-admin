@@ -34,7 +34,9 @@ const searchQuery = ref('')
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">Admin Dashboard</h1>
+      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        Admin Dashboard
+      </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
@@ -43,7 +45,10 @@ const searchQuery = ref('')
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
-          <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="ml-2 w-4 h-4"
+          />
         </template>
       </UButton>
     </div>
@@ -61,7 +66,9 @@ const searchQuery = ref('')
     <UCard :ui="{ body: { padding: 'p-0' } }">
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 class="font-bold text-gray-900">Users list</h3>
+          <h3 class="font-bold text-gray-900">
+            Users list
+          </h3>
           <div class="flex items-center gap-4">
             <UInput
               v-model="searchQuery"
@@ -79,7 +86,10 @@ const searchQuery = ref('')
             >
               Sort by
               <template #trailing>
-                <UIcon name="i-lucide-chevron-down" class="ml-2 w-4 h-4" />
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="ml-2 w-4 h-4"
+                />
               </template>
             </UButton>
           </div>

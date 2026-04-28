@@ -27,8 +27,12 @@ const queue = [
   <div class="space-y-8">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 leading-tight">Verification Queue</h1>
-        <p class="text-sm text-gray-400">Manage lawyer identity and professional verification</p>
+        <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+          Verification Queue
+        </h1>
+        <p class="text-sm text-gray-400">
+          Manage lawyer identity and professional verification
+        </p>
       </div>
     </div>
 
@@ -45,7 +49,9 @@ const queue = [
     <UCard :ui="{ body: { padding: 'p-0' } }">
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 class="font-bold text-gray-900">Queue Items</h3>
+          <h3 class="font-bold text-gray-900">
+            Queue Items
+          </h3>
           <div class="flex items-center gap-4">
             <USelect
               :options="['Show all', 'Pending only', 'Rejected']"

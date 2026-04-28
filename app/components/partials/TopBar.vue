@@ -12,7 +12,7 @@ defineEmits(['toggle-sidebar'])
         class="lg:hidden"
         @click="$emit('toggle-sidebar')"
       />
-      
+
       <div class="flex-1 max-w-md hidden md:block">
         <UInput
           icon="i-lucide-search"
@@ -32,7 +32,7 @@ defineEmits(['toggle-sidebar'])
         class="relative"
       >
         <template #trailing>
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
         </template>
       </UButton>
 
@@ -43,8 +43,12 @@ defineEmits(['toggle-sidebar'])
           size="sm"
         />
         <div class="hidden sm:block text-left">
-          <p class="text-xs font-semibold text-gray-900 leading-tight">Atiba Heritage</p>
-          <p class="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Admin</p>
+          <p class="text-xs font-semibold text-gray-900 leading-tight">
+            Atiba Heritage
+          </p>
+          <p class="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
+            Admin
+          </p>
         </div>
       </div>
     </div>

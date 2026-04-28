@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import type { TableColumn, TableData } from '@nuxt/ui'
+import type { TableColumn } from '@nuxt/ui'
 
-interface Props {
-  columns: TableColumn<any>[]
-  data: any[]
+interface CaseRow {
+  id: string
+  name: string
+  avatar?: string
+  status?: string
+  joined?: string
+  contact?: string
+  [key: string]: unknown
 }
 
-const props = defineProps<Props>()
+interface Props {
+  columns: TableColumn<CaseRow>[]
+  data: CaseRow[]
+}
+
+defineProps<Props>()
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
@@ -28,7 +38,11 @@ const getStatusColor = (status: string) => {
       <!-- Custom User Cell -->
       <template #user-cell="{ row }">
         <div class="flex items-center gap-3 py-1">
-          <UAvatar :src="row.original.avatar" :alt="row.original.name" size="sm" />
+          <UAvatar
+            :src="row.original.avatar"
+            :alt="row.original.name"
+            size="sm"
+          />
           <div class="flex flex-col">
             <span class="font-medium text-gray-900">{{ row.original.name }}</span>
             <span class="text-[10px] text-gray-400 font-medium uppercase">{{ row.original.id }}</span>
@@ -55,7 +69,7 @@ const getStatusColor = (status: string) => {
       </template>
 
       <!-- Custom Contact Cell -->
-       <template #contact-cell="{ row }">
+      <template #contact-cell="{ row }">
         <span class="text-gray-500">{{ row.original.contact }}</span>
       </template>
 
