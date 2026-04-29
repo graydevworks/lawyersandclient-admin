@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SelectItem } from '@nuxt/ui'
+
 interface StatItem {
   title: string
   value: string
@@ -7,12 +9,26 @@ interface StatItem {
   trendSuffix?: string
 }
 
+const filterDate = ref('This week')
+
 const stats: StatItem[] = [
   { title: 'Total New Users', value: '258', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Clients', value: '212', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Lawyers', value: '47', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'Pending verification', value: '4', trend: 'New lawyers awaiting review', trendType: 'neutral', trendSuffix: '' }
 ]
+
+const sortBy = ref<SelectItem[]>([
+  {
+    type: 'label',
+    label: 'Sort by',
+    icon: 'i-lucide-sort'
+  },
+  'Location',
+  'Date Joined'
+])
+
+const value = ref('Location')
 
 const signUpsSeries = [
   {
@@ -39,7 +55,7 @@ const signUpsOptions = {
   },
   dataLabels: { enabled: false },
   xaxis: {
-    categories: ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thur'],
+    categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     axisBorder: { show: false }
   },
   grid: {
@@ -77,14 +93,14 @@ const rows = [
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
       </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
         variant="solid"
-        class="shadow-sm"
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
@@ -106,25 +122,25 @@ const rows = [
     </div>
 
     <!-- Sign ups Chart -->
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-900">
-            Sign ups
-          </h3>
+    <UCard class="lg:col-span-8 rounded-[18px] border-0 ring-0">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[16px] font-semibold text-gray-900">
+          Sign ups
+        </h3>
+        <div class="flex items-center gap-4">
           <USelect
-            :options="['This week', 'Last week']"
-            size="sm"
+            v-model="filterDate"
+            :items="['This week', 'Last week', 'Last month']"
             variant="outline"
-            class="w-32"
+            class="w-28 rounded-[36px] text-[16px] py-[7px]"
           />
         </div>
-      </template>
-      <div class="h-80 w-full overflow-hidden">
+      </div>
+      <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
         <ClientOnly>
           <apexchart
             type="bar"
-            height="320"
+            :height="373"
             :options="signUpsOptions"
             :series="signUpsSeries"
           />
@@ -133,37 +149,33 @@ const rows = [
     </UCard>
 
     <!-- Tabs & Table -->
-    <UCard>
+    <UCard
+      class="rounded-[24px] border-0 ring-0"
+      :ui="{ header: 'border-0 mb-0', body: 'p-0! px-[8px]!' }"
+    >
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <UTabs
             :items="items"
-            class="min-w-64"
+            variant="link"
             :ui="{ content: 'hidden' }"
           />
-
           <div class="flex items-center gap-4">
             <UInput
               icon="i-lucide-search"
               placeholder="Search by name or email..."
-              size="sm"
-              class="w-full md:w-64"
+              class="w-full md:w-[367px]"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
             />
-            <UButton
+            <USelect
+              v-model="value"
               color="neutral"
               variant="outline"
               icon="i-lucide-list-filter"
-              size="sm"
-              class="whitespace-nowrap"
-            >
-              Sort by
-              <template #trailing>
-                <UIcon
-                  name="i-lucide-chevron-down"
-                  class="ml-2 w-4 h-4"
-                />
-              </template>
-            </UButton>
+              class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+              :items="sortBy"
+              placeholder="Sort By"
+            />
           </div>
         </div>
       </template>

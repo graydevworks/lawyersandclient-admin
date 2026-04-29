@@ -49,25 +49,27 @@ const series = computed(() => [
     :ui="{ body: 'p-[16px]!' }"
   >
     <div class="space-y-[10px]">
-      <div class="flex justify-between items-start">
-        <h4 class="text-[15px] font-normal captitalize">
-          {{ title }}
-        </h4>
-        <div
-          v-if="sparklineData && sparklineData.length"
-          class="w-16 h-8"
-        >
-          <ClientOnly>
-            <apexchart
-              type="line"
-              height="32"
-              width="64"
-              :options="chartOptions"
-              :series="series"
-            />
-          </ClientOnly>
+      <slot name="header">
+        <div class="flex justify-between items-start">
+          <h4 class="text-[15px] font-normal captitalize">
+            {{ title }}
+          </h4>
+          <div
+            v-if="sparklineData && sparklineData.length"
+            class="w-16 h-8"
+          >
+            <ClientOnly>
+              <apexchart
+                type="line"
+                height="32"
+                width="64"
+                :options="chartOptions"
+                :series="series"
+              />
+            </ClientOnly>
+          </div>
         </div>
-      </div>
+      </slot>
 
       <div class="flex items-baseline gap-2">
         <span class="text-2xl font-semibold text-gray-900 tracking-tight">{{ value }}</span>

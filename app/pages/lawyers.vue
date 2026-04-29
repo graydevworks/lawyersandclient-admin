@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SelectItem } from '@nuxt/ui'
+
 interface StatItem {
   title: string
   value: string
@@ -14,39 +16,56 @@ const stats: StatItem[] = [
   { title: 'Case Acceptance', value: '84%', trend: '+3%', trendType: 'positive', trendSuffix: 'vs last month' }
 ]
 
+const value = ref('Location')
+
 const columns = [
-  { accessorKey: 'user', header: 'Lawyer' },
-  { accessorKey: 'specialty', header: 'Specialty' },
-  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'user', header: 'User' },
+  { accessorKey: 'email', header: 'Contact' },
+  { accessorKey: 'status', header: 'Verification' },
   { accessorKey: 'joined', header: 'Joined' },
   { accessorKey: 'lastActive', header: 'Last active' },
   { accessorKey: 'actions', header: 'Actions' }
 ]
 
 const lawyers = [
-  { id: 'LAW-01', name: 'Adaeze Okonkwo', specialty: 'Criminal Law', status: 'Active', joined: '24 May, 2020', lastActive: '2 min ago', avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 'LAW-02', name: 'Emeka Nwachukwu', specialty: 'Family Law', status: 'Active', joined: '1 Feb, 2020', lastActive: '1 hr ago', avatar: 'https://i.pravatar.cc/150?u=6' },
-  { id: 'LAW-03', name: 'Ngozi Amadi', specialty: 'Commercial Law', status: 'New', joined: '8 Sep, 2020', lastActive: '1s ago', avatar: 'https://i.pravatar.cc/150?u=8' },
-  { id: 'LAW-04', name: 'Seun Olatunji', specialty: 'Immigration', status: 'Active', joined: '22 Oct, 2020', lastActive: '30m ago', avatar: 'https://i.pravatar.cc/150?u=10' },
-  { id: 'LAW-05', name: 'Justina Ogbonnaya', specialty: 'Labor Law', status: 'Active', joined: '8 Sep, 2020', lastActive: '3h ago', avatar: 'https://i.pravatar.cc/150?u=11' }
+  { id: 'LAW-01', name: 'Adaeze Okonkwo', email: 'adeze@example.com', status: 'Pending', joined: '24 May, 2020', lastActive: '2 min ago', avatar: 'https://i.pravatar.cc/150?u=1', responseRate: 80 },
+  { id: 'LAW-02', name: 'Emeka Nwachukwu', email: 'emeka@example.com', status: 'Rejected', joined: '1 Feb, 2020', lastActive: '1 hr ago', avatar: 'https://i.pravatar.cc/150?u=6', responseRate: 90 },
+  { id: 'LAW-03', name: 'Ngozi Amadi', email: 'ngozi@example.com', status: 'Verified', joined: '8 Sep, 2020', lastActive: '1s ago', avatar: 'https://i.pravatar.cc/150?u=8', responseRate: 70 },
+  { id: 'LAW-04', name: 'Seun Olatunji', email: 'seun@example.com', status: 'Pending', joined: '22 Oct, 2020', lastActive: '30m ago', avatar: 'https://i.pravatar.cc/150?u=10', responseRate: 85 },
+  { id: 'LAW-05', name: 'Justina Ogbonnaya', email: 'justina@example.com', status: 'Pending', joined: '8 Sep, 2020', lastActive: '3h ago', avatar: 'https://i.pravatar.cc/150?u=11', responseRate: 95 }
 ]
 
-const searchQuery = ref('')
+const sortBy = ref<SelectItem[]>([
+  {
+    type: 'label',
+    label: 'Sort by',
+    icon: 'i-lucide-sort'
+  },
+  'Location',
+  'Date Joined'
+])
 </script>
 
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
-        Lawyers Management
+      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
+        Admin Dashboard
       </h1>
       <UButton
-        icon="i-lucide-plus"
-        color="primary"
+        icon="i-lucide-calendar"
+        color="neutral"
         variant="solid"
-        class="shadow-sm"
-        label="Add New Lawyer"
-      />
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
+      >
+        April 10, 2026 - May 11, 2026
+        <template #trailing>
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="ml-2 w-4 h-4"
+          />
+        </template>
+      </UButton>
     </div>
 
     <!-- Stats Grid -->
@@ -59,35 +78,31 @@ const searchQuery = ref('')
     </div>
 
     <!-- Lawyers List Card -->
-    <UCard>
+    <UCard
+      class="lg:col-span-8 rounded-[18px] border-0 ring-0"
+      :ui="{ header: 'border-0 mb-0', body: 'p-0! px-[8px]!' }"
+    >
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 class="font-bold text-gray-900">
-            Lawyers list
+          <h3 class="text-[16px] font-semibold text-gray-900">
+            Recent activity
           </h3>
           <div class="flex items-center gap-4">
             <UInput
-              v-model="searchQuery"
               icon="i-lucide-search"
-              placeholder="Search by name or specialty..."
-              size="sm"
-              class="w-full md:w-64"
+              placeholder="Search by name or email..."
+              class="w-full md:w-[367px]"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
             />
-            <UButton
+            <USelect
+              v-model="value"
               color="neutral"
               variant="outline"
               icon="i-lucide-list-filter"
-              size="sm"
-              class="whitespace-nowrap"
-            >
-              Filter
-              <template #trailing>
-                <UIcon
-                  name="i-lucide-chevron-down"
-                  class="ml-2 w-4 h-4"
-                />
-              </template>
-            </UButton>
+              class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+              :items="sortBy"
+              placeholder="Sort By"
+            />
           </div>
         </div>
       </template>
@@ -96,9 +111,8 @@ const searchQuery = ref('')
         :columns="columns"
         :data="lawyers"
       >
-        <!-- Custom Specialty Cell -->
-        <template #specialty-cell="{ row }">
-          <span class="text-gray-600 font-medium">{{ (row.original as any).specialty }}</span>
+        <template #email-cell="{ row }">
+          <span class="text-gray-600 font-medium">{{ (row.original as any).email }}</span>
         </template>
       </SharedDataTable>
     </UCard>

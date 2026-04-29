@@ -42,14 +42,14 @@ const searchQuery = ref('')
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
       </h1>
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
         variant="solid"
-        class="shadow-sm"
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
@@ -71,10 +71,13 @@ const searchQuery = ref('')
     </div>
 
     <!-- Clients List Card -->
-    <UCard>
+    <UCard
+      class="rounded-[24px] border-0 ring-0"
+      :ui="{ header: 'border-0 mb-0', body: 'p-0! px-[8px]!' }"
+    >
       <template #header>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 class="font-bold text-gray-900">
+          <h3 class="font-medium text-gray-900">
             Users list
           </h3>
           <div class="flex items-center gap-4">
@@ -82,15 +85,15 @@ const searchQuery = ref('')
               v-model="searchQuery"
               icon="i-lucide-search"
               placeholder="Search by name or email..."
-              size="sm"
-              class="w-full md:w-64"
+              class="w-full md:w-[367px]"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
             />
             <UButton
               color="neutral"
               variant="outline"
               icon="i-lucide-list-filter"
               size="sm"
-              class="whitespace-nowrap"
+              class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
             >
               Sort by
               <template #trailing>

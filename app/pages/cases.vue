@@ -75,47 +75,47 @@ const cases: CaseRow[] = [
 ]
 
 const columns = [
-  { key: 'id', label: 'Case ID' },
-  { key: 'matter', label: 'Matter' },
-  { key: 'client', label: 'Client' },
-  { key: 'lawyer', label: 'Lawyer' },
-  { key: 'status', label: 'Status' },
-  { key: 'duration', label: 'Duration' },
-  { key: 'actions', label: '' }
-] as const
+  { accessorKey: 'id', header: 'Case ID' },
+  { accessorKey: 'matter', header: 'Matter' },
+  { accessorKey: 'client', header: 'Client' },
+  { accessorKey: 'lawyer', header: 'Lawyer' },
+  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'duration', header: 'Duration' },
+  { accessorKey: 'actions', header: 'Action' }
+]
 
 const isModalOpen = ref(false)
 const selectedCase = ref<CaseDetails | null>(null)
 
-const viewCase = (row: CaseRow) => {
-  selectedCase.value = {
-    id: row.id,
-    matter: row.matter,
-    category: row.category.toUpperCase(),
-    client: {
-      name: row.client,
-      location: row.location
-    },
-    lawyer: {
-      name: row.lawyer,
-      location: row.lawyerLoc
-    },
-    practiceArea: row.category,
-    status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
-    openedDate: '22 Mar 2026', // Mock fixed date
-    timeElapsed: row.duration,
-    lastActivity: 'Yesterday' // Mock fixed activity
-  }
-  isModalOpen.value = true
-}
+// const viewCase = (row: any) => {
+//   selectedCase.value = {
+//     id: row.id,
+//     matter: row.matter,
+//     category: row.category.toUpperCase(),
+//     client: {
+//       name: row.client,
+//       location: row.location
+//     },
+//     lawyer: {
+//       name: row.lawyer,
+//       location: row.lawyerLoc
+//     },
+//     practiceArea: row.category,
+//     status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
+//     openedDate: '22 Mar 2026', // Mock fixed date
+//     timeElapsed: row.duration,
+//     lastActivity: 'Yesterday' // Mock fixed activity
+//   }
+//   isModalOpen.value = true
+// }
 
 const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
-    case 'active': return 'emerald'
-    case 'stalled': return 'red'
-    case 'pending': return 'orange'
-    case 'completed': return 'blue'
-    default: return 'gray'
+    case 'active': return 'success'
+    case 'stalled': return 'warning'
+    case 'pending': return 'warning'
+    case 'completed': return 'success'
+    default: return 'secondary'
   }
 }
 
@@ -161,30 +161,34 @@ const filters = ['All', 'Stalled', 'Completed']
     </div>
 
     <!-- Table Section -->
-    <UCard class="overflow-hidden">
+    <UCard class="overflow-hidden rounded-[18px] border-0 ring-0">
       <!-- Filter Bar -->
-      <div class="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-100">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div class="flex-1 max-w-lg">
           <UInput
             icon="i-lucide-search"
-            placeholder="Search by case ID, client, or lawyer"
-            class="w-full bg-gray-50 border-0 focus:ring-1 focus:ring-gray-200"
-            variant="ghost"
+            placeholder="Search by name or email..."
+            class="w-full md:w-[367px]"
+            :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
           />
         </div>
 
         <div class="flex items-center gap-4">
           <USelect
-            :options="['All statuses']"
-            variant="ghost"
-            class="bg-gray-50/50"
-            size="sm"
+            placeholder="All statuses"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-list-filter"
+            class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+            :items="['All categories']"
           />
           <USelect
-            :options="['All categories']"
-            variant="ghost"
-            class="bg-gray-50/50"
-            size="sm"
+            placeholder="All categories"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-list-filter"
+            class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+            :items="['All categories']"
           />
 
           <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
@@ -203,85 +207,104 @@ const filters = ['All', 'Stalled', 'Completed']
 
       <!-- Custom Table -->
       <UTable
-        :rows="cases"
-        :columns="columns as any"
+        :data="cases"
+        :columns="columns"
         :ui="{
-          thead: 'bg-gray-50/50',
-          th: 'text-[10px] font-bold text-gray-500 uppercase tracking-widest py-4',
-          td: 'py-5 align-top'
-        } as any"
+          base: 'divider-none border-none mt-4',
+          th: 'divider-none border-none! font-light!',
+          tr: 'divider-none border-none!',
+          thead: 'divider-none border-none bg-[#F9F9FB]',
+          separator: 'hidden'
+        }"
       >
-        <template #id-data="{ row }">
+        <template #id-cell="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">ID: {{ (row as any).id }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).date }}</span>
+            <span class="text-sm font-medium text-gray-900">ID: {{ row.original.id }}</span>
+            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.date }}</span>
           </div>
         </template>
 
-        <template #matter-data="{ row }">
+        <template #matter-cell="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ (row as any).matter }}</span>
-            <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
-              {{ (row as any).category }}
+            <span class="text-sm font-medium text-gray-900">{{ row.original.matter }}</span>
+            <span class="text-[12px] text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
+              {{ row.original.category }}
             </span>
           </div>
         </template>
 
-        <template #client-data="{ row }">
+        <template #client-cell="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ (row as any).client }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).location }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ row.original.client }}</span>
+            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.location }}</span>
           </div>
         </template>
 
-        <template #lawyer-data="{ row }">
+        <template #lawyer-cell="{ row }">
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-gray-900">{{ (row as any).lawyer }}</span>
-            <span class="text-[11px] text-gray-400 font-medium">{{ (row as any).lawyerLoc }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ row.original.lawyer }}</span>
+            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.lawyerLoc }}</span>
           </div>
         </template>
 
-        <template #status-data="{ row }">
+        <template #status-cell="{ row }">
           <UBadge
-            :color="getStatusColor((row as any).status) as any"
+            v-if="row.original.status"
+            :color="getStatusColor(row.original.status) as any"
             variant="subtle"
-            class="rounded-full px-3 py-0.5 font-bold"
+            class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
           >
-            {{ (row as any).status }}
+            {{ row.original.status }}
           </UBadge>
         </template>
 
-        <template #duration-data="{ row }">
-          <span class="text-sm font-semibold text-gray-900">{{ (row as any).duration }}</span>
+        <template #duration-cell="{ row }">
+          <span class="text-sm font-medium text-gray-900">{{ row.original.duration }}</span>
         </template>
 
-        <template #actions-data="{ row }">
+        <!-- Custom Actions Cell -->
+        <template #actions-cell="{ row }">
           <UButton
             label="View"
-            variant="ghost"
-            class="text-[#003357] font-bold border border-gray-100 px-4 hover:bg-gray-50"
+            variant="outline"
+            color="neutral"
             size="xs"
-            @click="viewCase(row as any)"
+            class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
+            :to="`/user/${row.original.id}`"
           />
         </template>
       </UTable>
 
       <!-- Pagination Footer -->
       <div class="px-6 py-5 border-t border-gray-100 flex items-center justify-between bg-gray-50/20">
-        <div class="text-xs text-gray-400 font-medium">
-          Showing 1–10 of 89 activities
+        <div class="text-xs text-gray-500">
+          Showing 1–10 of {{ cases.length }} cases
         </div>
         <UPagination
-          :total="89"
           :model-value="1"
-          :page-count="10"
-          :ui="{
-            root: 'gap-1',
-            base: 'min-w-[32px] h-8 flex items-center justify-center font-bold text-xs',
-            active: 'bg-[#003357] text-white',
-            inactive: 'text-gray-500 hover:bg-gray-100'
-          } as any"
-        />
+          :total="10"
+          :items-per-page="10"
+          :first-icon="false"
+          class="gap-1"
+        >
+          <template #first>
+            <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+          </template>
+          <template #next>
+            <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+              Next <UIcon name="iconoir:arrow-right" />
+            </UButton>
+          </template>
+          <template #prev>
+            <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+              <UIcon name="iconoir:arrow-left" />
+              Prev
+            </UButton>
+          </template>
+          <template #last>
+            <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+          </template>
+        </UPagination>
       </div>
     </UCard>
 

@@ -29,11 +29,18 @@ const getStatusColor = (status: string) => {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+  <div class="bg-white overflow-hidden">
     <UTable
       :data="data"
       :columns="columns"
-      class="w-full"
+      class="w-full p-0 border-0 divider-none"
+      :ui="{
+        base: 'divider-none border-none',
+        th: 'divider-none border-none! font-light!',
+        tr: 'divider-none border-none!',
+        thead: 'divider-none border-none bg-[#F9F9FB]',
+        separator: 'hidden'
+      }"
     >
       <!-- Custom User Cell -->
       <template #user-cell="{ row }">
@@ -41,11 +48,11 @@ const getStatusColor = (status: string) => {
           <UAvatar
             :src="row.original.avatar"
             :alt="row.original.name"
-            size="sm"
+            class="size-[32px]"
           />
-          <div class="flex flex-col">
-            <span class="font-medium text-gray-900">{{ row.original.name }}</span>
-            <span class="text-[10px] text-gray-400 font-medium uppercase">{{ row.original.id }}</span>
+          <div class="flex flex-col gap-[6px]">
+            <span class="font-normal text-gray-900 text-[13px]">{{ row.original.name }}</span>
+            <span class="text-[12px] text-gray-400 font-normal uppercase">{{ row.original.id }}</span>
           </div>
         </div>
       </template>
@@ -56,8 +63,7 @@ const getStatusColor = (status: string) => {
           v-if="row.original.status"
           :color="getStatusColor(row.original.status)"
           variant="subtle"
-          size="sm"
-          class="rounded-full px-2.5 py-0.5"
+          class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
         >
           {{ row.original.status }}
         </UBadge>
@@ -65,12 +71,16 @@ const getStatusColor = (status: string) => {
 
       <!-- Custom Joined Cell -->
       <template #joined-cell="{ row }">
-        <span class="text-gray-500">{{ row.original.joined }}</span>
+        <span class="text-gray-500! text-[14px] font-normal">{{ row.original.joined }}</span>
       </template>
 
       <!-- Custom Contact Cell -->
       <template #contact-cell="{ row }">
-        <span class="text-gray-500">{{ row.original.contact }}</span>
+        <span class="text-gray-500! text-[14px] font-normal">{{ row.original.contact }}</span>
+      </template>
+
+      <template #lastActive-cell="{ row }">
+        <span class="text-gray-500! text-[14px] font-normal">{{ row.original.lastActive }}</span>
       </template>
 
       <!-- Custom Actions Cell -->
@@ -80,7 +90,7 @@ const getStatusColor = (status: string) => {
           variant="outline"
           color="neutral"
           size="xs"
-          class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB]"
+          class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
           :to="`/user/${row.original.id}`"
         />
       </template>
@@ -95,8 +105,27 @@ const getStatusColor = (status: string) => {
         :model-value="1"
         :total="data.length"
         :items-per-page="10"
+        :first-icon="false"
         class="gap-1"
-      />
+      >
+        <template #first>
+          <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+        </template>
+        <template #next>
+          <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+            Next <UIcon name="iconoir:arrow-right" />
+          </UButton>
+        </template>
+        <template #prev>
+          <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+            <UIcon name="iconoir:arrow-left" />
+            Prev
+          </UButton>
+        </template>
+        <template #last>
+          <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+        </template>
+      </UPagination>
     </div>
   </div>
 </template>
