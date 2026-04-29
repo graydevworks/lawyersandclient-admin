@@ -13,6 +13,11 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  colorMode: {
+    preference: 'light', // 'system' | 'light' | 'dark' | 'sepia'
+    fallback: 'light'
+  },
+
   routeRules: {
     '/': { prerender: true }
   },
