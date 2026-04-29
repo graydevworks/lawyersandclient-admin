@@ -138,8 +138,8 @@ const filters = ['All', 'Stalled', 'Completed']
       <UButton
         icon="i-lucide-calendar"
         color="neutral"
-        variant="outline"
-        class="bg-white text-gray-700 border-gray-200 font-semibold shadow-sm"
+        variant="solid"
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
