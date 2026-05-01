@@ -1,18 +1,22 @@
 <script setup lang="ts">
 interface StatItem {
+  id: number
   title: string
   value: string
   trend?: string
   trendType: 'positive' | 'neutral' | 'negative'
   trendSuffix?: string
   sparklineData?: number[]
+  color?: string
+  secondColor?: string
+  withChart: boolean
 }
 
 const stats: StatItem[] = [
-  { title: 'Total users', value: '4,281', trend: '+12%', trendType: 'positive', trendSuffix: 'vs 4,302 last month', sparklineData: [30, 40, 35, 50, 49, 60, 70, 91] },
-  { title: 'Active users', value: '1,243', trend: '+7%', trendType: 'positive', trendSuffix: '25.8% of total base', sparklineData: [20, 30, 25, 40, 39, 50, 60, 80] },
-  { title: 'Case acceptance rate', value: '38.4%', trend: '+3%', trendType: 'positive', trendSuffix: 'vs 35.2% last period', sparklineData: [10, 20, 15, 30, 29, 40, 50, 70] },
-  { title: 'Lawyer-client match rate', value: '61.7%', trend: '-2%', trendType: 'negative', trendSuffix: 'vs 63.1% last period', sparklineData: [80, 70, 75, 60, 61, 50, 40, 30] }
+  { id: 1, title: 'Total users', value: '4,281', trend: '+12%', trendType: 'positive', trendSuffix: 'vs 4,302 last month', sparklineData: [30, 40, 35, 50, 49, 60, 70, 91], color: '#013355', secondColor: '#8BCFFE', withChart: true },
+  { id: 2, title: 'Active users', value: '1,243', trend: '+7%', trendType: 'positive', trendSuffix: '25.8% of total base', sparklineData: [20, 30, 25, 40, 39, 50, 60, 80], color: '#008236', secondColor: '#00823633', withChart: true },
+  { id: 3, title: 'Case acceptance rate', value: '38.4%', trend: '+3%', trendType: 'positive', trendSuffix: 'vs 35.2% last period', sparklineData: [10, 20, 15, 30, 29, 40, 50, 70], color: '#4A0155', secondColor: '#4A015533', withChart: true },
+  { id: 4, title: 'Lawyer-client match rate', value: '61.7%', trend: '-2%', trendType: 'negative', trendSuffix: 'vs 63.1% last period', sparklineData: [80, 70, 75, 60, 61, 50, 40, 30], color: '#FD9A00', secondColor: '#FD9A004D', withChart: true }
 ]
 
 const userGrowthSeries = [
@@ -87,7 +91,7 @@ const locations = [
         icon="i-lucide-calendar"
         color="neutral"
         variant="solid"
-        class="shadow-sm"
+        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
       >
         April 10, 2026 - May 11, 2026
         <template #trailing>
@@ -117,18 +121,18 @@ const locations = [
               User growth
             </h3>
             <USelect
-              :options="['Last 30 days']"
+              :items="['Last 30 days']"
               size="sm"
               variant="outline"
-              class="w-32"
+              class="w-32 rounded-[36px] text-[16px] py-[7px]"
             />
           </div>
         </template>
-        <div class="h-80 w-full overflow-hidden">
+        <div class="w-full overflow-hidden">
           <ClientOnly>
             <apexchart
               type="line"
-              height="320"
+              height="380"
               :options="userGrowthOptions"
               :series="userGrowthSeries"
             />
@@ -156,13 +160,13 @@ const locations = [
               />
             </ClientOnly>
           </div>
-          <div class="mt-4 w-full space-y-2">
+          <div class="mt-4 w-full space-y-2 mt-20">
             <div
               v-for="(label, i) in practiceAreaOptions.labels"
               :key="label"
               class="flex items-center justify-between text-xs"
             >
-              <div class="flex items-center gap-2 font-medium text-gray-600">
+              <div class="flex h-[20px] items-center gap-2 font-medium text-gray-600">
                 <span
                   :style="{ backgroundColor: practiceAreaOptions.colors[i] }"
                   class="w-2 h-2 rounded-full"
@@ -197,10 +201,8 @@ const locations = [
               <span class="text-gray-400">{{ cat.value.toLocaleString() }}</span>
             </div>
             <UProgress
-              :value="cat.value"
+              v-model="cat.value"
               :max="cat.total"
-              :color="cat.color as any"
-              size="sm"
             />
           </div>
         </div>
@@ -223,10 +225,9 @@ const locations = [
               <span class="text-gray-400">{{ exp.value.toLocaleString() }}</span>
             </div>
             <UProgress
-              :value="exp.value"
+              v-model="exp.value"
               :max="exp.total"
-              :color="exp.color as any"
-              size="sm"
+              :color="exp.color"
             />
           </div>
         </div>
@@ -241,10 +242,10 @@ const locations = [
             Most active locations
           </h3>
           <USelect
-            :options="['All']"
+            :items="['All']"
             size="sm"
             variant="outline"
-            class="w-20"
+            class="w-20 rounded-[36px] text-[16px] py-[7px]"
           />
         </div>
       </template>
@@ -263,14 +264,15 @@ const locations = [
           </div>
           <div class="space-y-1">
             <UProgress
-              :value="100"
-              color="primary"
-              size="sm"
+              v-model="loc.clients"
+              :max="100"
+              :ui="{ indicator: 'bg-[#0370BA]! h-1.5', base: 'h-1.5' }"
             />
             <UProgress
-              :value="60"
+              v-model="loc.lawyers"
+              :max="100"
               color="primary"
-              size="sm"
+              :ui="{ indicator: 'bg-[#7DC9FD]! h-1.5', base: 'h-1.5' }"
             />
           </div>
         </div>
