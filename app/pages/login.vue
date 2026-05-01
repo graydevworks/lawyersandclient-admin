@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 const email = ref('atibaheritage@gmail.com')
-const password = ref('............')
+const password = ref('password123')
 const showPassword = ref(false)
 
 const login = () => {
@@ -14,107 +14,101 @@ const login = () => {
 </script>
 
 <template>
-  <div class="min-h-screen relative flex items-center justify-center p-4">
+  <div class="min-h-screen relative flex items-center justify-center p-4 font-['Public_Sans']">
     <!-- Background Image with Overlay -->
     <div
       class="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
       style="background-image: url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=2070&auto=format&fit=crop')"
     >
-      <div class="absolute inset-0 bg-[#001D31]/70 backdrop-blur-[2px]" />
+      <div class="absolute inset-0 bg-[#001D31]/80 backdrop-blur-[1px]" />
     </div>
 
     <!-- Login Card -->
-    <UCard
-      class="w-full max-w-[480px] z-10 rounded-[32px] overflow-hidden shadow-2xl border-0"
-      :ui="{
-        body: 'p-8 sm:p-12',
-        root: 'bg-white'
-      }"
-    >
-      <div class="flex flex-col items-center">
-        <!-- Logo -->
-        <div class="mb-8 flex flex-col items-center">
-          <div class="w-12 h-12 bg-[#003357] rounded-xl flex items-center justify-center text-white mb-2">
-            <span class="text-2xl font-bold">C</span>
-          </div>
-          <p class="text-[10px] font-bold tracking-[0.2em] text-[#003357] uppercase">
-            Lawyers & Clients
-          </p>
+    <div class="w-full max-w-[540px] z-10 bg-white rounded-[40px] shadow-2xl p-8 sm:p-12 md:p-16 flex flex-col items-center">
+      <!-- Logo -->
+      <div class="mb-6">
+        <img
+          src="/images/lawyers&clients.svg"
+          alt="Lawyers & Clients"
+          class="h-16 w-auto"
+        >
+      </div>
+
+      <h1 class="text-[24px] font-semibold text-[#111827] mb-10 text-center leading-tight">
+        Sign In to access Admin dashboard
+      </h1>
+
+      <form
+        class="w-full space-y-8"
+        @submit.prevent="login"
+      >
+        <div class="space-y-1.5">
+          <label
+            for="email"
+            class="text-[13px] font-medium text-gray-400 ml-1"
+          >Email address</label>
+          <UInput
+            id="email"
+            v-model="email"
+            placeholder="atibaheritage@gmail.com"
+            size="xl"
+            class="w-full"
+            :ui="{
+              base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]',
+              placeholder: 'text-gray-900 font-medium'
+            }"
+          />
         </div>
 
-        <h1 class="text-2xl font-bold text-[#111827] mb-8">
-          Sign In to access Admin dashboard
-        </h1>
-
-        <form
-          class="w-full space-y-6"
-          @submit.prevent="login"
-        >
-          <UFormGroup
-            label="Email address"
-            name="email"
-            :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-          >
+        <div class="space-y-1.5">
+          <label
+            for="password"
+            class="text-[13px] font-medium text-gray-400 ml-1"
+          >Password</label>
+          <div class="relative">
             <UInput
-              v-model="email"
-              placeholder="Email address"
+              id="password"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="••••••••••••"
               size="xl"
               class="w-full"
               :ui="{
-                base: 'rounded-2xl bg-white border-gray-200 focus:ring-[#003357]'
+                base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]',
+                placeholder: 'text-gray-900 font-medium'
               }"
             />
-          </UFormGroup>
-
-          <UFormGroup
-            label="Password"
-            name="password"
-            :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-          >
-            <div class="relative">
-              <UInput
-                v-model="password"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Password"
-                size="xl"
-                class="w-full"
-                :ui="{
-                  base: 'rounded-2xl bg-white border-gray-200 focus:ring-[#003357]'
-                }"
+            <button
+              type="button"
+              class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showPassword = !showPassword"
+            >
+              <UIcon
+                :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                class="w-5 h-5"
               />
-              <button
-                type="button"
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                @click="showPassword = !showPassword"
-              >
-                <UIcon
-                  :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  class="w-5 h-5"
-                />
-              </button>
-            </div>
-          </UFormGroup>
-
-          <div class="text-right">
+            </button>
+          </div>
+          <div class="flex justify-end pt-1">
             <NuxtLink
               to="/forgot-password"
-              class="text-xs font-bold text-[#003357] hover:underline"
+              class="text-[14px] font-bold text-[#003357] hover:underline"
             >
               Forgot Password
             </NuxtLink>
           </div>
+        </div>
 
-          <UButton
-            type="submit"
-            block
-            size="xl"
-            class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-2xl py-4 transition-all"
-          >
-            Login to your account
-          </UButton>
-        </form>
-      </div>
-    </UCard>
+        <UButton
+          type="submit"
+          block
+          size="xl"
+          class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-[32px] h-[60px] text-[16px] transition-all shadow-lg active:scale-[0.98]"
+        >
+          Login to your account
+        </UButton>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -122,5 +116,10 @@ const login = () => {
 :deep(.u-input-wrapper input) {
   font-weight: 500;
   color: #111827;
+}
+
+/* Custom shadow for the card to match premium feel */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 </style>

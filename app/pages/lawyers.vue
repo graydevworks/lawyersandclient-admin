@@ -110,6 +110,7 @@ const sortBy = ref<SelectItem[]>([
       <SharedDataTable
         :columns="columns"
         :data="lawyers"
+        link-prefix="/lawyers"
       >
         <template #email-cell="{ row }">
           <span class="text-gray-600 font-medium">{{ (row.original as any).email }}</span>

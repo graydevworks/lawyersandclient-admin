@@ -14,9 +14,12 @@ interface CaseRow {
 interface Props {
   columns: TableColumn<CaseRow>[]
   data: CaseRow[]
+  linkPrefix?: string
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  linkPrefix: '/user'
+})
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
@@ -91,7 +94,7 @@ const getStatusColor = (status: string) => {
           color="neutral"
           size="xs"
           class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
-          :to="`/user/${row.original.id}`"
+          :to="`${props.linkPrefix}/${row.original.id}`"
         />
       </template>
     </UTable>

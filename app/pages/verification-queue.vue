@@ -170,7 +170,7 @@ function selectSubmission(submission: Submission) {
   <div class="h-[calc(100vh-theme(spacing.24))] flex flex-col">
     <!-- Header -->
     <div class="mb-6 shrink-0">
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Verification Queue
       </h1>
       <p class="text-sm text-gray-500 mt-1">
@@ -191,7 +191,7 @@ function selectSubmission(submission: Submission) {
             icon="i-heroicons-magnifying-glass"
             placeholder="Search ..."
             class="w-full"
-            :ui="{ icon: { trailing: { pointer: '' } } }"
+            :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
           >
             <template #trailing>
               <UButton
@@ -240,11 +240,10 @@ function selectSubmission(submission: Submission) {
                 {{ sub.docsUploaded }}/{{ sub.docsTotal }}
               </div>
               <UBadge
-                :color="sub.priority === 'Urgent' ? 'red' : 'gray'"
                 variant="soft"
                 size="xs"
-                class="rounded-full px-2"
-                :ui="{ rounded: 'rounded-full' }"
+                class="rounded-full px-3 text-[12px] font-light bg-[#F1EFE8] text-[#5F5E5A]"
+                :class="{ 'bg-[#FCEBEB] text-[#A32D2D]': sub.priority === 'Urgent' }"
               >
                 {{ sub.priority }}
               </UBadge>
@@ -287,7 +286,7 @@ function selectSubmission(submission: Submission) {
         <!-- Top Action Bar -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between shrink-0">
           <div>
-            <h2 class="text-xl font-bold text-gray-900">
+            <h2 class="text-xl font-normal text-gray-900">
               {{ selectedSubmission.name }}
             </h2>
             <p class="text-sm text-gray-500 mt-1">
@@ -295,10 +294,10 @@ function selectSubmission(submission: Submission) {
             </p>
           </div>
           <div class="flex items-center gap-3">
-            <button class="px-5 py-2 rounded-lg font-medium text-sm text-white bg-rose-700 hover:bg-rose-800 transition-colors shadow-sm">
+            <button class="px-5 py-2 rounded-lg font-medium text-sm text-white bg-[#A32D2D] hover:bg-rose-800 transition-colors shadow-sm">
               Reject
             </button>
-            <button class="px-5 py-2 rounded-lg font-medium text-sm text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-sm">
+            <button class="px-5 py-2 rounded-lg font-medium text-sm text-white bg-[#0F6E56] hover:bg-teal-800 transition-colors shadow-sm">
               Approve
             </button>
           </div>
@@ -307,29 +306,28 @@ function selectSubmission(submission: Submission) {
         <!-- Info Cards Grid -->
         <div class="grid grid-cols-2 gap-6 shrink-0">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-xs font-bold text-gray-400 tracking-wider uppercase mb-6">
+            <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-6">
               Submission
             </h3>
-            <div class="space-y-5">
-              <div class="flex justify-between items-center text-sm">
+            <div class="">
+              <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Submitted</span>
                 <span class="font-medium text-gray-900">{{ selectedSubmission.fullDate }}</span>
               </div>
-              <div class="flex justify-between items-center text-sm">
+              <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Documents</span>
                 <span class="font-medium text-gray-900">{{ selectedSubmission.docsUploaded }} of {{ selectedSubmission.docsTotal }} uploaded</span>
               </div>
-              <div class="flex justify-between items-center text-sm border-b border-gray-100 pb-5">
+              <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Missing</span>
-                <span :class="selectedSubmission.missing !== 'None' ? 'text-red-500' : 'text-gray-900'">{{ selectedSubmission.missing }}</span>
+                <span :class="selectedSubmission.missing !== 'None' ? 'text-[#A32D2D]' : 'text-gray-900'">{{ selectedSubmission.missing }}</span>
               </div>
-              <div class="flex justify-between items-center text-sm pt-1">
+              <div class="flex justify-between items-center text-sm py-[12px]">
                 <span class="text-gray-500">Priority</span>
                 <UBadge
                   :color="selectedSubmission.priority === 'Urgent' ? 'red' : 'gray'"
                   variant="soft"
-                  size="sm"
-                  class="rounded-full px-3"
+                  class="rounded-full px-3 text-[13px] font-light bg-[#F1EFE8]"
                 >
                   {{ selectedSubmission.priority }}
                 </UBadge>
@@ -338,23 +336,23 @@ function selectSubmission(submission: Submission) {
           </div>
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-xs font-bold text-gray-400 tracking-wider uppercase mb-6">
+            <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-6">
               Applicant
             </h3>
-            <div class="space-y-5 text-sm">
-              <div class="flex justify-between items-center">
+            <div class="text-sm">
+              <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Lawyer ID</span>
                 <span class="font-medium text-gray-900 uppercase">{{ selectedSubmission.id }}</span>
               </div>
-              <div class="flex justify-between items-center">
+              <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Email</span>
                 <span class="font-medium text-gray-900">{{ selectedSubmission.email }}</span>
               </div>
-              <div class="flex justify-between items-center border-b border-gray-100 pb-5">
+              <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
                 <span class="text-gray-500">Location</span>
                 <span class="font-medium text-gray-900">{{ selectedSubmission.location }}</span>
               </div>
-              <div class="flex justify-between items-center pt-1">
+              <div class="flex justify-between items-center py-[12px]">
                 <span class="text-gray-500">Practice area</span>
                 <span class="font-medium text-gray-900">{{ selectedSubmission.specialty }}</span>
               </div>
@@ -365,14 +363,14 @@ function selectSubmission(submission: Submission) {
         <!-- Documents Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 shrink-0">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xs font-bold text-gray-400 tracking-wider uppercase">
+            <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase">
               Documents
             </h3>
             <UButton
               variant="ghost"
               color="primary"
               size="sm"
-              icon="i-heroicons-arrow-down-tray"
+              trailing-icon="i-heroicons-arrow-down-tray"
             >
               Download all
             </UButton>
@@ -389,12 +387,12 @@ function selectSubmission(submission: Submission) {
             >
               <div
                 class="h-28 flex items-center justify-center shrink-0"
-                :class="doc.uploaded ? 'bg-indigo-50/50' : 'bg-gray-50/50'"
+                :class="doc.uploaded ? doc.name == 'Government ID' ? 'bg-[#EEEDFE]' : 'bg-[#EBF3FC]' : 'bg-gray-50/50'"
               >
                 <UIcon
                   :name="doc.uploaded ? 'i-heroicons-document-text' : 'i-heroicons-document'"
-                  class="w-8 h-8"
-                  :class="doc.uploaded ? 'text-indigo-500' : 'text-gray-300'"
+                  class="w-12 h-12"
+                  :class="doc.uploaded ? doc.name == 'Government ID' ? 'text-indigo-500' : 'text-[#185FA5]' : 'text-gray-300'"
                 />
               </div>
               <div class="p-4 bg-white flex-1 border-t border-gray-100">
@@ -409,9 +407,13 @@ function selectSubmission(submission: Submission) {
                   :class="doc.uploaded ? 'text-emerald-600' : 'text-rose-500'"
                 >
                   <UIcon
+                    v-if="!doc.uploaded"
                     :name="doc.uploaded ? 'i-heroicons-check' : 'i-heroicons-x-mark'"
                     class="w-3.5 h-3.5"
                   />
+                  <span v-if="doc.uploaded">
+                    ✓
+                  </span>
                   {{ doc.status }}
                 </p>
               </div>
@@ -427,21 +429,21 @@ function selectSubmission(submission: Submission) {
 
         <!-- Review Notes -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 shrink-0">
-          <h3 class="text-xs font-bold text-gray-400 tracking-wider uppercase mb-5">
+          <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-5">
             Review Notes
           </h3>
           <UTextarea
             v-model="reviewNote"
             placeholder="Add review notes here — visible to operations team only..."
-            class="mb-4 bg-gray-50/50"
+            class="mb-4 w-full"
+            :ui="{ base: 'bg-[#F9FAFB] border border-[#ECECEC] py-[12.5px] px-[15px]' }"
             :rows="3"
             variant="outline"
           />
           <div class="flex justify-end">
             <UButton
-              color="blue"
               variant="soft"
-              class="px-5"
+              class="px-5 py-[6.5px] bg-[#EBF3FC] text-[#185FA5] rounded-[7.5px] border border-[#B5D4F4]"
             >
               Save note
             </UButton>
@@ -461,16 +463,13 @@ function selectSubmission(submission: Submission) {
               v-for="(event, index) in selectedSubmission.history"
               :key="index"
               class="relative pl-6"
+              :class="{ 'border-b border-gray-100 pb-[12.24px]': index !== selectedSubmission.history.length - 1 }"
             >
-              <div class="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-blue-600 z-10" />
-              <div
-                v-if="index !== selectedSubmission.history.length - 1"
-                class="absolute left-[3px] top-3 w-[2px] h-full bg-gray-200"
-              />
+              <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full bg-[#185FA5] z-10" />
               <p class="text-sm text-gray-900 font-medium">
                 {{ event.action }}
               </p>
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="text-sm font-light text-gray-500 mt-1">
                 {{ event.date }}
               </p>
             </div>
