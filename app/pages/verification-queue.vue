@@ -1,7 +1,25 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const submissions = [
+interface Submission {
+  id: string
+  initials: string
+  name: string
+  specialty: string
+  location: string
+  submittedAt: string
+  fullDate: string
+  docsUploaded: number
+  docsTotal: number
+  priority: string
+  email: string
+  missing: string
+  statusBg: string
+  documents: { name: string, type: string, status: string, uploaded: boolean }[]
+  history: { action: string, date: string }[]
+}
+
+const submissions: Submission[] = [
   {
     id: 'LWY-0088',
     initials: 'NA',
@@ -143,7 +161,7 @@ const filteredSubmissions = computed(() => {
   return submissions.filter(s => s.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
 })
 
-function selectSubmission(submission: any) {
+function selectSubmission(submission: Submission) {
   selectedSubmission.value = submission
 }
 </script>
