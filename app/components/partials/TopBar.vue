@@ -34,22 +34,19 @@ const handleToggle = () => {
 <template>
   <header class="relative">
     <div class="fixed h-16 bg-white border-b border-gray-200 flex items-center justify-between px-[12px] py-[10px] top-[16px] z-40 w-[calc(100%-24px)] left-[50%] translate-x-[-50%] rounded-[12px]">
-      <div class="">
-        <div class="flex items-center gap-2">
-          <!-- Hamburger menu for mobile and tablet -->
-          <UButton
-            icon="i-lucide-menu"
-            color="neutral"
-            variant="ghost"
-            class="lg:hidden"
-            @click="handleToggle"
-          />
-          <div class="w-8 h-8 bg-[#003357] rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            C
-          </div>
-          <div class="w-24 h-4 bg-gray-100 rounded" /> <!-- Logo placeholder text -->
+      <NuxtLink
+        to="/dashboard"
+        class="p-8"
+      >
+        <div class="flex items-center space-x-2">
+          <img
+            src="/images/LCS@2x.png"
+            alt="Logo"
+            class="w-8"
+          >
+          <span class="text-primary font-semibold text-lg">Lawyers & Clients</span>
         </div>
-      </div>
+      </NuxtLink>
       <div class="flex items-center gap-4 flex-1 w-full">
         <!-- Spacer -->
       </div>

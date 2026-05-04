@@ -41,7 +41,7 @@ const recentNotifications = [
             </div>
 
             <div class="space-y-4">
-              <div class="space-y-1.5">
+              <div class="flex flex-col space-y-1.5">
                 <label class="text-sm font-medium text-gray-700">Title</label>
                 <UInput
                   v-model="notificationTitle"
@@ -49,7 +49,7 @@ const recentNotifications = [
                 />
               </div>
 
-              <div class="space-y-1.5">
+              <div class="flex flex-col space-y-1.5">
                 <label class="text-sm font-medium text-gray-700">Message</label>
                 <UTextarea
                   v-model="notificationMessage"
@@ -58,7 +58,7 @@ const recentNotifications = [
                 />
               </div>
 
-              <div class="space-y-1.5">
+              <div class="flex flex-col space-y-1.5">
                 <label class="text-sm font-medium text-gray-700">Type</label>
                 <USelect
                   v-model="notificationType"
