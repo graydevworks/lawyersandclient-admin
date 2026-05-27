@@ -3,16 +3,14 @@ export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, 'auth_token')
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
-  try {
-    const session = await getUserSession(event)
-    const role = session.user?.role || 'clients'
+  console.log(`${apiBase}/public/lawyers/${event.context.params?.id}`)
 
-    const response = await $fetch(`${apiBase}/${role}/notifications/${event.context.params?.id}`, {
+  try {
+    const response = await $fetch(`${apiBase}/admin/notifications/${event.context.params?.id}`, {
       method: 'GET',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
         'User-Agent': 'Nuxt-Nitro-Server',
         'Connection': 'keep-alive',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -25,18 +23,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Lawyer saved successfully',
+      message: (responseData.message as string) || 'Guest deleted successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to save lawyer'
+    let message = 'Failed to delete guest'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to save lawyer'
+      message = (data?.message as string) || 'Failed to delete guest'
 
       console.log(data)
     }

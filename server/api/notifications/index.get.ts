@@ -4,11 +4,10 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const session = await getUserSession(event)
-    const role = session.user?.role || 'clients'
-
-    const response = await $fetch(`${apiBase}/${role}/notifications`, {
+    const query = getQuery(event)
+    const response = await $fetch(`${apiBase}/admin/notifications`, {
       method: 'GET',
+      query,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',

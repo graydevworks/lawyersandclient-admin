@@ -3,14 +3,13 @@ export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, 'auth_token')
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
-  console.log(`${apiBase}/clients/bookmarks/${event.context.params?.id}`)
-
   try {
-    const response = await $fetch(`${apiBase}/admin/lawyers/${event.context.params?.id}`, {
-      method: 'DELETE',
+    const response = await $fetch(`${apiBase}/admin/cases`, {
+      method: 'GET',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         'User-Agent': 'Nuxt-Nitro-Server',
         'Connection': 'keep-alive',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -23,20 +22,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Guest deleted successfully',
+      message: (responseData.message as string) || 'Cases fetched successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to delete guest'
+    let message = 'Failed to fetch cases'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to delete guest'
-
-      console.log(data)
+      message = (data?.message as string) || 'Failed to fetch cases'
     }
 
     return {

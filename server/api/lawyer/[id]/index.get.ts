@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   console.log(`${apiBase}/public/lawyers/${event.context.params?.id}`)
 
   try {
-    const response = await $fetch(`${apiBase}/public/lawyers/${event.context.params?.id}`, {
+    const response = await $fetch(`${apiBase}/admin/lawyers/${event.context.params?.id}`, {
       method: 'GET',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
