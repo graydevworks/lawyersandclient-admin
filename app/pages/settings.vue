@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+definePageMeta({ middleware: 'auth' })
+
 const activeTab = ref('Security')
 const activeContentTab = ref('Featured lawyers')
+const showContentMenu = ref(false)
 
 const tabs = [
   { id: 'General', label: 'General', icon: 'i-lucide-settings' },
@@ -12,6 +15,21 @@ const tabs = [
 ]
 
 const contentTabs = ['App banners', 'Featured lawyers', 'Website Ads']
+
+const handleTabClick = (tabId: string) => {
+  if (tabId === 'Content Management') {
+    activeTab.value = tabId
+    showContentMenu.value = true
+  } else {
+    activeTab.value = tabId
+    showContentMenu.value = false
+  }
+}
+
+const handleBackToSettings = () => {
+  showContentMenu.value = false
+  activeTab.value = 'General'
+}
 
 const featuredLawyers = [
   { id: 1, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false },
@@ -69,34 +87,81 @@ const sessionTimeout = ref('30 minutes')
           root: 'overflow-hidden'
         }"
       >
-        <div class="flex flex-col py-4">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            class="flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors relative"
-            :class="activeTab === tab.id ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-600 hover:bg-gray-50'"
-            @click="activeTab = tab.id"
+        <div class="relative overflow-hidden">
+          <!-- Sliding container -->
+          <div
+            class="flex transition-transform duration-300 ease-in-out"
+            :class="showContentMenu ? '-translate-x-full' : 'translate-x-0'"
           >
-            <div
-              v-if="activeTab === tab.id"
-              class="absolute left-0 top-0 bottom-0 w-1 bg-[#003357]"
-            />
-            <UIcon
-              :name="tab.icon"
-              class="w-5 h-5"
-              :class="activeTab === tab.id ? 'text-[#003357]' : 'text-gray-400'"
-            />
-            {{ tab.label }}
-          </button>
+            <!-- Main Settings Menu -->
+            <div class="w-full shrink-0">
+              <div class="flex flex-col py-4">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.id"
+                  class="flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors relative"
+                  :class="activeTab === tab.id ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-600 hover:bg-gray-50'"
+                  @click="handleTabClick(tab.id)"
+                >
+                  <div
+                    v-if="activeTab === tab.id"
+                    class="absolute left-0 top-0 bottom-0 w-1 bg-[#003357]"
+                  />
+                  <UIcon
+                    :name="tab.icon"
+                    class="w-5 h-5"
+                    :class="activeTab === tab.id ? 'text-[#003357]' : 'text-gray-400'"
+                  />
+                  {{ tab.label }}
+                </button>
 
-          <div class="px-6 py-4 mt-2 border-t border-gray-100">
-            <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors">
-              <UIcon
-                name="i-lucide-log-out"
-                class="w-5 h-5"
-              />
-              Logout
-            </button>
+                <div class="px-6 py-4 mt-2 border-t border-gray-100">
+                  <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors">
+                    <UIcon
+                      name="i-lucide-log-out"
+                      class="w-5 h-5"
+                    />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Management Sub-Menu -->
+            <div class="w-full shrink-0">
+              <div class="flex flex-col py-4">
+                <button
+                  class="flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  @click="handleBackToSettings"
+                >
+                  <UIcon
+                    name="i-lucide-arrow-left"
+                    class="w-5 h-5"
+                  />
+                  Back
+                </button>
+
+                <div class="px-6 py-3">
+                  <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    Content Management
+                  </p>
+                </div>
+
+                <button
+                  v-for="ctab in contentTabs"
+                  :key="ctab"
+                  class="w-full text-left px-6 py-3 text-sm font-medium transition-colors relative"
+                  :class="activeContentTab === ctab ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-600 hover:bg-gray-50'"
+                  @click="activeContentTab = ctab"
+                >
+                  <div
+                    v-if="activeContentTab === ctab"
+                    class="absolute left-0 top-0 bottom-0 w-1 bg-[#003357]"
+                  />
+                  {{ ctab }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </UCard>
@@ -106,23 +171,10 @@ const sessionTimeout = ref('30 minutes')
         <!-- Content Management Section -->
         <div
           v-if="activeTab === 'Content Management'"
-          class="flex flex-col md:flex-row gap-6 h-full"
+          class="h-full"
         >
-          <!-- Sub-Sidebar -->
-          <div class="w-full md:w-56 flex-shrink-0 space-y-1">
-            <button
-              v-for="ctab in contentTabs"
-              :key="ctab"
-              class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-              :class="activeContentTab === ctab ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:bg-gray-100'"
-              @click="activeContentTab = ctab"
-            >
-              {{ ctab }}
-            </button>
-          </div>
-
           <!-- Sub-Content Area -->
-          <div class="flex-1 bg-white rounded-xl border border-gray-100 overflow-hidden min-h-[600px]">
+          <div class="bg-white rounded-xl border border-gray-100 overflow-hidden min-h-[600px]">
             <!-- Featured Lawyers -->
             <div
               v-if="activeContentTab === 'Featured lawyers'"

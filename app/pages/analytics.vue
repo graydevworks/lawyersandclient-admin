@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch analytics data on mount ---
 const { getAnalytics } = useAnalytics()
 

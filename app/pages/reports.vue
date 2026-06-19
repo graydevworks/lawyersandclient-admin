@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch reports data on mount ---
 const { getReports } = useReports()
 

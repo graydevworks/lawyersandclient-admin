@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import CaseDetailsModal from '~/components/cases/CaseDetailsModal.vue'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch cases data on mount ---
 const { getCases } = useCases()
 
@@ -116,6 +118,28 @@ const selectedCase = ref<CaseDetails | null>(null)
 //   }
 //   isModalOpen.value = true
 // }
+
+const viewCase = (row: CaseRow) => {
+  selectedCase.value = {
+    id: row.id,
+    matter: row.matter,
+    category: row.category.toUpperCase(),
+    client: {
+      name: row.client,
+      location: row.location
+    },
+    lawyer: {
+      name: row.lawyer,
+      location: row.lawyerLoc
+    },
+    practiceArea: row.category,
+    status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
+    openedDate: '22 Mar 2026',
+    timeElapsed: row.duration,
+    lastActivity: 'Yesterday'
+  }
+  isModalOpen.value = true
+}
 
 const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
@@ -278,7 +302,7 @@ const filters = ['All', 'Stalled', 'Completed']
             color="neutral"
             size="xs"
             class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
-            :to="`/user/${row.original.id}`"
+            @click="viewCase(row.original)"
           />
         </template>
       </UTable>

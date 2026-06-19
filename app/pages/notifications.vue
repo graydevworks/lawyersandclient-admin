@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch notifications data on mount ---
 const { getNotifications } = useNotification()
 

@@ -17,9 +17,11 @@ interface Props {
   linkPrefix?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   linkPrefix: '/user'
 })
+
+const emit = defineEmits(['view-profile'])
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
@@ -95,7 +97,7 @@ const getStatusColor = (status: string) => {
           color="neutral"
           size="xs"
           class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
-          :to="`${props.linkPrefix}/${row.original.id}`"
+          @click="emit('view-profile', row.original)"
         />
       </template>
     </UTable>

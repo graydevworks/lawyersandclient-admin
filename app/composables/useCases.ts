@@ -40,7 +40,7 @@ export const useCases = () => {
 
       toast.add({
         title: 'Error',
-        description: 'Failed to load events.',
+        description: 'Failed to load cases.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch user data on mount ---
 const { getUser } = useUsers()
 

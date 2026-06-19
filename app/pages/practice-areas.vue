@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch practice areas on mount ---
 const { getPracticeArea } = usePracticeArea()
 
@@ -10,6 +12,18 @@ onMounted(async () => {
 })
 
 const searchQuery = ref('')
+
+// --- Modal state ---
+const isAddModalOpen = ref(false)
+const isSuccessModalOpen = ref(false)
+const lastAddedName = ref('')
+
+const handleSavePracticeArea = (name: string) => {
+  console.log('[Practice Area] New area:', name)
+  lastAddedName.value = name
+  isAddModalOpen.value = false
+  isSuccessModalOpen.value = true
+}
 
 const practiceAreas = ref([
   { id: 1, name: 'Litigation & Disputes', lawyers: 186, active: true },
@@ -41,13 +55,14 @@ const practiceAreas = ref([
         placeholder="Search practice areas"
         class="w-[400px]"
         size="md"
-        :ui="{ icon: { leading: { pointer: '' } }, rounded: 'rounded-full' }"
-        color="white"
+        :ui="{ base: 'rounded-full' }"
+        color="neutral"
       />
       <UButton
         color="primary"
         class="bg-[#003357] hover:bg-[#004474] text-white px-5 py-2.5 rounded-lg text-sm font-medium"
         icon="i-heroicons-plus"
+        @click="isAddModalOpen = true"
       >
         Add Practice area
       </UButton>
@@ -87,7 +102,7 @@ const practiceAreas = ref([
       <div class="flex items-center gap-1.5">
         <UButton
           variant="ghost"
-          color="gray"
+          color="neutral"
           size="sm"
           icon="i-heroicons-arrow-left"
           class="font-medium text-gray-500"
@@ -98,7 +113,7 @@ const practiceAreas = ref([
           v-for="page in 5"
           :key="page"
           :variant="page === 1 ? 'solid' : 'ghost'"
-          :color="page === 1 ? 'primary' : 'gray'"
+          :color="page === 1 ? 'primary' : 'neutral'"
           size="sm"
           class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
           :class="page === 1 ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
@@ -107,7 +122,7 @@ const practiceAreas = ref([
         </UButton>
         <UButton
           variant="ghost"
-          color="gray"
+          color="neutral"
           size="sm"
           trailing-icon="i-heroicons-arrow-right"
           class="font-medium text-gray-500"
@@ -116,5 +131,18 @@ const practiceAreas = ref([
         </UButton>
       </div>
     </div>
+
+    <!-- Add Practice Area Modal -->
+    <PracticeAreaAddModal
+      v-model="isAddModalOpen"
+      @save="handleSavePracticeArea"
+    />
+
+    <!-- Success Confirmation Modal -->
+    <SharedSuccessModal
+      v-model="isSuccessModalOpen"
+      title="Practice area added successfully"
+      :description="`'${lastAddedName}' has been added to your practice areas list.`"
+    />
   </div>
 </template>

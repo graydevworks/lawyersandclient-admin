@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch clients data on mount ---
 const { getClients } = useClients()
 
@@ -30,24 +32,56 @@ const columns = [
   { accessorKey: 'actions', header: 'Actions' }
 ]
 
-const clients = [
-  { id: 'PRET-02', name: 'Miles, Esther', contact: 'gravyface@mac.com', status: 'New', joined: '24 May, 2020', lastActive: '3 months', avatar: 'https://i.pravatar.cc/150?u=13' },
-  { id: 'BSAD-21', name: 'Cooper, Kristin', contact: 'grolschie@mac.com', status: 'Suspended', joined: '1 Feb, 2020', lastActive: '6 months', avatar: 'https://i.pravatar.cc/150?u=14' },
-  { id: 'WSCT-02', name: 'Nguyen, Shane', contact: 'bockelboy@att.net', status: 'Active', joined: '8 Sep, 2020', lastActive: '1 month', avatar: 'https://i.pravatar.cc/150?u=15' },
-  { id: 'BGHO-91', name: 'Henry, Arthur', contact: 'chinthaka@hotmail.com', status: 'Suspended', joined: '22 Oct, 2020', lastActive: '16 hours', avatar: 'https://i.pravatar.cc/150?u=16' },
-  { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', status: 'Active', joined: '8 Sep, 2020', lastActive: '8 hours', avatar: 'https://i.pravatar.cc/150?u=17' },
-  { id: 'GSOC-02', name: 'Flores, Juanita', contact: 'sinclair@att.net', status: 'Active', joined: '17 Oct, 2020', lastActive: '7 months', avatar: 'https://i.pravatar.cc/150?u=18' },
-  { id: 'PSDY-992', name: 'Miles, Esther', contact: 'miami@aol.com', status: 'Suspended', joined: '21 Sep, 2020', lastActive: '8 months', avatar: 'https://i.pravatar.cc/150?u=19' },
-  { id: 'SDDT-02', name: 'Black, Marvin', contact: 'raines@optonline.net', status: 'Active', joined: '22 Oct, 2020', lastActive: '2 weeks', avatar: 'https://i.pravatar.cc/150?u=20' },
-  { id: 'DUCD-02', name: 'Miles, Esther', contact: 'juliano@yahoo.ca', status: 'Active', joined: '8 Sep, 2020', lastActive: 'Permanent', avatar: 'https://i.pravatar.cc/150?u=21' },
-  { id: 'DXCY-22', name: 'Cooper, Kristin', contact: 'kspiteri@live.com', status: 'Active', joined: '21 Sep, 2020', lastActive: '1 week', avatar: 'https://i.pravatar.cc/150?u=22' }
+const clients: ClientRow[] = [
+  { id: 'PRET-02', name: 'Miles, Esther', contact: 'gravyface@mac.com', email: 'gravyface@mac.com', location: 'Abuja', status: 'New', joined: '24 May, 2020', lastActive: '3 months', avatar: 'https://i.pravatar.cc/150?u=13' },
+  { id: 'BSAD-21', name: 'Cooper, Kristin', contact: 'grolschie@mac.com', email: 'grolschie@mac.com', location: 'Port Harcourt', status: 'Suspended', joined: '1 Feb, 2020', lastActive: '6 months', avatar: 'https://i.pravatar.cc/150?u=14' },
+  { id: 'WSCT-02', name: 'Nguyen, Shane', contact: 'bockelboy@att.net', email: 'bockelboy@att.net', location: 'Ibadan', status: 'Active', joined: '8 Sep, 2020', lastActive: '1 month', avatar: 'https://i.pravatar.cc/150?u=15' },
+  { id: 'BGHO-91', name: 'Henry, Arthur', contact: 'chinthaka@hotmail.com', email: 'chinthaka@hotmail.com', location: 'Kano', status: 'Suspended', joined: '22 Oct, 2020', lastActive: '16 hours', avatar: 'https://i.pravatar.cc/150?u=16' },
+  { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', email: 'giafly@hotmail.com', location: 'Lagos', status: 'Active', joined: '8 Sep, 2020', lastActive: '8 hours', avatar: 'https://i.pravatar.cc/150?u=17' },
+  { id: 'GSOC-02', name: 'Flores, Juanita', contact: 'sinclair@att.net', email: 'tundebakare@gmail.com', location: 'Lagos', status: 'Active', joined: '17 Oct, 2020', lastActive: '7 months', avatar: 'https://i.pravatar.cc/150?u=18' },
+  { id: 'PSDY-992', name: 'Miles, Esther', contact: 'miami@aol.com', email: 'miami@aol.com', location: 'Abuja', status: 'Suspended', joined: '21 Sep, 2020', lastActive: '8 months', avatar: 'https://i.pravatar.cc/150?u=19' },
+  { id: 'SDDT-02', name: 'Black, Marvin', contact: 'raines@optonline.net', email: 'raines@optonline.net', location: 'Lagos', status: 'Active', joined: '22 Oct, 2020', lastActive: '2 weeks', avatar: 'https://i.pravatar.cc/150?u=20' },
+  { id: 'DUCD-02', name: 'Miles, Esther', contact: 'juliano@yahoo.ca', email: 'juliano@yahoo.ca', location: 'Benin City', status: 'Active', joined: '8 Sep, 2020', lastActive: 'Permanent', avatar: 'https://i.pravatar.cc/150?u=21' },
+  { id: 'DXCY-22', name: 'Cooper, Kristin', contact: 'kspiteri@live.com', email: 'kspiteri@live.com', location: 'Lagos', status: 'Active', joined: '21 Sep, 2020', lastActive: '1 week', avatar: 'https://i.pravatar.cc/150?u=22' }
 ]
 
 const searchQuery = ref('')
+
+interface ClientRow {
+  id: string
+  name: string
+  contact: string
+  email?: string
+  location?: string
+  status: string
+  joined: string
+  lastActive: string
+  avatar: string
+  totalChats?: number
+  reportsFiled?: number
+  [key: string]: unknown
+}
+
+const selectedClient = ref<ClientRow | null>(null)
+const isProfileModalOpen = ref(false)
+
+const handleViewProfile = (client: ClientRow) => {
+  selectedClient.value = {
+    ...client,
+    totalChats: 0,
+    reportsFiled: 1
+  }
+  isProfileModalOpen.value = true
+}
 </script>
 
 <template>
   <div class="space-y-8">
+    <ClientsProfileModal
+      v-model="isProfileModalOpen"
+      :client="selectedClient"
+    />
+
     <div class="flex items-center justify-between">
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
@@ -117,6 +151,7 @@ const searchQuery = ref('')
       <SharedDataTable
         :columns="columns"
         :data="clients"
+        @view-profile="handleViewProfile"
       />
     </UCard>
   </div>

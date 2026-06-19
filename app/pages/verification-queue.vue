@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+definePageMeta({ middleware: 'auth' })
 
 // --- Fetch verification queue data on mount ---
 const { getVerificationQueue } = useVerification()
@@ -7,7 +9,20 @@ const { getVerificationQueue } = useVerification()
 onMounted(async () => {
   const result = await getVerificationQueue()
   console.log('[Verification Queue] API response:', result)
+  checkScreen()
+  window.addEventListener('resize', checkScreen)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreen)
+})
+
+const isMobile = ref(false)
+const showDetail = ref(false)
+
+const checkScreen = () => {
+  isMobile.value = window.innerWidth < 1024
+}
 
 interface Submission {
   id: string
@@ -161,7 +176,7 @@ const submissions: Submission[] = [
 ]
 
 const searchQuery = ref('')
-const selectedSubmission = ref(submissions[0])
+const selectedSubmission = ref<Submission>(submissions[0]!)
 const reviewNote = ref('')
 
 const filteredSubmissions = computed(() => {
@@ -171,6 +186,13 @@ const filteredSubmissions = computed(() => {
 
 function selectSubmission(submission: Submission) {
   selectedSubmission.value = submission
+  if (isMobile.value) {
+    showDetail.value = true
+  }
+}
+
+function backToList() {
+  showDetail.value = false
 }
 </script>
 
@@ -187,9 +209,15 @@ function selectSubmission(submission: Submission) {
     </div>
 
     <!-- Main Content Split -->
-    <div class="flex-1 flex gap-6 min-h-0">
+    <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
       <!-- Left Column: List -->
-      <div class="w-1/3 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0">
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0"
+        :class="[
+          showDetail && isMobile ? 'hidden' : 'block',
+          isMobile ? 'w-full' : 'lg:w-1/3'
+        ]"
+      >
         <div class="p-5 border-b border-gray-100">
           <h2 class="font-bold text-gray-900 mb-4">
             Submissions
@@ -200,18 +228,7 @@ function selectSubmission(submission: Submission) {
             placeholder="Search ..."
             class="w-full"
             :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
-          >
-            <template #trailing>
-              <UButton
-                v-show="searchQuery !== ''"
-                color="gray"
-                variant="link"
-                icon="i-heroicons-x-mark"
-                :padded="false"
-                @click="searchQuery = ''"
-              />
-            </template>
-          </UInput>
+          />
         </div>
 
         <div class="flex-1 overflow-y-auto min-h-0">
@@ -264,7 +281,7 @@ function selectSubmission(submission: Submission) {
           <div class="flex items-center gap-1">
             <UButton
               variant="ghost"
-              color="gray"
+              color="neutral"
               size="xs"
               icon="i-heroicons-arrow-left"
             >
@@ -279,7 +296,7 @@ function selectSubmission(submission: Submission) {
             </UButton>
             <UButton
               variant="ghost"
-              color="gray"
+              color="neutral"
               size="xs"
               trailing-icon="i-heroicons-arrow-right"
             >
@@ -290,9 +307,29 @@ function selectSubmission(submission: Submission) {
       </div>
 
       <!-- Right Column: Details -->
-      <div class="flex-1 flex flex-col gap-6 overflow-y-auto pr-2 pb-6 min-h-0">
+      <div
+        class="flex flex-col gap-6 overflow-y-auto pb-6 min-h-0"
+        :class="[
+          isMobile
+            ? (showDetail ? 'fixed inset-0 z-50 bg-white rounded-t-2xl shadow-2xl mt-16 pt-4 px-4' : 'hidden')
+            : 'flex-1 pr-2'
+        ]"
+      >
+        <!-- Back button (mobile only) -->
+        <button
+          v-if="isMobile"
+          class="flex items-center gap-2 text-sm font-medium text-[#003357] mb-3 shrink-0 px-2"
+          @click="backToList"
+        >
+          <UIcon
+            name="i-heroicons-arrow-left"
+            class="w-5 h-5"
+          />
+          Back to submissions
+        </button>
+
         <!-- Top Action Bar -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between shrink-0">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
           <div>
             <h2 class="text-xl font-normal text-gray-900">
               {{ selectedSubmission.name }}
@@ -312,7 +349,7 @@ function selectSubmission(submission: Submission) {
         </div>
 
         <!-- Info Cards Grid -->
-        <div class="grid grid-cols-2 gap-6 shrink-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-6">
               Submission
@@ -333,7 +370,7 @@ function selectSubmission(submission: Submission) {
               <div class="flex justify-between items-center text-sm py-[12px]">
                 <span class="text-gray-500">Priority</span>
                 <UBadge
-                  :color="selectedSubmission.priority === 'Urgent' ? 'red' : 'gray'"
+                  :color="selectedSubmission.priority === 'Urgent' ? 'error' : 'neutral'"
                   variant="soft"
                   class="rounded-full px-3 text-[13px] font-light bg-[#F1EFE8]"
                 >
@@ -385,7 +422,7 @@ function selectSubmission(submission: Submission) {
           </div>
           <div
             v-if="selectedSubmission.documents && selectedSubmission.documents.length > 0"
-            class="grid grid-cols-3 gap-4"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             <div
               v-for="doc in selectedSubmission.documents"

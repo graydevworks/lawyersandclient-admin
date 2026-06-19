@@ -22,18 +22,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Practice areas fetched successfully',
+      message: (responseData.message as string) || 'Reports fetched successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to fetch practice areas'
+    let message = 'Failed to fetch reports'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to fetch practice areas'
+      message = (data?.message as string) || 'Failed to fetch reports'
 
       console.log(data)
     }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch dashboard data on mount ---
 const { getDashboard } = useDashboard()
 

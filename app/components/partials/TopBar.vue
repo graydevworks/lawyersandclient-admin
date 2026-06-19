@@ -3,6 +3,17 @@ import { onMounted, onUnmounted, ref } from 'vue'
 
 const emit = defineEmits(['toggle-sidebar', 'toggle-tablet-sidebar'])
 
+const { currentUser } = useAuth()
+
+const displayName = computed(() => {
+  const u = currentUser.value as Record<string, unknown> | undefined
+  const data = u?.data as Record<string, unknown> | undefined
+  if (data?.first_name || data?.last_name) {
+    return `${data.first_name || ''} ${data.last_name || ''}`.trim()
+  }
+  return (u?.email as string)?.split('@')[0] || 'Admin'
+})
+
 // Use window resize event to detect screen size
 const isMobile = ref(false)
 
@@ -70,6 +81,13 @@ const handleToggle = () => {
       </div>
 
       <div class="flex items-center gap-2 md:gap-3 lg:gap-6">
+        <!-- Mobile/Tablet search icon -->
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-search"
+          class="flex lg:hidden justify-center relative size-[36px] rounded-full bg-[#F6F6F6]"
+        />
         <div class="flex-1 max-w-md hidden lg:block">
           <UInput
             icon="i-lucide-search"
@@ -80,31 +98,35 @@ const handleToggle = () => {
             :ui="{ base: 'h-[36px]' }"
           />
         </div>
-        <UButton
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-bell"
-          class="flex justify-center relative size-[36px] rounded-full bg-[#F6F6F6]"
-        >
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-        </UButton>
+        <NuxtLink to="/notifications">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-bell"
+            class="flex justify-center relative size-[36px] rounded-full bg-[#F6F6F6]"
+          >
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+          </UButton>
+        </NuxtLink>
 
-        <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity w-[150px] h-full bg-[#F6F6F6] py-[4px] px-[4.5px] rounded-full">
-          <UAvatar
-            src="https://i.pravatar.cc/150?u=admin"
-            alt="Atiba Heritage"
-            size="sm"
-            class="size-[33px]"
-          />
-          <div class="hidden sm:block text-left">
-            <p class="text-[12px] font-medium text-gray-900 leading-tight">
-              Atiba Heritage
-            </p>
-            <p class="text-[10px] text-gray-500 uppercase tracking-wider font-normal">
-              Admin
-            </p>
+        <NuxtLink to="/account-details">
+          <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity w-[150px] h-full bg-[#F6F6F6] py-[4px] px-[4.5px] rounded-full">
+            <UAvatar
+              src="https://i.pravatar.cc/150?u=admin"
+              alt="Atiba Heritage"
+              size="sm"
+              class="size-[33px]"
+            />
+            <div class="hidden sm:block text-left">
+              <p class="text-[12px] font-medium text-gray-900 leading-tight">
+                {{ displayName }}
+              </p>
+              <p class="text-[10px] text-gray-500 uppercase tracking-wider font-normal">
+                Admin
+              </p>
+            </div>
           </div>
-        </div>
+        </NuxtLink>
       </div>
     </div>
   </header>

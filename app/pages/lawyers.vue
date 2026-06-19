@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
 
+definePageMeta({ middleware: 'auth' })
+
 // --- Fetch lawyers data on mount ---
 const { getLawyers } = useLawyers()
 

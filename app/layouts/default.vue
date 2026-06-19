@@ -14,7 +14,7 @@ const isTabletSheetOpen = ref(false)
 
     <!-- Tablet Sheet -->
     <USlideover
-      v-model="isTabletSheetOpen"
+      v-model:open="isTabletSheetOpen"
       side="left"
       class="hidden md:block lg:hidden"
       :ui="{ content: 'w-[300px] max-w-[85vw]' }"
@@ -29,7 +29,7 @@ const isTabletSheetOpen = ref(false)
 
     <!-- Mobile Sheet -->
     <USlideover
-      v-model="isSidebarOpen"
+      v-model:open="isSidebarOpen"
       side="left"
       class="md:hidden"
       :ui="{ content: 'w-[280px] max-w-[88vw]' }"

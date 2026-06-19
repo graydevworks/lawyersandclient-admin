@@ -30,7 +30,7 @@ export const useLawyers = () => {
     } catch (error) {
       toast.add({
         title: 'Error',
-        description: 'Failed to load profile.',
+        description: 'Failed to load lawyers.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
@@ -49,7 +49,7 @@ export const useLawyers = () => {
     } catch (error) {
       toast.add({
         title: 'Error',
-        description: 'Failed to load profile.',
+        description: 'Failed to load lawyer details.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
@@ -66,16 +66,19 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}`, { method: 'GET' })
       toast.add({
         title: 'Saved!',
-        description: response.message || 'Lawyer fetched successfully.',
+        description: response.message || 'Lawyer saved successfully.',
         icon: 'i-lucide-bookmark-check',
         color: 'success',
         duration: 3000
       })
       return { success: true, data: response }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = (error as Record<string, unknown>)?.data
+        ? ((error as Record<string, unknown>).data as Record<string, unknown>)?.message as string
+        : 'Failed to save lawyer.'
       toast.add({
         title: 'Error',
-        description: error.data?.message || 'Failed to save lawyer.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000

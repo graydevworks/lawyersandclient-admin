@@ -12,15 +12,19 @@ export default defineEventHandler(async (event) => {
 
   const { appEnv, public: { apiBase } } = useRuntimeConfig(event)
 
-  if (role === 'lawyers' || role === 'clients') {
+  if (role === 'lawyers' || role === 'clients' || role === 'admin') {
+    const endpoint = role === 'admin' ? 'admin/auth/login' : `${role}/auth/login`
+    console.log(`${apiBase}/${endpoint}`)
+
     try {
       const response: {
         access_token: string
         refresh_token: string
-        client?: object | any
-        lawyer?: object | any
+        client?: Record<string, unknown>
+        lawyer?: Record<string, unknown>
+        admin?: Record<string, unknown>
         message?: string
-      } = await $fetch(`${apiBase}/${role}/auth/login`, {
+      } = await $fetch(`${apiBase}/${endpoint}`, {
         method: 'POST',
         body: {
           email: body.email,
@@ -40,11 +44,12 @@ export default defineEventHandler(async (event) => {
       console.log('Login response:', response)
 
       // Set the user session with the response data
+      const userData = response.lawyer || response.client || response.admin || null
       await setUserSession(event, {
         user: {
           email: body.email,
           role: role,
-          data: response && response.lawyer ? response.lawyer : response && response.client ? response.client : null
+          data: userData
         }
       })
 
@@ -63,13 +68,13 @@ export default defineEventHandler(async (event) => {
       }
     } catch (error) {
       let statusCode = 401
-      let message = 'Invalid credentials'
+      let message = 'Invalid email or password. Please check your credentials and try again.'
 
       if (error && typeof error === 'object') {
         const err = error as Record<string, unknown>
         statusCode = (err.statusCode as number) || (err.status as number) || 401
         const data = err.data as Record<string, unknown> | undefined
-        message = (data?.message as string) || 'Invalid credentials'
+        message = (data?.message as string) || 'Invalid email or password. Please check your credentials and try again.'
       }
 
       return {
@@ -80,7 +85,7 @@ export default defineEventHandler(async (event) => {
   } else {
     return {
       status: 400,
-      message: 'Invalid role specified'
+      message: 'Invalid role specified. Please try again with the correct role.'
     }
   }
 })

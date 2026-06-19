@@ -1,14 +1,43 @@
-<script setup>
+<script setup lang="ts">
 definePageMeta({
-  layout: 'blank'
+  layout: 'blank',
+  middleware: 'auth',
+  role: 'auth'
 })
+
+const { login } = useAuth()
 
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
 
-const login = () => {
-  navigateTo('/dashboard')
+const handleLogin = async () => {
+  errorMessage.value = ''
+
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Please enter both email and password.'
+    return
+  }
+
+  isLoading.value = true
+  try {
+    const result = await login({
+      email: email.value,
+      password: password.value,
+      role: 'admin'
+    })
+
+    if (!result.success && result.error) {
+      errorMessage.value = result.error
+    }
+  } catch (err) {
+    errorMessage.value = 'Something went wrong. Please try again.'
+    console.error('[Login] Error:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -39,8 +68,19 @@ const login = () => {
 
       <form
         class="w-full space-y-8"
-        @submit.prevent="login"
+        @submit.prevent="handleLogin"
       >
+        <!-- Error Message -->
+        <div
+          v-if="errorMessage"
+          class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2"
+        >
+          <UIcon
+            name="i-lucide-alert-circle"
+            class="w-4 h-4 shrink-0"
+          />
+          {{ errorMessage }}
+        </div>
         <div class="space-y-1.5">
           <label
             for="email"
@@ -54,8 +94,7 @@ const login = () => {
             size="xl"
             class="w-full"
             :ui="{
-              base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]',
-              placeholder: 'text-gray-900 font-medium'
+              base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]'
             }"
           />
         </div>
@@ -74,8 +113,7 @@ const login = () => {
               size="xl"
               class="w-full"
               :ui="{
-                base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]',
-                placeholder: 'text-gray-900 font-medium'
+                base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]'
               }"
             />
             <button
@@ -95,9 +133,10 @@ const login = () => {
           type="submit"
           block
           size="xl"
+          :loading="isLoading"
           class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-[32px] h-[60px] text-[16px] transition-all shadow-lg active:scale-[0.98]"
         >
-          Login to your account
+          {{ isLoading ? 'Signing in...' : 'Login to your account' }}
         </UButton>
       </form>
     </div>
