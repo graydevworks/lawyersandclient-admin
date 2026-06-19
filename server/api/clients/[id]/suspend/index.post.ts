@@ -24,18 +24,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Lawyer saved successfully',
+      message: (responseData.message as string) || 'Client suspended successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to save lawyer'
+    let message = 'Failed to suspend client'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to save lawyer'
+      message = (data?.message as string) || 'Failed to suspend client'
 
       console.log(data)
     }

@@ -15,6 +15,24 @@ export default defineNuxtConfig({
     fallback: 'light'
   },
 
+  runtimeConfig: {
+    apiSecret: '',
+    appEnv: '',
+    session: {
+      password: '',
+      maxAge: 60 * 60 * 24 * 30,
+      cookie: {
+        // @ts-expect-error process is available at Nuxt config evaluation time
+        secure: (process.env.NUXT_APP_ENV || 'production') === 'production'
+      }
+    },
+    public: {
+      apiBase: '',
+      encryptKey: '',
+      googleClientId: ''
+    }
+  },
+
   routeRules: {
     '/': { prerender: true }
   },

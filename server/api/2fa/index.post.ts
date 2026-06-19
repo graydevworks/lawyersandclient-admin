@@ -25,18 +25,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Event created successfully',
+      message: (responseData.message as string) || '2FA verification completed successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to create event'
+    let message = 'Failed to complete 2FA verification'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to create event'
+      message = (data?.message as string) || 'Failed to complete 2FA verification'
 
       console.log(data)
     }

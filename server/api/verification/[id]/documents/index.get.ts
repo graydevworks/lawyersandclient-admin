@@ -24,18 +24,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Lawyers fetched successfully',
+      message: (responseData.message as string) || 'Verification documents fetched successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to fetch lawyers'
+    let message = 'Failed to fetch verification documents'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to fetch lawyers'
+      message = (data?.message as string) || 'Failed to fetch verification documents'
 
       console.log(data)
     }
