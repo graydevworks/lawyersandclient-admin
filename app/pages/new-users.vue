@@ -4,10 +4,10 @@ import type { SelectItem } from '@nuxt/ui'
 definePageMeta({ middleware: 'auth' })
 
 // --- Fetch user data on mount ---
-const { getUser } = useUsers()
+const { getUsers } = useUsers()
 
 onMounted(async () => {
-  const result = await getUser()
+  const result = await getUsers()
   console.log('[Users] API response:', result)
 })
 

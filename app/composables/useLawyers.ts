@@ -21,11 +21,10 @@ export const useLawyers = () => {
   const loading = ref(false)
   const updating = ref(false)
 
-  const getLawyers = async (isPublic: boolean = false) => {
+  const getLawyers = async (params: Record<string, string | number | boolean | null | undefined> = {}) => {
     loading.value = true
     try {
-      const url = isPublic ? '/api/public/lawyers' : '/api/lawyer'
-      const lawyers = await $fetch(url, { method: 'GET' })
+      const lawyers = await $fetch('/api/lawyer', { method: 'GET', query: params })
       return { success: true, data: { lawyers } }
     } catch (error) {
       toast.add({

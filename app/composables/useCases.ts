@@ -13,21 +13,18 @@ export const useCases = () => {
 
   const getApiUrl = (path = '') => `/api/cases${path}`
 
-  const getCases = async () => {
+  const getCases = async (params: Record<string, string | number | boolean | null | undefined> = {}) => {
     controller.value?.abort()
     controller.value = new AbortController()
 
     loading.value = true
 
     try {
-      const [user] = await Promise.all([
-        $fetch(getApiUrl(), {
-          method: 'GET',
-          signal: controller.value.signal
-        })
-      ])
-
-      console.log(user)
+      const user = await $fetch(getApiUrl(), {
+        method: 'GET',
+        query: params,
+        signal: controller.value.signal
+      })
 
       return {
         success: true,
@@ -45,7 +42,7 @@ export const useCases = () => {
         color: 'error',
         duration: 3000
       })
-      console.error('Get event error:', error)
+      console.error('Get cases error:', error)
       return { success: false, error }
     } finally {
       loading.value = false
@@ -88,10 +85,6 @@ export const useCases = () => {
 
     loading.value = true
     try {
-      // Validate params against searchSchema
-      // Note: Valibot parse will throw if invalid, or use safeParse
-      // const validated = v.parse(searchSchema, params)
-
       const data = await $fetch('/api/cases/search', {
         method: 'GET',
         query: params,

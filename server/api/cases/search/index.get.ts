@@ -4,8 +4,10 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
+    const query = getQuery(event)
     const response = await $fetch(`${apiBase}/admin/cases/search`, {
       method: 'GET',
+      query,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
@@ -22,18 +24,18 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Searched Cases fetched successfully',
+      message: (responseData.message as string) || 'Case search results fetched successfully',
       data: response
     }
   } catch (error) {
     let statusCode = 401
-    let message = 'Failed to fetch searched cases'
+    let message = 'Failed to search cases'
 
     if (error && typeof error === 'object') {
       const err = error as Record<string, unknown>
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to fetch searched cases'
+      message = (data?.message as string) || 'Failed to search cases'
 
       console.log(data)
     }

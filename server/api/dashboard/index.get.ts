@@ -4,8 +4,10 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
+    const query = getQuery(event)
     const response = await $fetch(`${apiBase}/admin/dashboard`, {
       method: 'GET',
+      query,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',

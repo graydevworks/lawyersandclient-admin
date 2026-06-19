@@ -52,10 +52,10 @@ export const useReports = () => {
     }
   }
 
-  const getReportStats = async () => {
+  const getReportStats = async (params: ReportQuery = {}) => {
     loading.value = true
     try {
-      const data = await $fetch('/api/report/stats', { method: 'GET' })
+      const data = await $fetch('/api/report/stats', { method: 'GET', query: params })
       return { success: true, data }
     } catch (error) {
       return { success: false, error }

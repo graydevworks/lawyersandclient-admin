@@ -4,8 +4,10 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
+    const query = getQuery(event)
     const response = await $fetch(`${apiBase}/admin/lawyers`, {
       method: 'GET',
+      query,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
@@ -19,8 +21,6 @@ export default defineEventHandler(async (event) => {
     })
 
     const responseData = response as Record<string, unknown>
-
-    console.log('Lawyers fetched successfully', responseData.data)
 
     return {
       status: 200,

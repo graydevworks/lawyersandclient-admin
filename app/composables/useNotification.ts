@@ -1,10 +1,11 @@
 import { isAbortError } from '~/util/apiHelper'
 
+type NotificationQuery = Record<string, string | number | boolean | null | undefined>
+
 export const useNotification = () => {
   const toast = useToast()
   const loading = ref(false)
   const updating = ref(false)
-  const { user } = useUserSession()
 
   const queryController = ref<AbortController | null>(null)
   const mutationController = ref<AbortController | null>(null)
@@ -13,7 +14,7 @@ export const useNotification = () => {
 
   const getApiUrl = (path = '') => `/api/notifications${path}`
 
-  const getNotifications = async () => {
+  const getNotifications = async (params: NotificationQuery = {}) => {
     queryController.value?.abort()
     queryController.value = new AbortController()
 
@@ -21,6 +22,7 @@ export const useNotification = () => {
     try {
       const data = await $fetch(getApiUrl(), {
         method: 'GET',
+        query: params,
         signal: queryController.value.signal
       })
       return { success: true, data }
@@ -92,11 +94,12 @@ export const useNotification = () => {
     }
   }
 
-  const markAllAsRead = async () => {
+  const getNotificationStats = async (params: NotificationQuery = {}) => {
     loading.value = true
     try {
       const data = await $fetch('/api/notifications/stats', {
         method: 'GET',
+        query: params,
         signal: queryController.value?.signal
       })
       return { success: true, data }
@@ -122,6 +125,6 @@ export const useNotification = () => {
     getNotifications,
     getNotification,
     markAsRead,
-    markAllAsRead
+    getNotificationStats
   }
 }
