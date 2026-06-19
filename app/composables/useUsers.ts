@@ -1,18 +1,14 @@
-import { useToast } from '@nuxt/ui/composables'
+type UsersQuery = Record<string, string | number | boolean | null | undefined>
 
 export const useUsers = () => {
   const toast = useToast()
   const loading = ref(false)
 
-  const getUser = async () => {
+  const getUsers = async (params: UsersQuery = {}) => {
     loading.value = true
 
     try {
-      const [user] = await Promise.all([
-        $fetch('/api/v1/clients/profile', { method: 'GET' })
-      ])
-
-      console.log(user)
+      const user = await $fetch('/api/users', { method: 'GET', query: params })
 
       return {
         success: true,
@@ -23,12 +19,12 @@ export const useUsers = () => {
     } catch (error) {
       toast.add({
         title: 'Error',
-        description: 'Failed to load events.',
+        description: 'Failed to load users.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      console.error('Get event error:', error)
+      console.error('Get users error:', error)
       return { success: false, error }
     } finally {
       loading.value = false
@@ -37,6 +33,6 @@ export const useUsers = () => {
 
   return {
     loading,
-    getUser
+    getUsers
   }
 }
