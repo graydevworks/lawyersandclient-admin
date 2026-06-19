@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+
 const emit = defineEmits(['toggle-sidebar', 'toggle-tablet-sidebar'])
 
 // Use window resize event to detect screen size
@@ -33,31 +35,47 @@ const handleToggle = () => {
 
 <template>
   <header class="relative">
-    <div class="fixed h-16 bg-white border-b border-gray-200 flex items-center justify-between px-[12px] py-[10px] top-[16px] z-40 w-[calc(100%-24px)] left-[50%] translate-x-[-50%] rounded-[12px]">
+    <div class="fixed h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 md:px-4 py-[10px] top-[12px] md:top-[16px] z-40 w-[calc(100%-16px)] md:w-[calc(100%-24px)] left-1/2 -translate-x-1/2 rounded-[12px]">
+      <div class="flex items-center gap-2 md:gap-3">
+        <UButton
+          class="md:hidden"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-menu"
+          @click="handleToggle"
+        />
+        <UButton
+          class="hidden md:inline-flex lg:hidden"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-menu"
+          @click="handleToggle"
+        />
+      </div>
       <NuxtLink
         to="/dashboard"
-        class="p-8"
+        class="px-2 md:px-4 lg:p-8 min-w-0"
       >
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-2 min-w-0">
           <img
             src="/images/LCS@2x.png"
             alt="Logo"
             class="w-8"
           >
-          <span class="text-primary font-semibold text-lg">Lawyers & Clients</span>
+          <span class="text-primary font-semibold text-sm md:text-base lg:text-lg truncate">Lawyers & Clients</span>
         </div>
       </NuxtLink>
-      <div class="flex items-center gap-4 flex-1 w-full">
+      <div class="flex items-center gap-2 md:gap-4 flex-1 w-full">
         <!-- Spacer -->
       </div>
 
-      <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2 md:gap-3 lg:gap-6">
         <div class="flex-1 max-w-md hidden lg:block">
           <UInput
             icon="i-lucide-search"
             placeholder="Search ..."
             variant="ghost"
-            class="bg-gray-100 rounded-lg hover:bg-gray-200 focus-within:bg-gray-50 focus-within:ring-1 focus-within:ring-gray-300 transition-all border-0 rounded-full overflow-hidden"
+            class="bg-gray-100 hover:bg-gray-200 focus-within:bg-gray-50 focus-within:ring-1 focus-within:ring-gray-300 transition-all border-0 rounded-full overflow-hidden"
             size="sm"
             :ui="{ base: 'h-[36px]' }"
           />
@@ -78,7 +96,7 @@ const handleToggle = () => {
             size="sm"
             class="size-[33px]"
           />
-          <div class="hidden md:block text-left">
+          <div class="hidden sm:block text-left">
             <p class="text-[12px] font-medium text-gray-900 leading-tight">
               Atiba Heritage
             </p>

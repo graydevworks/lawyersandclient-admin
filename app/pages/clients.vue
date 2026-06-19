@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// --- Fetch clients data on mount ---
+const { getClients } = useClients()
+
+onMounted(async () => {
+  const result = await getClients()
+  console.log('[Clients] API response:', result)
+})
 interface StatItem {
   title: string
   value: string

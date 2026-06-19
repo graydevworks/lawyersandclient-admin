@@ -73,8 +73,9 @@ export const useNotification = () => {
 
     updating.value = true
     try {
-      response = await $fetch(getApiUrl(`/${id}/read`), {
+      response = await $fetch(getApiUrl(), {
         method: 'POST',
+        body: { id },
         signal: mutationController.value.signal
       })
 
@@ -92,48 +93,26 @@ export const useNotification = () => {
   }
 
   const markAllAsRead = async () => {
-    mutationController.value?.abort()
-    mutationController.value = new AbortController()
-
-    updating.value = true
+    loading.value = true
     try {
-      response = await $fetch(getApiUrl('/read-all'), {
-        method: 'POST',
-        signal: mutationController.value.signal
+      const data = await $fetch('/api/notifications/stats', {
+        method: 'GET',
+        signal: queryController.value?.signal
       })
-
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'All notifications marked as read',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to mark notifications as read',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      return { success: true, data }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
       toast.add({
         title: 'Error',
-        description: 'Failed to mark notifications as read.',
+        description: 'Failed to fetch notification stats.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
       return { success: false, error }
     } finally {
-      updating.value = false
+      loading.value = false
     }
   }
 

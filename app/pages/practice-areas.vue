@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// --- Fetch practice areas on mount ---
+const { getPracticeArea } = usePracticeArea()
+
+onMounted(async () => {
+  const result = await getPracticeArea()
+  console.log('[Practice Areas] API response:', result)
+})
+
 const searchQuery = ref('')
 
 const practiceAreas = ref([

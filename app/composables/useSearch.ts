@@ -1,57 +1,74 @@
-import { isAbortError, createAbortManager } from '~/util/apiHelper'
+type SearchParams = Record<string, string | number | boolean | null | undefined>
 
 export const useSearch = () => {
   const toast = useToast()
-  const abortManager = createAbortManager()
+  const loading = ref(false)
 
-  const getSearch = async (credentials: { keyword?: string, location?: string, gender?: string, practice_area_id?: number, min_experience?: number, min_rating?: number }, isPublic: boolean = false) => {
-    const signal = abortManager.getSignal()
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
+  const search = async (url: string, params: SearchParams = {}) => {
+    loading.value = true
     try {
-      const url = isPublic ? '/api/public/search' : '/api/search'
       const response = await $fetch(url, {
         method: 'GET',
-        query: { ...credentials },
-        signal
+        query: params
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message,
-          icon: 'i-lucide-check',
-          color: 'success',
-          duration: 3000
-        })
-
-        return { success: true, data: response.data }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-      }
+      return { success: true, data: response }
     } catch (error: any) {
-      if (isAbortError(error)) {
-        return { success: false, aborted: true }
-      }
-
       toast.add({
         title: 'Error',
-        description: error.data?.message || 'An error occurred.',
+        description: error?.data?.message || 'Failed to fetch search results.',
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
       return { success: false, error }
+    } finally {
+      loading.value = false
     }
   }
 
+  const searchLawyers = (params: SearchParams = {}) => search('/api/lawyer/search', params)
+  const searchClients = (params: SearchParams = {}) => search('/api/clients/search', params)
+  const searchCases = (params: SearchParams = {}) => search('/api/cases/search', params)
+  const searchPracticeAreas = (params: SearchParams = {}) => search('/api/practice-area/search', params)
+  const searchVerification = (params: SearchParams = {}) => search('/api/verification/search', params)
+  const searchFeaturedLawyers = (params: SearchParams = {}) => search('/api/featured/search', params)
+
+  const debounceSearch = async <T>(
+    runner: () => Promise<T>,
+    delay = 350
+  ): Promise<T> => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+
+    return await new Promise((resolve, reject) => {
+      debounceTimer = setTimeout(async () => {
+        try {
+          const result = await runner()
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      }, delay)
+    })
+  }
+
+  const cancelDebounce = () => {
+    if (!debounceTimer) return
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+
   return {
-    getSearch,
-    abort: abortManager.abort
+    loading,
+    searchLawyers,
+    searchClients,
+    searchCases,
+    searchPracticeAreas,
+    searchVerification,
+    searchFeaturedLawyers,
+    debounceSearch,
+    cancelDebounce
   }
 }

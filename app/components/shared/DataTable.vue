@@ -33,10 +33,11 @@ const getStatusColor = (status: string) => {
 
 <template>
   <div class="bg-white overflow-hidden">
+    <div class="overflow-x-auto">
     <UTable
       :data="data"
       :columns="columns"
-      class="w-full p-0 border-0 divider-none"
+      class="w-full min-w-[720px] p-0 border-0 divider-none"
       :ui="{
         base: 'divider-none border-none',
         th: 'divider-none border-none! font-light!',
@@ -98,9 +99,10 @@ const getStatusColor = (status: string) => {
         />
       </template>
     </UTable>
+    </div>
 
     <!-- Footer -->
-    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+    <div class="px-4 md:px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-0 items-start sm:items-center justify-between bg-gray-50/30">
       <div class="text-xs text-gray-500">
         Showing 1–10 of {{ data.length }} users
       </div>

@@ -126,6 +126,75 @@ export const usePracticeArea = () => {
     loading,
     updating,
     getPracticeArea,
+    searchPracticeArea: async (query: Record<string, unknown> = {}) => {
+      loading.value = true
+      try {
+        const data = await $fetch('/api/practice-area/search', {
+          method: 'GET',
+          query
+        })
+        return { success: true, data }
+      } catch (error) {
+        return { success: false, error }
+      } finally {
+        loading.value = false
+      }
+    },
+    createPracticeArea: async (body: Record<string, unknown>) => {
+      updating.value = true
+      try {
+        const data = await $fetch('/api/practice-area', {
+          method: 'POST',
+          body
+        })
+        return { success: true, data }
+      } catch (error) {
+        return { success: false, error }
+      } finally {
+        updating.value = false
+      }
+    },
+    updatePracticeArea: async (id: string | number, body: Record<string, unknown>) => {
+      updating.value = true
+      try {
+        const data = await $fetch(`/api/practice-area/${id}`, {
+          method: 'PUT',
+          body
+        })
+        return { success: true, data }
+      } catch (error) {
+        return { success: false, error }
+      } finally {
+        updating.value = false
+      }
+    },
+    deletePracticeArea: async (id: string | number) => {
+      updating.value = true
+      try {
+        const data = await $fetch(`/api/practice-area/${id}`, {
+          method: 'DELETE'
+        })
+        return { success: true, data }
+      } catch (error) {
+        return { success: false, error }
+      } finally {
+        updating.value = false
+      }
+    },
+    togglePracticeArea: async (id: string | number, body: Record<string, unknown> = {}) => {
+      updating.value = true
+      try {
+        const data = await $fetch(`/api/practice-area/${id}/toggle`, {
+          method: 'PUT',
+          body
+        })
+        return { success: true, data }
+      } catch (error) {
+        return { success: false, error }
+      } finally {
+        updating.value = false
+      }
+    },
     getLawyerPracticeAreas,
     savePracticeAreas
   }

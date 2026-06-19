@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// --- Fetch dashboard data on mount ---
+const { getDashboard } = useDashboard()
+
+onMounted(async () => {
+  const result = await getDashboard()
+  console.log('[Dashboard] API response:', result)
+})
 interface StatItem {
   title: string
   value: string

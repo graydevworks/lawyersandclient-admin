@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
 
+// --- Fetch user data on mount ---
+const { getUser } = useUsers()
+
+onMounted(async () => {
+  const result = await getUser()
+  console.log('[Users] API response:', result)
+})
+
 interface StatItem {
   title: string
   value: string

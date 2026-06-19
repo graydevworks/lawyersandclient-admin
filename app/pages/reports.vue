@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// --- Fetch reports data on mount ---
+const { getReports } = useReports()
+
+onMounted(async () => {
+  const result = await getReports()
+  console.log('[Reports] API response:', result)
+})
+
 const activeTab = ref('All')
 
 const submissions = [

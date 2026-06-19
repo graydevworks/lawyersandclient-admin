@@ -1,14 +1,13 @@
-<script setup lang="ts">
+<script setup>
 definePageMeta({
   layout: 'blank'
 })
 
-const email = ref('atibaheritage@gmail.com')
-const password = ref('password123')
+const email = ref('')
+const password = ref('')
 const showPassword = ref(false)
 
 const login = () => {
-  // Mock login redirect
   navigateTo('/dashboard')
 }
 </script>
@@ -50,7 +49,8 @@ const login = () => {
           <UInput
             id="email"
             v-model="email"
-            placeholder="atibaheritage@gmail.com"
+            type="email"
+            placeholder="Enter your email"
             size="xl"
             class="w-full"
             :ui="{
@@ -70,7 +70,7 @@ const login = () => {
               id="password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="••••••••••••"
+              placeholder="Enter your password"
               size="xl"
               class="w-full"
               :ui="{
@@ -88,14 +88,6 @@ const login = () => {
                 class="w-5 h-5"
               />
             </button>
-          </div>
-          <div class="flex justify-end pt-1">
-            <NuxtLink
-              to="/forgot-password"
-              class="text-[14px] font-bold text-[#003357] hover:underline"
-            >
-              Forgot Password
-            </NuxtLink>
           </div>
         </div>
 

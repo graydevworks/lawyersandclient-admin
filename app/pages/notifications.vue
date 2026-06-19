@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// --- Fetch notifications data on mount ---
+const { getNotifications } = useNotification()
+
+onMounted(async () => {
+  const result = await getNotifications()
+  console.log('[Notifications] API response:', result)
+})
+
 const notificationTarget = ref('All users')
 const notificationType = ref('Announcement')
 const notificationTitle = ref('')

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+// --- Fetch analytics data on mount ---
+const { getAnalytics } = useAnalytics()
+
+onMounted(async () => {
+  const result = await getAnalytics()
+  console.log('[Analytics] API response:', result)
+})
 interface StatItem {
   id: number
   title: string

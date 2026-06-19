@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
 
+// --- Fetch lawyers data on mount ---
+const { getLawyers } = useLawyers()
+
+onMounted(async () => {
+  const result = await getLawyers()
+  console.log('[Lawyers] API response:', result)
+})
+
 interface StatItem {
   title: string
   value: string

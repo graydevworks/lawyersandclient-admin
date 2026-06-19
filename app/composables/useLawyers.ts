@@ -19,10 +19,7 @@ import { useToast } from '@nuxt/ui/composables'
 export const useLawyers = () => {
   const toast = useToast()
   const loading = ref(false)
-  const { user, fetch: refreshSession } = useUserSession()
-
-  const getRole = () => user.value?.role || 'clients'
-  const getApiUrl = (path = '') => `/api/v1/${getRole()}/cases${path}`
+  const updating = ref(false)
 
   const getLawyers = async (isPublic: boolean = false) => {
     loading.value = true
@@ -64,12 +61,12 @@ export const useLawyers = () => {
   }
 
   const saveLawyer = async (id: number | string) => {
-    loading.value = true
+    updating.value = true
     try {
-      const response = await $fetch(`/api/v1/${getRole()}/lawyers/${id}`, { method: 'POST' })
+      const response = await $fetch(`/api/lawyer/${id}`, { method: 'GET' })
       toast.add({
         title: 'Saved!',
-        description: response.message || 'Lawyer saved to your list.',
+        description: response.message || 'Lawyer fetched successfully.',
         icon: 'i-lucide-bookmark-check',
         color: 'success',
         duration: 3000
@@ -85,13 +82,93 @@ export const useLawyers = () => {
       })
       return { success: false, error }
     } finally {
+      updating.value = false
+    }
+  }
+
+  const searchLawyers = async (query: Record<string, unknown> = {}) => {
+    loading.value = true
+    try {
+      const lawyers = await $fetch('/api/lawyer/search', { method: 'GET', query })
+      return { success: true, data: { lawyers } }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const suspendLawyer = async (id: number | string) => {
+    updating.value = true
+    try {
+      const response = await $fetch(`/api/lawyer/${id}/suspend`, { method: 'POST' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
+      updating.value = false
+    }
+  }
+
+  const reinstateLawyer = async (id: number | string) => {
+    updating.value = true
+    try {
+      const response = await $fetch(`/api/lawyer/${id}/reinstate`, { method: 'POST' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
+      updating.value = false
+    }
+  }
+
+  const resetLawyerPassword = async (id: number | string) => {
+    updating.value = true
+    try {
+      const response = await $fetch(`/api/lawyer/${id}/reset-password`, { method: 'POST' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
+      updating.value = false
+    }
+  }
+
+  const deleteLawyer = async (id: number | string) => {
+    updating.value = true
+    try {
+      const response = await $fetch(`/api/lawyer/${id}`, { method: 'DELETE' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
+      updating.value = false
+    }
+  }
+
+  const getLawyerDocument = async (id: number | string) => {
+    loading.value = true
+    try {
+      const response = await $fetch(`/api/lawyer/${id}/document`, { method: 'GET' })
+      return { success: true, data: response }
+    } catch (error) {
+      return { success: false, error }
+    } finally {
       loading.value = false
     }
   }
 
   return {
+    loading,
+    updating,
     getLawyers,
     showLawyers,
-    saveLawyer
+    saveLawyer,
+    searchLawyers,
+    suspendLawyer,
+    reinstateLawyer,
+    resetLawyerPassword,
+    deleteLawyer,
+    getLawyerDocument
   }
 }

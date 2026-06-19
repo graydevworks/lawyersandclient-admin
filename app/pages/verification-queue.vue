@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
+// --- Fetch verification queue data on mount ---
+const { getVerificationQueue } = useVerification()
+
+onMounted(async () => {
+  const result = await getVerificationQueue()
+  console.log('[Verification Queue] API response:', result)
+})
+
 interface Submission {
   id: string
   initials: string

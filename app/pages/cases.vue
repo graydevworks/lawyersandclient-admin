@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import CaseDetailsModal from '~/components/cases/CaseDetailsModal.vue'
 
+// --- Fetch cases data on mount ---
+const { getCases } = useCases()
+
+onMounted(async () => {
+  const result = await getCases()
+  console.log('[Cases] API response:', result)
+})
+
 interface CaseRow {
   id: string
   date: string

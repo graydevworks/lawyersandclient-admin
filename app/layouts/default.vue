@@ -1,44 +1,58 @@
 <script setup lang="ts">
-const isSidebarOpen = useState('isSidebarOpen', () => false)
-const isTabletSheetOpen = useState('isTabletSheetOpen', () => false)
+import { ref } from 'vue'
+
+const isSidebarOpen = ref(false)
+const isTabletSheetOpen = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#F8F9FB] flex relative">
+  <div class="min-h-screen bg-[#F8F9FB] flex relative overflow-x-hidden">
     <!-- Sidebar for desktop (lg and above) -->
     <div class="hidden lg:block px-[24px]! pt-[16px]">
       <PartialsSidebar />
     </div>
 
-    <!-- Tablet Sidebar (USheet) -->
-    <USheet
+    <!-- Tablet Sheet -->
+    <USlideover
       v-model="isTabletSheetOpen"
       side="left"
-      class="md:hidden lg:hidden"
+      class="hidden md:block lg:hidden"
+      :ui="{ content: 'w-[300px] max-w-[85vw]' }"
     >
-      <PartialsSidebar class="w-full! relative!" />
-    </USheet>
+      <template #content>
+        <PartialsSidebar
+          class="w-full! relative! h-full"
+          @close="isTabletSheetOpen = false"
+        />
+      </template>
+    </USlideover>
 
-    <!-- Mobile Sidebar (USlideover) -->
+    <!-- Mobile Sheet -->
     <USlideover
       v-model="isSidebarOpen"
       side="left"
       class="md:hidden"
+      :ui="{ content: 'w-[280px] max-w-[88vw]' }"
     >
-      <PartialsSidebar class="w-full! relative!" />
+      <template #content>
+        <PartialsSidebar
+          class="w-full! relative! h-full"
+          @close="isSidebarOpen = false"
+        />
+      </template>
     </USlideover>
 
     <!-- Main Content -->
     <div
       class="flex-1 flex flex-col min-h-screen transition-all duration-300"
-      :class="[isSidebarOpen || isTabletSheetOpen ? '' : 'lg:ml-64']"
+      :class="['lg:ml-64']"
     >
       <PartialsTopBar
         @toggle-sidebar="isSidebarOpen = !isSidebarOpen"
         @toggle-tablet-sidebar="isTabletSheetOpen = !isTabletSheetOpen"
       />
 
-      <main class="flex-1 pr-[12px] pt-[100px]!">
+      <main class="flex-1 px-3 md:px-4 lg:pr-[12px] lg:pl-0 pt-[88px] md:pt-[96px]">
         <slot />
       </main>
     </div>

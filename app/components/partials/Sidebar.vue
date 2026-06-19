@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { defineEmits } from 'vue'
+
 defineEmits(['close'])
 
 const navGroups = [
@@ -32,7 +34,7 @@ const navGroups = [
 </script>
 
 <template>
-  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-[12px] lg:top-[95px] rounded-[12px] z-50">
+  <aside class="w-full lg:w-64 bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-[12px] lg:top-[95px] rounded-[12px] z-50 h-full lg:h-[calc(100vh-112px)]">
     <!-- Close button for mobile/tablet -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
       <h2 class="text-lg font-semibold text-gray-900">
@@ -46,13 +48,13 @@ const navGroups = [
         @click="$emit('close')"
       />
     </div>
-    <nav class="flex-1 overflow-y-auto p-[16px]">
+    <nav class="flex-1 overflow-y-auto p-3 md:p-4">
       <div
         v-for="group in navGroups"
         :key="group.label"
         class="mb-8"
       >
-        <h3 class="px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+        <h3 class="px-4 md:px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
           {{ group.label }}
         </h3>
         <div class="space-y-1">
@@ -60,7 +62,7 @@ const navGroups = [
             v-for="item in group.items"
             :key="item.label"
             :to="item.to"
-            class="flex items-center gap-3 px-[13px] py-2.5 text-sm font-medium transition-colors rounded-[6px]"
+            class="flex items-center gap-3 px-3 md:px-[13px] py-2.5 text-sm font-medium transition-colors rounded-[6px]"
             active-class="bg-[#003357] text-white"
             inactive-class="text-[#64748B] hover:bg-gray-50 hover:text-gray-900"
           >
