@@ -47,7 +47,7 @@ const contentClasses = [
 <template>
   <UModal
     v-model:open="isOpen"
-    :ui="{ content: contentClasses }"
+    :ui="{ content: contentClasses, overlay: 'z-[100]', backdrop: 'z-[100]' }"
   >
     <div class="bg-white px-6 py-8 flex flex-col items-center text-center relative">
       <!-- Close button -->

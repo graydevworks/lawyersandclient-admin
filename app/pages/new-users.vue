@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
-import { formatCompactNumber } from '~/util/helper'
+import { formatCompactNumber, formatRelativeDate } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -19,12 +19,12 @@ interface StatItem {
 
 const filterDate = ref('This week')
 
-const stats: StatItem[] = [
+const stats = ref<StatItem[]>([
   { title: 'Total New Users', value: '258', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Clients', value: '212', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'New Lawyers', value: '47', trend: '+14%', trendType: 'positive', trendSuffix: 'vs last week' },
   { title: 'Pending verification', value: '4', trend: 'New lawyers awaiting review', trendType: 'neutral', trendSuffix: '' }
-]
+])
 
 const sortBy = ref<SelectItem[]>([
   {
@@ -38,18 +38,18 @@ const sortBy = ref<SelectItem[]>([
 
 const value = ref('Location')
 
-const signUpsSeries = [
+const signUpsSeries = ref([
   {
     name: 'Clients',
-    data: [18, 14, 23, 11, 21, 8, 10]
+    data: [0, 0, 0, 0, 0, 0, 0]
   },
   {
     name: 'Lawyers',
-    data: [11, 19, 18, 15, 17, 21, 18]
+    data: [0, 0, 0, 0, 0, 0, 0]
   }
-]
+])
 
-const signUpsOptions = {
+const signUpsOptions = ref({
   chart: {
     type: 'bar',
     toolbar: { show: false }
@@ -79,7 +79,7 @@ const signUpsOptions = {
     position: 'top',
     horizontalAlign: 'left'
   }
-}
+})
 
 const items = [
   { label: 'Clients (8)', slot: 'clients' },
@@ -109,8 +109,59 @@ const rows = ref([
 ])
 
 const fetchUsers = async () => {
-  await getUsers()
+  const result = await getUsers()
   // Map real API data when available
+
+  console.log(result, 'hh')
+  if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
+    const userList = result.data.user.data.data
+    const statistics = result.data.user.data.data.stats
+
+    console.log(userList, 'hellow')
+
+    stats.value = [
+      { title: 'Total New Users', value: statistics.total_new_users.count, trend: statistics.total_new_users.change_pct, trendType: statistics.total_new_users.change_pct > -1 ? 'positive' : 'negative', trendSuffix: statistics.total_new_users.period },
+      { title: 'New Clients', value: statistics.new_clients.count, trend: statistics.new_clients.change_pct, trendType: statistics.new_clients.change_pct > -1 ? 'positive' : 'negative', trendSuffix: statistics.new_clients.period },
+      { title: 'New Lawyers', value: statistics.new_lawyers.count, trend: statistics.new_lawyers.change_pct, trendType: statistics.new_lawyers.change_pct > -1 ? 'positive' : 'negative', trendSuffix: statistics.new_lawyers.period },
+      { title: 'Pending verification', value: statistics.pending_verification.count, trend: 'New lawyers awaiting review', trendType: 'neutral', trendSuffix: '' }
+    ]
+
+    // Sign Ups
+    const lawyersSignups: any[] = []
+    const clientsSignups: any[] = []
+
+    userList.signups_chart.forEach((item: any) => {
+      lawyersSignups.push(item.lawyers)
+      clientsSignups.push(item.clients)
+    })
+
+    // sunday is the first day of the week but the api brings it as 7th
+    lawyersSignups.unshift(lawyersSignups[lawyersSignups.length - 1])
+    lawyersSignups.pop()
+    clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
+    clientsSignups.pop()
+
+    signUpsSeries.value = [
+      {
+        name: 'Clients',
+        data: clientsSignups
+      },
+      {
+        name: 'Lawyers',
+        data: lawyersSignups
+      }
+    ]
+
+    // clients
+    rows.value = userList.users.data.map((item: any) => ({
+      id: item.id,
+      name: item.full_name,
+      contact: item.email,
+      joined: item.joined_at ? formatRelativeDate(item.joined_at) : '',
+      location: item.location,
+      avatar: item.profile_photo_url
+    }))
+  }
 }
 
 onMounted(async () => {

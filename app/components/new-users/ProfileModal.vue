@@ -1,27 +1,24 @@
 <script setup lang="ts">
 /**
- * ClientProfileModal — User details modal with Reset Password and Suspend Account actions.
- * Triggered from clients page "View Profile" button.
- * Includes confirmation modals and success feedback.
+ * NewUsersProfileModal — User details modal for new-users page.
+ * Supports both clients and lawyers with reset password & suspend actions.
  */
 
-interface ClientInfo {
+interface UserInfo {
   id: string
   name: string
-  email?: string
   contact?: string
-  location?: string
+  email?: string
+  role: string
   status: string
   avatar?: string
   joined: string
-  lastActive: string
-  totalChats?: number
-  reportsFiled?: number
+  location?: string
 }
 
 const props = defineProps<{
   modelValue: boolean
-  client: ClientInfo | null
+  user: UserInfo | null
 }>()
 
 const emit = defineEmits(['update:modelValue', 'action-complete'])
@@ -36,13 +33,17 @@ const getStatusColor = (status: string) => {
     case 'active': return 'success'
     case 'suspended': return 'error'
     case 'new': return 'secondary'
+    case 'pending': return 'warning'
     default: return 'neutral'
   }
 }
 
-const statusBadgeColor = computed(() => getStatusColor(props.client?.status || ''))
+const statusBadgeColor = computed(() => getStatusColor(props.user?.status || ''))
+const isLawyer = computed(() => props.user?.role?.toLowerCase() === 'lawyer')
 
-const { suspendClient, resetClientPassword, updating } = useClients()
+const { suspendClient, resetClientPassword } = useClients()
+const { suspendLawyer, resetLawyerPassword } = useLawyers()
+const updating = ref(false)
 
 // Modal state
 const showResetConfirm = ref(false)
@@ -50,7 +51,6 @@ const showSuspendForm = ref(false)
 const showSuccessModal = ref(false)
 const successTitle = ref('')
 const successDescription = ref('')
-const successButtonText = ref('Complete')
 
 const suspendReason = ref('')
 const suspendReasons = [
@@ -61,21 +61,28 @@ const suspendReasons = [
   'Other'
 ]
 
-const userEmail = computed(() => props.client?.email || props.client?.contact || 'user@email.com')
-const userName = computed(() => props.client?.name || 'this user')
+const userEmail = computed(() => props.user?.email || props.user?.contact || 'user@email.com')
+const userName = computed(() => props.user?.name || 'this user')
+const roleLabel = computed(() => isLawyer.value ? 'Lawyer' : 'Client')
 
 const handleResetPassword = () => {
   showResetConfirm.value = true
 }
 
 const confirmResetPassword = async () => {
-  if (!props.client) return
+  if (!props.user) return
   showResetConfirm.value = false
-  const result = await resetClientPassword(props.client.id)
+  updating.value = true
+  let result
+  if (isLawyer.value) {
+    result = await resetLawyerPassword(props.user.id)
+  } else {
+    result = await resetClientPassword(props.user.id)
+  }
+  updating.value = false
   if (result.success) {
     successTitle.value = 'Password reset link sent successfully'
     successDescription.value = `Password reset link has been sent to ${userEmail.value}. The user must click the link to reset their password.`
-    successButtonText.value = 'Complete'
     showSuccessModal.value = true
   }
 }
@@ -86,13 +93,19 @@ const handleSuspend = () => {
 }
 
 const confirmSuspend = async () => {
-  if (!props.client) return
+  if (!props.user) return
   showSuspendForm.value = false
-  const result = await suspendClient(props.client.id, suspendReason.value)
+  updating.value = true
+  let result
+  if (isLawyer.value) {
+    result = await suspendLawyer(props.user.id, suspendReason.value)
+  } else {
+    result = await suspendClient(props.user.id, suspendReason.value)
+  }
+  updating.value = false
   if (result.success) {
     successTitle.value = 'Account suspended successfully'
     successDescription.value = 'Suspended users cannot log in or interact with the platform. You can reinstate them later.'
-    successButtonText.value = 'Complete'
     showSuccessModal.value = true
     emit('action-complete')
   }
@@ -110,21 +123,21 @@ const handleSuccessComplete = () => {
     title="User details"
     max-width="max-w-[520px]"
   >
-    <template v-if="client">
+    <template v-if="user">
       <!-- Profile Header -->
       <div class="flex items-center gap-4 mt-3 mb-6">
         <UAvatar
-          :src="client.avatar || `https://i.pravatar.cc/150?u=${client.id}`"
-          :alt="client.name"
+          :src="user.avatar || `https://i.pravatar.cc/150?u=${user.id}`"
+          :alt="user.name"
           size="lg"
           class="size-[56px]"
         />
         <div>
           <h3 class="text-[18px] font-bold text-gray-900">
-            {{ client.name }}
+            {{ user.name }}
           </h3>
           <p class="text-[13px] text-gray-400">
-            Client since {{ client.joined }}
+            {{ roleLabel }} &middot; Joined {{ user.joined }}
           </p>
         </div>
       </div>
@@ -137,15 +150,19 @@ const handleSuccessComplete = () => {
         <div class="space-y-0">
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
             <span class="text-gray-500">User ID</span>
-            <span class="font-semibold text-gray-900">{{ client.id }}</span>
+            <span class="font-semibold text-gray-900">{{ user.id }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
             <span class="text-gray-500">Email</span>
-            <span class="text-gray-900">{{ client.email || client.contact || 'N/A' }}</span>
+            <span class="text-gray-900">{{ user.email || user.contact || 'N/A' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+            <span class="text-gray-500">Role</span>
+            <span class="font-semibold text-gray-900">{{ roleLabel }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
             <span class="text-gray-500">Location</span>
-            <span class="text-gray-900">{{ client.location || 'N/A' }}</span>
+            <span class="text-gray-900">{{ user.location || 'N/A' }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3">
             <span class="text-gray-500">Status</span>
@@ -154,33 +171,8 @@ const handleSuccessComplete = () => {
               variant="subtle"
               class="rounded-full px-3 py-0.5 font-bold text-[12px]"
             >
-              {{ client.status }}
+              {{ user.status }}
             </UBadge>
-          </div>
-        </div>
-      </div>
-
-      <!-- Activity Section -->
-      <div class="mb-6">
-        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-          Activity
-        </h4>
-        <div class="space-y-0">
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Total chats</span>
-            <span class="font-semibold text-gray-900">{{ client.totalChats ?? 0 }}</span>
-          </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Reports filed</span>
-            <span class="font-semibold text-gray-900">{{ client.reportsFiled ?? 0 }}</span>
-          </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Last active</span>
-            <span class="text-gray-900">{{ client.lastActive }}</span>
-          </div>
-          <div class="flex justify-between items-center text-sm py-3">
-            <span class="text-gray-500">Joined</span>
-            <span class="text-gray-900">{{ client.joined }}</span>
           </div>
         </div>
       </div>
@@ -284,7 +276,6 @@ const handleSuccessComplete = () => {
     v-model="showSuccessModal"
     :title="successTitle"
     :description="successDescription"
-    :button-text="successButtonText"
     @complete="handleSuccessComplete"
   />
 </template>

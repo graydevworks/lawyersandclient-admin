@@ -100,10 +100,12 @@ export const useLawyers = () => {
     }
   }
 
-  const suspendLawyer = async (id: number | string) => {
+  const suspendLawyer = async (id: number | string, reason?: string) => {
     updating.value = true
     try {
-      const response = await $fetch(`/api/lawyer/${id}/suspend`, { method: 'POST' })
+      const body = new FormData()
+      if (reason) body.append('reason', reason)
+      const response = await $fetch(`/api/lawyer/${id}/suspend`, { method: 'POST', body })
       return { success: true, data: response }
     } catch (error) {
       return { success: false, error }

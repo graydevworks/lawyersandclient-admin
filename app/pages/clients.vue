@@ -87,6 +87,7 @@ const fetchClients = async () => {
       location: client.location,
       status: client.status,
       joined: client.joined_at ? formatRelativeDate(client.joined_at) : '',
+      lastActive: client.last_active ? formatRelativeDate(client.last_active) : 'N/A',
       avatar: client.profile_photo_url || ''
     }))
 
@@ -106,7 +107,9 @@ onMounted(async () => {
 
 // Silent background refresh every 60 seconds
 const { start } = useIntervalFetch(fetchClients, 60000)
-onMounted(() => start())
+onMounted(() => {
+  start()
+})
 </script>
 
 <template>
@@ -114,6 +117,7 @@ onMounted(() => start())
     <ClientsProfileModal
       v-model="isProfileModalOpen"
       :client="selectedClient"
+      @action-complete="fetchClients"
     />
 
     <div class="flex items-center justify-between">

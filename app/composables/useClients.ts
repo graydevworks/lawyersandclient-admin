@@ -28,10 +28,12 @@ export const useClients = () => {
     }
   }
 
-  const suspendClient = async (id: string | number) => {
+  const suspendClient = async (id: string | number, reason?: string) => {
     updating.value = true
     try {
-      const data = await $fetch(`/api/clients/${id}/suspend`, { method: 'POST' })
+      const body = new FormData()
+      if (reason) body.append('reason', reason)
+      const data = await $fetch(`/api/clients/${id}/suspend`, { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
       return { success: false, error }
