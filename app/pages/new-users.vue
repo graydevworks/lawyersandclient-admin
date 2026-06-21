@@ -81,14 +81,17 @@ const signUpsOptions = ref({
   }
 })
 
+const activeTab = ref<'clients' | 'lawyers'>('clients')
+
 const items = [
-  { label: 'Clients (8)', slot: 'clients' },
-  { label: 'Lawyers (5)', slot: 'lawyers' }
+  { label: 'Clients', value: 'clients', slot: 'clients' },
+  { label: 'Lawyers', value: 'lawyers', slot: 'lawyers' }
 ]
 
 const columns = [
   { accessorKey: 'user', header: 'User' },
   { accessorKey: 'contact', header: 'Contact' },
+  { accessorKey: 'role', header: 'Role' },
   { accessorKey: 'joined', header: 'Joined' },
   { accessorKey: 'location', header: 'Location' },
   { accessorKey: 'actions', header: 'Actions' }
@@ -96,28 +99,47 @@ const columns = [
 
 const cardFields = [
   { key: 'contact', label: 'Contact' },
+  { key: 'role', label: 'Role' },
   { key: 'joined', label: 'Joined' },
   { key: 'location', label: 'Location' }
 ]
 
+// Filter rows by active tab
+const filteredRows = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return rows.value.filter((row: any) => {
+    const role = (row.role || '').toLowerCase()
+    if (activeTab.value === 'lawyers') return role === 'lawyer'
+    return role === 'client'
+  })
+})
+
+// Profile modal
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const selectedUser = ref<any>(null)
+const showProfile = ref(false)
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handleViewProfile = (user: any) => {
+  selectedUser.value = user
+  showProfile.value = true
+}
+
 const rows = ref([
-  { id: 'PRET-02', name: 'Miles, Esther', contact: 'gravyface@mac.com', joined: '24 May, 2020', location: 'Kaduna', avatar: 'https://i.pravatar.cc/150?u=13' },
-  { id: 'BSAD-21', name: 'Cooper, Kristin', contact: 'grolschie@mac.com', joined: '1 Feb, 2020', location: 'Anambra', avatar: 'https://i.pravatar.cc/150?u=14' },
-  { id: 'WSCT-02', name: 'Nguyen, Shane', contact: 'bockelboy@att.net', joined: '8 Sep, 2020', location: 'Imo', avatar: 'https://i.pravatar.cc/150?u=15' },
-  { id: 'BGHO-91', name: 'Henry, Arthur', contact: 'chinthaka@hotmail.com', joined: '22 Oct, 2020', location: 'Borno', avatar: 'https://i.pravatar.cc/150?u=16' },
-  { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', joined: '8 Sep, 2020', location: 'Kwara', avatar: 'https://i.pravatar.cc/150?u=17' }
+  { id: 'PRET-02', name: 'Miles, Esther', contact: 'gravyface@mac.com', role: 'client', status: 'new', joined: '24 May, 2020', location: 'Kaduna', avatar: 'https://i.pravatar.cc/150?u=13' },
+  { id: 'BSAD-21', name: 'Cooper, Kristin', contact: 'grolschie@mac.com', role: 'lawyer', status: 'new', joined: '1 Feb, 2020', location: 'Anambra', avatar: 'https://i.pravatar.cc/150?u=14' },
+  { id: 'WSCT-02', name: 'Nguyen, Shane', contact: 'bockelboy@att.net', role: 'client', status: 'new', joined: '8 Sep, 2020', location: 'Imo', avatar: 'https://i.pravatar.cc/150?u=15' },
+  { id: 'BGHO-91', name: 'Henry, Arthur', contact: 'chinthaka@hotmail.com', role: 'lawyer', status: 'pending', joined: '22 Oct, 2020', location: 'Borno', avatar: 'https://i.pravatar.cc/150?u=16' },
+  { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', role: 'client', status: 'new', joined: '8 Sep, 2020', location: 'Kwara', avatar: 'https://i.pravatar.cc/150?u=17' }
 ])
 
 const fetchUsers = async () => {
   const result = await getUsers()
   // Map real API data when available
 
-  console.log(result, 'hh')
   if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
     const userList = result.data.user.data.data
     const statistics = result.data.user.data.data.stats
-
-    console.log(userList, 'hellow')
 
     stats.value = [
       { title: 'Total New Users', value: statistics.total_new_users.count, trend: statistics.total_new_users.change_pct, trendType: statistics.total_new_users.change_pct > -1 ? 'positive' : 'negative', trendSuffix: statistics.total_new_users.period },
@@ -157,6 +179,8 @@ const fetchUsers = async () => {
       id: item.id,
       name: item.full_name,
       contact: item.email,
+      role: item.role || 'client',
+      status: item.status || 'new',
       joined: item.joined_at ? formatRelativeDate(item.joined_at) : '',
       location: item.location,
       avatar: item.profile_photo_url
@@ -278,6 +302,7 @@ onMounted(() => start())
         <template #header>
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <UTabs
+              v-model="activeTab"
               :items="items"
               variant="link"
               :ui="{ content: 'hidden' }"
@@ -302,20 +327,28 @@ onMounted(() => start())
           </div>
         </template>
 
-        <template v-if="rows.length > 0">
+        <template v-if="filteredRows.length > 0">
           <SharedDataTable
             :columns="columns"
-            :data="rows"
+            :data="filteredRows"
             :card-fields="cardFields"
+            @view-profile="handleViewProfile"
           />
         </template>
         <SharedEmptyState
           v-else
           icon="i-lucide-user-plus"
-          title="No new users"
-          description="There are no new users to display right now."
+          :title="activeTab === 'lawyers' ? 'No new lawyers' : 'No new clients'"
+          :description="activeTab === 'lawyers' ? 'There are no new lawyers to display right now.' : 'There are no new clients to display right now.'"
         />
       </UCard>
     </template>
+
+    <!-- Profile Modal -->
+    <NewUsersProfileModal
+      v-model="showProfile"
+      :user="selectedUser"
+      @action-complete="fetchUsers"
+    />
   </div>
 </template>

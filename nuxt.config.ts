@@ -8,6 +8,14 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/images/LC W@2x.png' }
+      ]
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   colorMode: {

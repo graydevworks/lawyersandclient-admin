@@ -49,44 +49,46 @@ const contentClasses = [
     v-model:open="isOpen"
     :ui="{ content: contentClasses, overlay: 'z-[100]', backdrop: 'z-[100]' }"
   >
-    <div class="bg-white px-6 py-8 flex flex-col items-center text-center relative">
-      <!-- Close button -->
-      <UButton
-        v-if="showClose"
-        icon="i-lucide-x"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        class="rounded-full absolute top-4 right-4"
-        @click="close"
-      />
-
-      <!-- Success Icon -->
-      <div class="w-[64px] h-[64px] rounded-full bg-[#22C55E] flex items-center justify-center mb-5 animate-[bounceIn_0.5s_ease-out]">
-        <UIcon
-          name="i-lucide-check"
-          class="w-8 h-8 text-white"
+    <template #content>
+      <div class="bg-white px-6 py-8 flex flex-col items-center text-center relative">
+        <!-- Close button -->
+        <UButton
+          v-if="showClose"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          class="rounded-full absolute top-4 right-4"
+          @click="close"
         />
+
+        <!-- Success Icon -->
+        <div class="w-[64px] h-[64px] rounded-full bg-[#22C55E] flex items-center justify-center mb-5 animate-[bounceIn_0.5s_ease-out]">
+          <UIcon
+            name="i-lucide-check"
+            class="w-8 h-8 text-white"
+          />
+        </div>
+
+        <!-- Title -->
+        <h2 class="text-[20px] font-bold text-gray-900 mb-2">
+          {{ title }}
+        </h2>
+
+        <!-- Description -->
+        <p class="text-[14px] text-gray-500 leading-relaxed mb-8 max-w-[340px]">
+          {{ description }}
+        </p>
+
+        <!-- Complete Button -->
+        <UButton
+          block
+          class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px] text-[14px]"
+          @click="handleComplete"
+        >
+          {{ buttonText }}
+        </UButton>
       </div>
-
-      <!-- Title -->
-      <h2 class="text-[20px] font-bold text-gray-900 mb-2">
-        {{ title }}
-      </h2>
-
-      <!-- Description -->
-      <p class="text-[14px] text-gray-500 leading-relaxed mb-8 max-w-[340px]">
-        {{ description }}
-      </p>
-
-      <!-- Complete Button -->
-      <UButton
-        block
-        class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px] text-[14px]"
-        @click="handleComplete"
-      >
-        {{ buttonText }}
-      </UButton>
-    </div>
+    </template>
   </UModal>
 </template>

@@ -65,9 +65,9 @@ const userEmail = computed(() => props.user?.email || props.user?.contact || 'us
 const userName = computed(() => props.user?.name || 'this user')
 const roleLabel = computed(() => isLawyer.value ? 'Lawyer' : 'Client')
 
-const handleResetPassword = () => {
-  showResetConfirm.value = true
-}
+// const handleResetPassword = () => {
+//   showResetConfirm.value = true
+// }
 
 const confirmResetPassword = async () => {
   if (!props.user) return
@@ -127,7 +127,7 @@ const handleSuccessComplete = () => {
       <!-- Profile Header -->
       <div class="flex items-center gap-4 mt-3 mb-6">
         <UAvatar
-          :src="user.avatar || `https://i.pravatar.cc/150?u=${user.id}`"
+          :src="user.avatar || `empty?u=${user.id}`"
           :alt="user.name"
           size="lg"
           class="size-[56px]"
@@ -178,7 +178,7 @@ const handleSuccessComplete = () => {
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex flex-col gap-3">
+      <!-- <div class="flex flex-col gap-3">
         <UButton
           block
           :loading="updating"
@@ -197,7 +197,7 @@ const handleSuccessComplete = () => {
         >
           Suspend account
         </UButton>
-      </div>
+      </div> -->
     </template>
   </SharedBaseModal>
 

@@ -16,12 +16,7 @@ interface StatItem {
   trendSuffix?: string
 }
 
-const stats = ref<StatItem[]>([
-  { title: 'Total Lawyers', value: '634', trend: '+8%', trendType: 'positive', trendSuffix: 'this week' },
-  { title: 'Active Cases', value: '1,248', trend: '+12%', trendType: 'positive', trendSuffix: 'vs last month' },
-  { title: 'Pending Review', value: '7', trendType: 'neutral' },
-  { title: 'Case Acceptance', value: '84%', trend: '+3%', trendType: 'positive', trendSuffix: 'vs last month' }
-])
+const stats = ref<StatItem[]>([])
 
 const value = ref('Location')
 
@@ -59,8 +54,23 @@ const sortBy = ref<SelectItem[]>([
 ])
 
 const fetchLawyers = async () => {
-  await getLawyers()
+  const result = await getLawyers()
   // Map real API data when available
+
+  console.log(result)
+  if (result && result.data && result.data.lawyers && result.data.lawyers.data && result.data.lawyers.data.success) {
+    const lawyerList = result.data.lawyers.data.data
+    const statistics = result.data.lawyers.data.data.stats
+
+    console.log(lawyerList, statistics)
+
+    stats.value = [
+      { title: 'Total Lawyers', value: statistics.total, trend: '', trendType: 'positive', trendSuffix: '' },
+      { title: 'Pending Lawyers', value: statistics.pending, trend: '', trendType: 'positive', trendSuffix: '' },
+      { title: 'Suspended Lawyers', value: statistics.suspended, trend: '', trendType: 'positive', trendSuffix: '' },
+      { title: 'Rejected Lawyers', value: statistics.rejected, trend: '', trendType: 'positive', trendSuffix: '' }
+    ]
+  }
 }
 
 onMounted(async () => {

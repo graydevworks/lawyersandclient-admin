@@ -99,6 +99,11 @@ const getStatusColor = (status: string) => {
           <span class="text-gray-500! text-[14px] font-normal">{{ row.original.contact }}</span>
         </template>
 
+        <!-- Custom Role Cell -->
+        <template #role-cell="{ row }">
+          <span class="text-gray-700 text-[14px] font-medium capitalize">{{ (row.original as any).role }}</span>
+        </template>
+
         <template #lastActive-cell="{ row }">
           <span class="text-gray-500! text-[14px] font-normal">{{ (row.original as any).lastActive }}</span>
         </template>
