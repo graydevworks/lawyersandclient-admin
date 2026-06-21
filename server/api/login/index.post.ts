@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
         // Automatically false on localhost (http), true in production (https)
         secure: appEnv === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: 60 * 60 * 24 * 30
       })
 
       return {

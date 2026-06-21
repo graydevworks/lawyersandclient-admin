@@ -6,10 +6,7 @@ definePageMeta({ middleware: 'auth' })
 // --- Fetch cases data on mount ---
 const { getCases } = useCases()
 
-onMounted(async () => {
-  const result = await getCases()
-  console.log('[Cases] API response:', result)
-})
+const skeleton = ref(true)
 
 interface CaseRow {
   id: string
@@ -58,31 +55,18 @@ const stats: StatItem[] = [
   { title: 'Avg. case duration', value: '14d', trend: '-2d', trendType: 'positive', trendSuffix: 'this month' }
 ]
 
-interface CaseRow {
-  id: string
-  date: string
-  matter: string
-  category: string
-  client: string
-  location: string
-  lawyer: string
-  lawyerLoc: string
-  status: string
-  duration: string
-}
-
-const cases: CaseRow[] = [
+const cases = ref<CaseRow[]>([
   { id: '39635', date: 'Today', matter: 'Wrongful termination claim', category: 'Media Law', client: 'Adese Samson', location: 'Oyo', lawyer: 'Ebubechukwu Agnes', lawyerLoc: 'Cross River', status: 'Active', duration: '9 Days' },
   { id: '43178', date: 'Today', matter: 'Child custody dispute', category: 'Entertainment', client: 'Folasayo Ogunnaike', location: 'Lagos', lawyer: 'Folasayo Ogunnaike', lawyerLoc: 'Imo', status: 'Active', duration: '3 Days' },
   { id: '22739', date: 'Today', matter: 'Land title fraud recovery', category: 'Municipality/ panchayat etc', client: 'Ogunmodede Smart', location: 'Ogun', lawyer: 'Hameed Yusuf', lawyerLoc: 'Yobe', status: 'Stalled', duration: '7 Days' },
   { id: '22739', date: 'Today', matter: 'Business contract breach', category: 'Medical Malpractice /negligence', client: '-', location: 'Kebbi', lawyer: 'Boluwatife Olusola', lawyerLoc: 'Bauchi', status: 'Active', duration: '5 Days' },
   { id: '97174', date: 'Today', matter: 'Wrongful termination claim', category: 'Public Procurement', client: 'Ebubechukwu Agnes', location: 'Anambra', lawyer: 'Toluwani Bakare', lawyerLoc: 'Adamawa', status: 'Active', duration: '10 Days' },
   { id: '43756', date: 'Today', matter: 'Child custody dispute', category: 'Data Protection and Privacy', client: 'Femi Babalola', location: 'Niger', lawyer: 'Hannah Pedro', lawyerLoc: 'Zamfara', status: 'Pending', duration: '8 Days' },
-  { id: '22739', date: 'Today', matter: 'Women’s Rights', category: 'Technology Law', client: 'Hannah Pedro', location: 'Plateau', lawyer: 'Justina Ogbonnaya', lawyerLoc: 'Delta', status: 'Active', duration: '6 Days' },
+  { id: '22739', date: 'Today', matter: 'Women\'s Rights', category: 'Technology Law', client: 'Hannah Pedro', location: 'Plateau', lawyer: 'Justina Ogbonnaya', lawyerLoc: 'Delta', status: 'Active', duration: '6 Days' },
   { id: '97174', date: 'Today', matter: 'Land title fraud recovery', category: 'Trusts and Estates', client: 'Hameed Yusuf', location: 'Zamfara', lawyer: 'Esther Joel', lawyerLoc: 'Ekiti', status: 'Stalled', duration: '2 Days' },
   { id: '70668', date: 'Today', matter: 'Business contract breach', category: 'Antitrust Law', client: 'Justina Ogbonnaya', location: 'Katsina', lawyer: 'Emmanuel Amuneke', lawyerLoc: 'Ondo', status: 'Pending', duration: '1 Day' },
   { id: '22739', date: 'Today', matter: 'New user registered', category: 'Non- Litigation practice', client: 'Toluwani Bakare', location: 'Gombe', lawyer: 'Daniel Samuel', lawyerLoc: 'Sokoto', status: 'Completed', duration: '4 Days' }
-]
+])
 
 const columns = [
   { accessorKey: 'id', header: 'Case ID' },
@@ -96,28 +80,6 @@ const columns = [
 
 const isModalOpen = ref(false)
 const selectedCase = ref<CaseDetails | null>(null)
-
-// const viewCase = (row: any) => {
-//   selectedCase.value = {
-//     id: row.id,
-//     matter: row.matter,
-//     category: row.category.toUpperCase(),
-//     client: {
-//       name: row.client,
-//       location: row.location
-//     },
-//     lawyer: {
-//       name: row.lawyer,
-//       location: row.lawyerLoc
-//     },
-//     practiceArea: row.category,
-//     status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
-//     openedDate: '22 Mar 2026', // Mock fixed date
-//     timeElapsed: row.duration,
-//     lastActivity: 'Yesterday' // Mock fixed activity
-//   }
-//   isModalOpen.value = true
-// }
 
 const viewCase = (row: CaseRow) => {
   selectedCase.value = {
@@ -153,6 +115,20 @@ const getStatusColor = (status: string): string => {
 
 const activeFilter = ref('All')
 const filters = ['All', 'Stalled', 'Completed']
+
+const fetchCases = async () => {
+  await getCases()
+  // Map real API data when available
+}
+
+onMounted(async () => {
+  await fetchCases()
+  skeleton.value = false
+})
+
+// Silent background refresh every 60 seconds
+const { start } = useIntervalFetch(fetchCases, 60000)
+onMounted(() => start())
 </script>
 
 <template>
@@ -164,7 +140,7 @@ const filters = ['All', 'Stalled', 'Completed']
           Cases
         </h1>
         <p class="text-sm text-gray-500">
-          All active lawyer-client engagements •
+          All active lawyer-client engagements
         </p>
       </div>
       <UButton
@@ -183,162 +159,268 @@ const filters = ['All', 'Stalled', 'Completed']
       </UButton>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <SharedStatCard
-        v-for="stat in stats"
-        :key="stat.title"
-        v-bind="stat"
-      />
-    </div>
-
-    <!-- Table Section -->
-    <UCard class="overflow-hidden rounded-[18px] border-0 ring-0">
-      <!-- Filter Bar -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div class="flex-1 max-w-lg">
-          <UInput
-            icon="i-lucide-search"
-            placeholder="Search by name or email..."
-            class="w-full md:w-[367px]"
-            :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
-          />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <USelect
-            placeholder="All statuses"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-list-filter"
-            class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
-            :items="['All categories']"
-          />
-          <USelect
-            placeholder="All categories"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-list-filter"
-            class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
-            :items="['All categories']"
-          />
-
-          <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
-            <button
-              v-for="filter in filters"
-              :key="filter"
-              class="px-5 py-1.5 text-sm font-medium rounded-md transition-all"
-              :class="activeFilter === filter ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
-              @click="activeFilter = filter"
-            >
-              {{ filter }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Custom Table -->
-      <UTable
-        :data="cases"
-        :columns="columns"
-        :ui="{
-          base: 'divider-none border-none mt-4',
-          th: 'divider-none border-none! font-light!',
-          tr: 'divider-none border-none!',
-          thead: 'divider-none border-none bg-[#F9F9FB]',
-          separator: 'hidden'
-        }"
-      >
-        <template #id-cell="{ row }">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium text-gray-900">ID: {{ row.original.id }}</span>
-            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.date }}</span>
-          </div>
-        </template>
-
-        <template #matter-cell="{ row }">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium text-gray-900">{{ row.original.matter }}</span>
-            <span class="text-[12px] text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
-              {{ row.original.category }}
-            </span>
-          </div>
-        </template>
-
-        <template #client-cell="{ row }">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium text-gray-900">{{ row.original.client }}</span>
-            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.location }}</span>
-          </div>
-        </template>
-
-        <template #lawyer-cell="{ row }">
-          <div class="flex flex-col">
-            <span class="text-sm font-medium text-gray-900">{{ row.original.lawyer }}</span>
-            <span class="text-[12px] text-gray-400 font-medium">{{ row.original.lawyerLoc }}</span>
-          </div>
-        </template>
-
-        <template #status-cell="{ row }">
-          <UBadge
-            v-if="row.original.status"
-            :color="getStatusColor(row.original.status) as any"
-            variant="subtle"
-            class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
-          >
-            {{ row.original.status }}
-          </UBadge>
-        </template>
-
-        <template #duration-cell="{ row }">
-          <span class="text-sm font-medium text-gray-900">{{ row.original.duration }}</span>
-        </template>
-
-        <!-- Custom Actions Cell -->
-        <template #actions-cell="{ row }">
-          <UButton
-            label="View"
-            variant="outline"
-            color="neutral"
-            size="xs"
-            class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
-            @click="viewCase(row.original)"
-          />
-        </template>
-      </UTable>
-
-      <!-- Pagination Footer -->
-      <div class="px-6 py-5 border-t border-gray-100 flex items-center justify-between bg-gray-50/20">
-        <div class="text-xs text-gray-500">
-          Showing 1–10 of {{ cases.length }} cases
-        </div>
-        <UPagination
-          :model-value="1"
-          :total="10"
-          :items-per-page="10"
-          :first-icon="false"
-          class="gap-1"
+    <!-- Skeleton Loading -->
+    <template v-if="skeleton">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <UCard
+          v-for="i in 4"
+          :key="i"
+          class="rounded-[10px] border-0 ring-0"
         >
-          <template #first>
-            <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
-          </template>
-          <template #next>
-            <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
-              Next <UIcon name="iconoir:arrow-right" />
-            </UButton>
-          </template>
-          <template #prev>
-            <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
-              <UIcon name="iconoir:arrow-left" />
-              Prev
-            </UButton>
-          </template>
-          <template #last>
-            <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
-          </template>
-        </UPagination>
+          <div class="space-y-3">
+            <USkeleton class="h-4 w-2/3" />
+            <USkeleton class="h-7 w-1/3" />
+            <USkeleton class="h-3 w-1/2" />
+          </div>
+        </UCard>
       </div>
-    </UCard>
+      <UCard class="rounded-[18px] border-0 ring-0">
+        <div class="space-y-4">
+          <div
+            v-for="i in 6"
+            :key="i"
+            class="flex items-center gap-3"
+          >
+            <USkeleton class="w-10 h-10 rounded" />
+            <div class="flex-1 space-y-2">
+              <USkeleton class="h-4 w-3/4" />
+              <USkeleton class="h-3 w-1/2" />
+            </div>
+            <USkeleton class="h-6 w-16 rounded-full" />
+            <USkeleton class="h-8 w-16 rounded" />
+          </div>
+        </div>
+      </UCard>
+    </template>
+
+    <!-- Real Content -->
+    <template v-else>
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SharedStatCard
+          v-for="stat in stats"
+          :key="stat.title"
+          v-bind="stat"
+        />
+      </div>
+
+      <!-- Table Section -->
+      <UCard class="overflow-hidden rounded-[18px] border-0 ring-0">
+        <!-- Filter Bar -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="flex-1 max-w-lg">
+            <UInput
+              icon="i-lucide-search"
+              placeholder="Search by name or email..."
+              class="w-full md:w-[367px]"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
+            />
+          </div>
+
+          <div class="flex items-center gap-4">
+            <USelect
+              placeholder="All statuses"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-list-filter"
+              class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+              :items="['All categories']"
+            />
+            <USelect
+              placeholder="All categories"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-list-filter"
+              class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
+              :items="['All categories']"
+            />
+
+            <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
+              <button
+                v-for="filter in filters"
+                :key="filter"
+                class="px-5 py-1.5 text-sm font-medium rounded-md transition-all"
+                :class="activeFilter === filter ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+                @click="activeFilter = filter"
+              >
+                {{ filter }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <template v-if="cases.length === 0">
+          <SharedEmptyState
+            icon="i-lucide-file-text"
+            title="No cases found"
+            description="There are no cases to display right now."
+          />
+        </template>
+
+        <template v-else>
+          <!-- Desktop Table (xl and above) -->
+          <div class="hidden xl:block">
+            <UTable
+              :data="cases"
+              :columns="columns"
+              :ui="{
+                base: 'divider-none border-none mt-4',
+                th: 'divider-none border-none! font-light!',
+                tr: 'divider-none border-none!',
+                thead: 'divider-none border-none bg-[#F9F9FB]',
+                separator: 'hidden'
+              }"
+            >
+              <template #id-cell="{ row }">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-900">ID: {{ row.original.id }}</span>
+                  <span class="text-[12px] text-gray-400 font-medium">{{ row.original.date }}</span>
+                </div>
+              </template>
+
+              <template #matter-cell="{ row }">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-900">{{ row.original.matter }}</span>
+                  <span class="text-[12px] text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
+                    {{ row.original.category }}
+                  </span>
+                </div>
+              </template>
+
+              <template #client-cell="{ row }">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-900">{{ row.original.client }}</span>
+                  <span class="text-[12px] text-gray-400 font-medium">{{ row.original.location }}</span>
+                </div>
+              </template>
+
+              <template #lawyer-cell="{ row }">
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-900">{{ row.original.lawyer }}</span>
+                  <span class="text-[12px] text-gray-400 font-medium">{{ row.original.lawyerLoc }}</span>
+                </div>
+              </template>
+
+              <template #status-cell="{ row }">
+                <UBadge
+                  v-if="row.original.status"
+                  :color="getStatusColor(row.original.status) as any"
+                  variant="subtle"
+                  class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
+                >
+                  {{ row.original.status }}
+                </UBadge>
+              </template>
+
+              <template #duration-cell="{ row }">
+                <span class="text-sm font-medium text-gray-900">{{ row.original.duration }}</span>
+              </template>
+
+              <template #actions-cell="{ row }">
+                <UButton
+                  label="View"
+                  variant="outline"
+                  color="neutral"
+                  size="xs"
+                  class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
+                  @click="viewCase(row.original)"
+                />
+              </template>
+            </UTable>
+          </div>
+
+          <!-- Mobile/Tablet Card View (below xl) -->
+          <div class="xl:hidden space-y-3 mt-4">
+            <div
+              v-for="row in cases"
+              :key="row.id"
+              class="bg-white border border-gray-100 rounded-[12px] p-4 space-y-3"
+            >
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-[14px] font-semibold text-gray-900">
+                    {{ row.matter }}
+                  </p>
+                  <p class="text-[12px] text-gray-400">
+                    ID: {{ row.id }} &middot; {{ row.date }}
+                  </p>
+                </div>
+                <UBadge
+                  :color="getStatusColor(row.status) as any"
+                  variant="subtle"
+                  class="rounded-full px-2.5 h-[24px] text-[11px] font-medium shrink-0"
+                >
+                  {{ row.status }}
+                </UBadge>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-[13px]">
+                <div class="flex flex-col">
+                  <span class="text-gray-400 text-[12px]">Client</span>
+                  <span class="text-gray-700 font-medium">{{ row.client }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-gray-400 text-[12px]">Lawyer</span>
+                  <span class="text-gray-700 font-medium">{{ row.lawyer }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-gray-400 text-[12px]">Category</span>
+                  <span class="text-gray-700 font-medium truncate">{{ row.category }}</span>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-gray-400 text-[12px]">Duration</span>
+                  <span class="text-gray-700 font-medium">{{ row.duration }}</span>
+                </div>
+              </div>
+
+              <div class="pt-1">
+                <UButton
+                  label="View Details"
+                  variant="outline"
+                  color="neutral"
+                  size="xs"
+                  class="w-full justify-center font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] rounded-[6px] text-[13px]"
+                  @click="viewCase(row)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination Footer -->
+          <div class="px-6 py-5 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-4">
+            <div class="text-xs text-gray-500">
+              Showing 1–{{ cases.length }} of {{ cases.length }} cases
+            </div>
+            <UPagination
+              :model-value="1"
+              :total="10"
+              :items-per-page="10"
+              :first-icon="false"
+              class="gap-1"
+            >
+              <template #first>
+                <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+              </template>
+              <template #next>
+                <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+                  Next <UIcon name="iconoir:arrow-right" />
+                </UButton>
+              </template>
+              <template #prev>
+                <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
+                  <UIcon name="iconoir:arrow-left" />
+                  Prev
+                </UButton>
+              </template>
+              <template #last>
+                <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
+              </template>
+            </UPagination>
+          </div>
+        </template>
+      </UCard>
+    </template>
 
     <CaseDetailsModal
       v-model="isModalOpen"

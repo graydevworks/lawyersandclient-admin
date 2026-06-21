@@ -27,7 +27,8 @@ const navGroups = [
     label: 'SYSTEM',
     items: [
       { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
-      { label: 'Notifications', icon: 'i-lucide-bell', to: '/notifications' }
+      { label: 'Notifications', icon: 'i-lucide-bell', to: '/notifications' },
+      { label: 'Logs', icon: 'i-lucide-scroll-text', to: '/logs' }
     ]
   }
 ]

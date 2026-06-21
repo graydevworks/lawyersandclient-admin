@@ -36,7 +36,7 @@ const contentClasses = [
   'w-full',
   'max-h-[85vh] overflow-y-auto',
   // Desktop: reset to centered
-  'md:bottom-auto md:left-auto md:right-auto md:translate-x-[-50%] md:translate-y-[-50%]',
+  'md:bottom-auto md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%]',
   'md:top-1/2 md:w-auto'
 ].join(' ')
 </script>
@@ -46,27 +46,29 @@ const contentClasses = [
     v-model:open="isOpen"
     :ui="{ content: contentClasses }"
   >
-    <div class="bg-white">
-      <!-- Header -->
-      <div class="flex items-center justify-between px-6 pt-6 pb-2">
-        <h2 class="text-[20px] font-bold text-gray-900">
-          {{ title }}
-        </h2>
-        <UButton
-          v-if="showClose"
-          icon="i-lucide-x"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          class="rounded-full -mr-1"
-          @click="close"
-        />
-      </div>
+    <template #content>
+      <div class="bg-white">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 pt-6 pb-2">
+          <h2 class="text-[20px] font-bold text-gray-900">
+            {{ title }}
+          </h2>
+          <UButton
+            v-if="showClose"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            class="rounded-full -mr-1"
+            @click="close"
+          />
+        </div>
 
-      <!-- Content -->
-      <div class="px-6 pb-6">
-        <slot />
+        <!-- Content -->
+        <div class="px-6 pb-6">
+          <slot />
+        </div>
       </div>
-    </div>
+    </template>
   </UModal>
 </template>

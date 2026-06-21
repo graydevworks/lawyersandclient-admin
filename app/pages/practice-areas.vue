@@ -6,10 +6,21 @@ definePageMeta({ middleware: 'auth' })
 // --- Fetch practice areas on mount ---
 const { getPracticeArea } = usePracticeArea()
 
+const skeleton = ref(true)
+
+const fetchPracticeAreas = async () => {
+  await getPracticeArea()
+  // Map real API data when available
+}
+
 onMounted(async () => {
-  const result = await getPracticeArea()
-  console.log('[Practice Areas] API response:', result)
+  await fetchPracticeAreas()
+  skeleton.value = false
 })
+
+// Silent background refresh every 60 seconds
+const { start } = useIntervalFetch(fetchPracticeAreas, 60000)
+onMounted(() => start())
 
 const searchQuery = ref('')
 
@@ -69,35 +80,75 @@ const practiceAreas = ref([
     </div>
 
     <!-- Practice Areas Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div
-        v-for="area in practiceAreas"
-        :key="area.id"
-        class="bg-white rounded-2xl p-5 flex flex-col gap-[12.5px]"
-      >
-        <div class="flex items-start justify-between">
-          <h3 class="text-[14px] font-medium text-gray-900 pr-2">
-            {{ area.name }}
-          </h3>
-          <USwitch
-            v-model="area.active"
-            class="shrink-0"
-            :ui="{ base: 'bg-[#013355]! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
-          />
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-[14px] text-[#8A9BB1] font-normal">
-            {{ area.lawyers }} lawyers
-          </span>
-          <button class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors">
-            Delete
-          </button>
+    <!-- Skeleton Loading -->
+    <template v-if="skeleton">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <UCard
+          v-for="i in 8"
+          :key="i"
+          class="rounded-2xl border-0 ring-0"
+        >
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <USkeleton class="h-4 w-2/3" />
+              <USkeleton class="h-5 w-10 rounded-full" />
+            </div>
+            <div class="flex justify-between">
+              <USkeleton class="h-4 w-1/3" />
+              <USkeleton class="h-4 w-12" />
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </template>
+
+    <!-- Empty State -->
+    <template v-else-if="practiceAreas.length === 0">
+      <UCard class="rounded-[18px] border-0 ring-0">
+        <SharedEmptyState
+          icon="i-lucide-scale"
+          title="No practice areas"
+          description="There are no practice areas configured yet. Add one to get started."
+          action-label="Add Practice Area"
+          @action="isAddModalOpen = true"
+        />
+      </UCard>
+    </template>
+
+    <template v-else>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          v-for="area in practiceAreas"
+          :key="area.id"
+          class="bg-white rounded-2xl p-5 flex flex-col gap-[12.5px]"
+        >
+          <div class="flex items-start justify-between">
+            <h3 class="text-[14px] font-medium text-gray-900 pr-2">
+              {{ area.name }}
+            </h3>
+            <USwitch
+              v-model="area.active"
+              class="shrink-0"
+              :ui="{ base: 'bg-[#013355]! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] text-[#8A9BB1] font-normal">
+              {{ area.lawyers }} lawyers
+            </span>
+            <button class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors">
+              Delete
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between text-sm text-gray-500 pt-2">
+    <div
+      v-if="!skeleton && practiceAreas.length > 0"
+      class="flex items-center justify-between text-sm text-gray-500 pt-2"
+    >
       <span>Showing 1–10 of 20 practice areas</span>
       <div class="flex items-center gap-1.5">
         <UButton

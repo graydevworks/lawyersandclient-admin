@@ -6,9 +6,16 @@ definePageMeta({ middleware: 'auth' })
 // --- Fetch verification queue data on mount ---
 const { getVerificationQueue } = useVerification()
 
+const skeleton = ref(true)
+
+const fetchQueue = async () => {
+  await getVerificationQueue()
+  // Map real API data when available
+}
+
 onMounted(async () => {
-  const result = await getVerificationQueue()
-  console.log('[Verification Queue] API response:', result)
+  await fetchQueue()
+  skeleton.value = false
   checkScreen()
   window.addEventListener('resize', checkScreen)
 })
@@ -16,6 +23,10 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreen)
 })
+
+// Silent background refresh every 60 seconds
+const { start } = useIntervalFetch(fetchQueue, 60000)
+onMounted(() => start())
 
 const isMobile = ref(false)
 const showDetail = ref(false)
@@ -231,7 +242,32 @@ function backToList() {
           />
         </div>
 
-        <div class="flex-1 overflow-y-auto min-h-0">
+        <!-- Skeleton Loading -->
+        <div v-if="skeleton" class="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
+          <div
+            v-for="i in 6"
+            :key="i"
+            class="flex items-start gap-3"
+          >
+            <USkeleton class="w-10 h-10 rounded-full shrink-0" />
+            <div class="flex-1 space-y-2">
+              <USkeleton class="h-4 w-3/4" />
+              <USkeleton class="h-3 w-1/2" />
+              <USkeleton class="h-3 w-1/3" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="filteredSubmissions.length === 0" class="flex-1 overflow-y-auto min-h-0">
+          <SharedEmptyState
+            icon="i-lucide-clipboard-check"
+            title="No submissions"
+            description="There are no pending verifications in the queue."
+          />
+        </div>
+
+        <div v-else class="flex-1 overflow-y-auto min-h-0">
           <div
             v-for="sub in filteredSubmissions"
             :key="sub.id"

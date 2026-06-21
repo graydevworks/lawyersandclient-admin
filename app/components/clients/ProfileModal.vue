@@ -34,7 +34,7 @@ const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'active': return 'success'
     case 'suspended': return 'error'
-    case 'new': return 'primary'
+    case 'new': return 'secondary'
     default: return 'neutral'
   }
 }
