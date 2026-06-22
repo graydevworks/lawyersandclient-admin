@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
+import { formatRelativeDate } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -25,23 +26,17 @@ const columns = [
   { accessorKey: 'email', header: 'Contact' },
   { accessorKey: 'status', header: 'Verification' },
   { accessorKey: 'joined', header: 'Joined' },
-  { accessorKey: 'lastActive', header: 'Last active' },
+  { accessorKey: 'userCode', header: 'User Code' },
   { accessorKey: 'actions', header: 'Actions' }
 ]
 
 const cardFields = [
   { key: 'email', label: 'Email' },
   { key: 'joined', label: 'Joined' },
-  { key: 'lastActive', label: 'Last active' }
+  { key: 'userCode', label: 'User Code' }
 ]
 
-const lawyers = ref([
-  { id: 'LAW-01', name: 'Adaeze Okonkwo', email: 'adeze@example.com', status: 'Pending', joined: '24 May, 2020', lastActive: '2 min ago', avatar: 'https://i.pravatar.cc/150?u=1', responseRate: 80 },
-  { id: 'LAW-02', name: 'Emeka Nwachukwu', email: 'emeka@example.com', status: 'Rejected', joined: '1 Feb, 2020', lastActive: '1 hr ago', avatar: 'https://i.pravatar.cc/150?u=6', responseRate: 90 },
-  { id: 'LAW-03', name: 'Ngozi Amadi', email: 'ngozi@example.com', status: 'Verified', joined: '8 Sep, 2020', lastActive: '1s ago', avatar: 'https://i.pravatar.cc/150?u=8', responseRate: 70 },
-  { id: 'LAW-04', name: 'Seun Olatunji', email: 'seun@example.com', status: 'Pending', joined: '22 Oct, 2020', lastActive: '30m ago', avatar: 'https://i.pravatar.cc/150?u=10', responseRate: 85 },
-  { id: 'LAW-05', name: 'Justina Ogbonnaya', email: 'justina@example.com', status: 'Pending', joined: '8 Sep, 2020', lastActive: '3h ago', avatar: 'https://i.pravatar.cc/150?u=11', responseRate: 95 }
-])
+const lawyers = ref([])
 
 const sortBy = ref<SelectItem[]>([
   {
@@ -70,6 +65,19 @@ const fetchLawyers = async () => {
       { title: 'Suspended Lawyers', value: statistics.suspended, trend: '', trendType: 'positive', trendSuffix: '' },
       { title: 'Rejected Lawyers', value: statistics.rejected, trend: '', trendType: 'positive', trendSuffix: '' }
     ]
+
+    // lawyer list
+
+    lawyers.value = lawyerList.lawyers.map((lawyer: any) => ({
+      id: lawyer.id,
+      name: lawyer.full_name,
+      email: lawyer.email,
+      status: lawyer.verification_status,
+      joined: lawyer.joined_at ? formatRelativeDate(lawyer.joined_at) : '',
+      userCode: lawyer.user_code,
+      avatar: lawyer.profile_photo_url,
+      responseRate: lawyer.average_rating
+    }))
   }
 }
 
@@ -185,6 +193,7 @@ onMounted(() => start())
             :data="lawyers"
             :card-fields="cardFields"
             link-prefix="/lawyers"
+            @view-profile="(e) => { $router.push(`/lawyers/${e.id}`) }"
           >
             <template #email-cell="{ row }">
               <span class="text-gray-600 font-medium">{{ (row.original as any).email }}</span>

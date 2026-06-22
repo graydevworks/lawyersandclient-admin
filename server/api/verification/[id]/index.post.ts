@@ -4,6 +4,8 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
+    const body = await readRawBody(event)
+
     const response = await $fetch(`${apiBase}/admin/verification-queue/${event.context.params?.id}/notes`, {
       method: 'POST',
       headers: {
@@ -15,7 +17,8 @@ export default defineEventHandler(async (event) => {
         'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
-      }
+      },
+      body
     })
 
     const responseData = response as Record<string, unknown>
@@ -35,7 +38,7 @@ export default defineEventHandler(async (event) => {
       const data = err.data as Record<string, unknown> | undefined
       message = (data?.message as string) || 'Failed to submit verification'
 
-      console.log(data)
+      // console.log(data)
     }
 
     return {

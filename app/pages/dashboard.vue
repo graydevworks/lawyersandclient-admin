@@ -94,11 +94,18 @@ const recentActivity = ref<{
 }[]>([])
 
 const verificationQueue = ref<{
+  id: string
   name: string
   specialty: string
   time: string
   avatar: string
 }[]>([])
+
+const router = useRouter()
+
+const viewQueueItem = (id: string) => {
+  router.push({ path: '/verification-queue', query: { id } })
+}
 
 const fetchDashboardData = async () => {
   const [result, queue] = await Promise.all([getDashboard(), getVerificationQueue()])
@@ -157,6 +164,7 @@ const fetchDashboardData = async () => {
 
   if (queue && queue.data && queue.data.data && queue.data.data.success) {
     verificationQueue.value = queue.data.data.data.submissions.map((item: any) => ({
+      id: String(item.id),
       name: item.full_name,
       specialty: item.email,
       time: item.submitted_at ? formatRelativeDate(item.submitted_at) : '',
@@ -447,6 +455,7 @@ onMounted(() => start())
                     variant="outline"
                     color="neutral"
                     class="py-[9px] px-[12px] text-[12px]"
+                    @click="viewQueueItem(item.id)"
                   />
                 </div>
               </div>
