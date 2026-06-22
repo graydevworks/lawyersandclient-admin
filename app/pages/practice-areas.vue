@@ -9,8 +9,19 @@ const { getPracticeArea } = usePracticeArea()
 const skeleton = ref(true)
 
 const fetchPracticeAreas = async () => {
-  await getPracticeArea()
+  const result = await getPracticeArea()
   // Map real API data when available
+  console.log(result, 'result')
+  if (result && result.data && result.data.data && result.data.data.success) {
+    console.log(result.data.data.data, 'data')
+
+    practiceAreas.value = result.data.data.data.map((area: any) => ({
+      id: area.id,
+      name: area.name,
+      lawyers: area.lawyers_count,
+      active: area.is_active
+    }))
+  }
 }
 
 onMounted(async () => {
@@ -36,24 +47,12 @@ const handleSavePracticeArea = (name: string) => {
   isSuccessModalOpen.value = true
 }
 
-const practiceAreas = ref([
-  { id: 1, name: 'Litigation & Disputes', lawyers: 186, active: true },
-  { id: 2, name: 'Criminal & Traffic', lawyers: 186, active: true },
-  { id: 3, name: 'Intellectual Property', lawyers: 186, active: true },
-  { id: 4, name: 'Practice Management', lawyers: 186, active: true },
-  { id: 5, name: 'Estate Planning', lawyers: 186, active: true },
-  { id: 6, name: 'Immigration', lawyers: 186, active: true },
-  { id: 7, name: 'Family', lawyers: 186, active: true },
-  { id: 8, name: 'Insolvency', lawyers: 186, active: true },
-  { id: 9, name: 'Agency', lawyers: 186, active: true },
-  { id: 10, name: 'Environment & Planning', lawyers: 186, active: true },
-  { id: 11, name: 'Employment Law', lawyers: 186, active: true },
-  { id: 12, name: 'Insolvency', lawyers: 186, active: true },
-  { id: 13, name: 'Personal Injury & workers', lawyers: 186, active: true },
-  { id: 14, name: 'Agency', lawyers: 186, active: true },
-  { id: 15, name: 'Commercial Law', lawyers: 186, active: true },
-  { id: 16, name: 'Conveyancing', lawyers: 186, active: true }
-])
+const practiceAreas = ref<{
+  id: number
+  name: string
+  lawyers: number
+  active: boolean
+}[]>([])
 </script>
 
 <template>

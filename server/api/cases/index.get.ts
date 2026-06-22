@@ -20,6 +20,8 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    console.log(response)
+
     const responseData = response as Record<string, unknown>
 
     return {
@@ -36,6 +38,8 @@ export default defineEventHandler(async (event) => {
       statusCode = (err.statusCode as number) || (err.status as number) || 401
       const data = err.data as Record<string, unknown> | undefined
       message = (data?.message as string) || 'Failed to fetch cases'
+
+      console.log(data)
     }
 
     return {

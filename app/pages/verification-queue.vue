@@ -295,7 +295,7 @@ onMounted(async () => {
   // Select from query param or auto-select first
   const queryId = route.query.id as string
   if (queryId) {
-    const found = submissions.value.find(s => s.id === queryId)
+    const found = submissions.value.find(s => s.id == queryId)
     if (found) {
       selectedSubmission.value = found
       fetchDetail(found.id)
