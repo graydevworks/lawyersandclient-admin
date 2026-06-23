@@ -44,6 +44,10 @@ const clients = ref<{
 }[]>([])
 
 const searchQuery = ref('')
+const currentPage = ref(1)
+const perPage = ref(10)
+const totalItems = ref(0)
+const totalPages = ref(1)
 
 interface ClientRow {
   id: string
@@ -72,12 +76,17 @@ const handleViewProfile = (client: ClientRow) => {
   isProfileModalOpen.value = true
 }
 
-const fetchClients = async () => {
-  const result = await getClients()
+const fetchClients = async (page: number = 1) => {
+  const result = await getClients({ page, per_page: perPage.value })
 
   if (result && result.data && result.data.data && result.data.data.success) {
     const clientList = result.data.data.data.clients
     const statistics = result.data.data.data.stats
+    const meta = result.data.data.meta
+
+    currentPage.value = meta.current_page || 1
+    totalItems.value = meta.total || 0
+    totalPages.value = meta.last_page || 1
 
     clients.value = clientList.map((client: any) => ({
       id: client.id,
@@ -100,13 +109,32 @@ const fetchClients = async () => {
   }
 }
 
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchClients(currentPage.value)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchClients(currentPage.value)
+  }
+}
+
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchClients(page)
+}
+
 onMounted(async () => {
   await fetchClients()
   skeleton.value = false
 })
 
 // Silent background refresh every 60 seconds
-const { start } = useIntervalFetch(fetchClients, 60000)
+const { start } = useIntervalFetch(() => fetchClients(currentPage.value), 60000)
 onMounted(() => {
   start()
 })
@@ -236,6 +264,50 @@ onMounted(() => {
           description="There are no clients to display right now."
         />
       </UCard>
+
+      <!-- Pagination -->
+      <div
+        v-if="clients.length > 0"
+        class="flex items-center justify-between text-sm text-gray-500 pt-2"
+      >
+        <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} clients</span>
+        <div class="flex items-center gap-1.5">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-heroicons-arrow-left"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === 1"
+            @click="handlePrevPage"
+          >
+            Prev
+          </UButton>
+          <UButton
+            v-for="page in Math.min(5, totalPages)"
+            :key="page"
+            :variant="page === currentPage ? 'solid' : 'ghost'"
+            :color="page === currentPage ? 'primary' : 'neutral'"
+            size="sm"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+            :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-heroicons-arrow-right"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === totalPages"
+            @click="handleNextPage"
+          >
+            Next
+          </UButton>
+        </div>
+      </div>
     </template>
   </div>
 </template>

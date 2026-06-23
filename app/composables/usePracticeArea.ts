@@ -12,7 +12,7 @@ export const usePracticeArea = () => {
 
   let response: { status: number, message: string }
 
-  const getPracticeArea = async () => {
+  const getPracticeArea = async (params: Record<string, string | number | boolean | null | undefined> = {}) => {
     queryController.value?.abort()
     queryController.value = new AbortController()
 
@@ -20,7 +20,8 @@ export const usePracticeArea = () => {
     try {
       const data = await $fetch('/api/practice-area', {
         method: 'GET',
-        signal: queryController.value.signal
+        signal: queryController.value.signal,
+        query: params
       })
       return { success: true, data }
     } catch (error) {

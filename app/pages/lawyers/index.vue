@@ -48,14 +48,24 @@ const sortBy = ref<SelectItem[]>([
   'Date Joined'
 ])
 
-const fetchLawyers = async () => {
-  const result = await getLawyers()
+const currentPage = ref(1)
+const perPage = ref(10)
+const totalItems = ref(0)
+const totalPages = ref(1)
+
+const fetchLawyers = async (page: number = 1) => {
+  const result = await getLawyers({ page, per_page: perPage.value })
   // Map real API data when available
 
   console.log(result)
   if (result && result.data && result.data.lawyers && result.data.lawyers.data && result.data.lawyers.data.success) {
     const lawyerList = result.data.lawyers.data.data
     const statistics = result.data.lawyers.data.data.stats
+    const meta = result.data.lawyers.data.meta
+
+    currentPage.value = meta.current_page || 1
+    totalItems.value = meta.total || 0
+    totalPages.value = meta.last_page || 1
 
     console.log(lawyerList, statistics)
 
@@ -81,13 +91,32 @@ const fetchLawyers = async () => {
   }
 }
 
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchLawyers(currentPage.value)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchLawyers(currentPage.value)
+  }
+}
+
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchLawyers(page)
+}
+
 onMounted(async () => {
   await fetchLawyers()
   skeleton.value = false
 })
 
 // Silent background refresh every 60 seconds
-const { start } = useIntervalFetch(fetchLawyers, 60000)
+const { start } = useIntervalFetch(() => fetchLawyers(currentPage.value), 60000)
 onMounted(() => start())
 </script>
 
@@ -207,6 +236,50 @@ onMounted(() => start())
           description="There are no lawyers to display right now."
         />
       </UCard>
+
+      <!-- Pagination -->
+      <div
+        v-if="lawyers.length > 0"
+        class="flex items-center justify-between text-sm text-gray-500 pt-2"
+      >
+        <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} lawyers</span>
+        <div class="flex items-center gap-1.5">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-heroicons-arrow-left"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === 1"
+            @click="handlePrevPage"
+          >
+            Prev
+          </UButton>
+          <UButton
+            v-for="page in Math.min(5, totalPages)"
+            :key="page"
+            :variant="page === currentPage ? 'solid' : 'ghost'"
+            :color="page === currentPage ? 'primary' : 'neutral'"
+            size="sm"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+            :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-heroicons-arrow-right"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === totalPages"
+            @click="handleNextPage"
+          >
+            Next
+          </UButton>
+        </div>
+      </div>
     </template>
   </div>
 </template>

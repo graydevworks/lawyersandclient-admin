@@ -104,6 +104,15 @@ const cardFields = [
   { key: 'location', label: 'Location' }
 ]
 
+// Pagination state
+const clientsCurrentPage = ref(1)
+const lawyersCurrentPage = ref(1)
+const perPage = ref(10)
+const clientsTotalPages = ref(1)
+const lawyersTotalPages = ref(1)
+const clientsTotalItems = ref(0)
+const lawyersTotalItems = ref(0)
+
 // Filter rows by active tab
 const filteredRows = computed(() => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,6 +122,11 @@ const filteredRows = computed(() => {
     return role === 'client'
   })
 })
+
+// Get current page and total pages for active tab
+const currentPage = computed(() => activeTab.value === 'lawyers' ? lawyersCurrentPage.value : clientsCurrentPage.value)
+const totalPages = computed(() => activeTab.value === 'lawyers' ? lawyersTotalPages.value : clientsTotalPages.value)
+const totalItems = computed(() => activeTab.value === 'lawyers' ? lawyersTotalItems.value : clientsTotalItems.value)
 
 // Profile modal
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,13 +147,25 @@ const rows = ref([
   { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', role: 'client', status: 'new', joined: '8 Sep, 2020', location: 'Kwara', avatar: 'https://i.pravatar.cc/150?u=17' }
 ])
 
-const fetchUsers = async () => {
-  const result = await getUsers()
+const fetchUsers = async (page: number = 1) => {
+  const result = await getUsers({ page, per_page: perPage.value, role: activeTab.value })
   // Map real API data when available
 
   if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
     const userList = result.data.user.data.data
     const statistics = result.data.user.data.data.stats
+    const meta = result.data.user.data.meta
+
+    // Update pagination for current tab
+    if (activeTab.value === 'clients') {
+      clientsCurrentPage.value = meta.current_page || 1
+      clientsTotalItems.value = meta.total || 0
+      clientsTotalPages.value = meta.last_page || 1
+    } else {
+      lawyersCurrentPage.value = meta.current_page || 1
+      lawyersTotalItems.value = meta.total || 0
+      lawyersTotalPages.value = meta.last_page || 1
+    }
 
     stats.value = [
       { title: 'Total New Users', value: statistics.total_new_users.count, trend: statistics.total_new_users.change_pct, trendType: statistics.total_new_users.change_pct > -1 ? 'positive' : 'negative', trendSuffix: statistics.total_new_users.period },
@@ -188,13 +214,52 @@ const fetchUsers = async () => {
   }
 }
 
+const handleTabChange = (tab: 'clients' | 'lawyers') => {
+  activeTab.value = tab
+  const page = tab === 'lawyers' ? lawyersCurrentPage.value : clientsCurrentPage.value
+  fetchUsers(page)
+}
+
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    const newPage = currentPage.value - 1
+    if (activeTab.value === 'clients') {
+      clientsCurrentPage.value = newPage
+    } else {
+      lawyersCurrentPage.value = newPage
+    }
+    fetchUsers(newPage)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    const newPage = currentPage.value + 1
+    if (activeTab.value === 'clients') {
+      clientsCurrentPage.value = newPage
+    } else {
+      lawyersCurrentPage.value = newPage
+    }
+    fetchUsers(newPage)
+  }
+}
+
+const goToPage = (page: number) => {
+  if (activeTab.value === 'clients') {
+    clientsCurrentPage.value = page
+  } else {
+    lawyersCurrentPage.value = page
+  }
+  fetchUsers(page)
+}
+
 onMounted(async () => {
   await fetchUsers()
   skeleton.value = false
 })
 
 // Silent background refresh every 60 seconds
-const { start } = useIntervalFetch(fetchUsers, 60000)
+const { start } = useIntervalFetch(() => fetchUsers(currentPage.value), 60000)
 onMounted(() => start())
 </script>
 
@@ -302,10 +367,11 @@ onMounted(() => start())
         <template #header>
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <UTabs
-              v-model="activeTab"
+              :model-value="activeTab"
               :items="items"
               variant="link"
               :ui="{ content: 'hidden' }"
+              @update:model-value="handleTabChange"
             />
             <div class="flex items-center gap-4">
               <UInput
@@ -342,13 +408,57 @@ onMounted(() => start())
           :description="activeTab === 'lawyers' ? 'There are no new lawyers to display right now.' : 'There are no new clients to display right now.'"
         />
       </UCard>
+
+      <!-- Pagination -->
+      <div
+        v-if="filteredRows.length > 0"
+        class="flex items-center justify-between text-sm text-gray-500 pt-2"
+      >
+        <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} users</span>
+        <div class="flex items-center gap-1.5">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-heroicons-arrow-left"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === 1"
+            @click="handlePrevPage"
+          >
+            Prev
+          </UButton>
+          <UButton
+            v-for="page in Math.min(5, totalPages)"
+            :key="page"
+            :variant="page === currentPage ? 'solid' : 'ghost'"
+            :color="page === currentPage ? 'primary' : 'neutral'"
+            size="sm"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+            :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-heroicons-arrow-right"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === totalPages"
+            @click="handleNextPage"
+          >
+            Next
+          </UButton>
+        </div>
+      </div>
     </template>
 
     <!-- Profile Modal -->
     <NewUsersProfileModal
       v-model="showProfile"
       :user="selectedUser"
-      @action-complete="fetchUsers"
+      @action-complete="() => fetchUsers(currentPage)"
     />
   </div>
 </template>

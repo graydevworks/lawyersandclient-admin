@@ -15,6 +15,13 @@ const skeleton = ref(true)
 const detailLoading = ref(false)
 const pending = ref(0)
 const urgent = ref(0)
+const isLoadingMore = ref(false)
+const hasMoreSubmissions = ref(true)
+const currentPage = ref(1)
+const perPage = ref(15)
+const totalItems = ref(0)
+const totalPages = ref(1)
+const submissionsListRef = ref<HTMLElement | null>(null)
 
 interface Submission {
   id: string
@@ -76,19 +83,33 @@ const colorPool = [
 const getColor = (index: number) => colorPool[index % colorPool.length]!
 
 // --- Fetch Queue List ---
-const fetchQueue = async () => {
-  const result = await getVerificationQueue()
+const fetchQueue = async (page: number = 1, append: boolean = false) => {
+  const params: Record<string, any> = { page, per_page: perPage.value }
+  if (searchQuery.value) {
+    params.search = searchQuery.value
+  }
+
+  const result = await getVerificationQueue(params)
   if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
     const data = (result.data as any).data.data
     const submissionList = data.submissions || []
     const statistics = data.stats || {}
+    const meta = data.meta
+
+    // Update pagination metadata
+    if (meta) {
+      currentPage.value = meta.current_page || page
+      totalItems.value = meta.total || 0
+      totalPages.value = meta.last_page || 1
+      hasMoreSubmissions.value = currentPage.value < totalPages.value
+    }
 
     pending.value = statistics.pending || 0
     urgent.value = statistics.urgent || 0
 
     console.log('Submissions', submissionList)
 
-    submissions.value = submissionList.map((item: any) => ({
+    const mappedSubmissions = submissionList.map((item: any) => ({
       id: item.id,
       name: item.full_name,
       initials: (item.full_name[0] + ' ' + item.full_name[item.full_name.length - 1]).toUpperCase(),
@@ -100,6 +121,24 @@ const fetchQueue = async () => {
       priority: item.priority,
       avatar: item.profile_photo_url
     }))
+
+    // Append or replace submissions
+    if (append) {
+      submissions.value = [...submissions.value, ...mappedSubmissions]
+    } else {
+      submissions.value = mappedSubmissions
+    }
+  }
+}
+
+// --- Load more submissions (infinite scroll) ---
+const loadMoreSubmissions = async () => {
+  if (isLoadingMore.value || !hasMoreSubmissions.value) return
+  isLoadingMore.value = true
+  try {
+    await fetchQueue(currentPage.value + 1, true)
+  } finally {
+    isLoadingMore.value = false
   }
 }
 
@@ -292,6 +331,22 @@ onMounted(async () => {
   await fetchQueue()
   skeleton.value = false
 
+  // Setup infinite scroll listener
+  const setupInfiniteScroll = () => {
+    const listElement = submissionsListRef.value
+    if (listElement) {
+      listElement.addEventListener('scroll', () => {
+        const scrollPercentage = (listElement.scrollTop + listElement.clientHeight) / listElement.scrollHeight
+        if (scrollPercentage > 0.8) {
+          // User is near the bottom
+          loadMoreSubmissions()
+        }
+      })
+    }
+  }
+
+  setTimeout(setupInfiniteScroll, 100)
+
   // Select from query param or auto-select first
   const queryId = route.query.id as string
   if (queryId) {
@@ -309,6 +364,13 @@ onMounted(async () => {
     router.replace({ path: '/verification-queue', query: { id: submissions.value[0]!.id } })
     fetchDetail(submissions.value[0]!.id)
   }
+})
+
+// --- Watch search query to reset and refetch ---
+watch(searchQuery, () => {
+  currentPage.value = 1
+  hasMoreSubmissions.value = true
+  fetchQueue(1, false)
 })
 
 onUnmounted(() => {
@@ -395,6 +457,7 @@ onMounted(() => start())
 
         <div
           v-else
+          ref="submissionsListRef"
           class="flex-1 overflow-y-auto min-h-0"
         >
           <div
@@ -445,6 +508,18 @@ onMounted(() => start())
                 {{ sub.priority }}
               </UBadge>
             </div>
+          </div>
+
+          <!-- Loading indicator for infinite scroll -->
+          <div
+            v-if="isLoadingMore"
+            class="p-4 flex items-center justify-center"
+          >
+            <UProgress
+              :model-value="50"
+              :ui="{ progress: { rounded: 'rounded-full' } }"
+              class="h-1 w-8"
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { formatCompactNumber } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
@@ -7,6 +8,8 @@ definePageMeta({ middleware: 'auth' })
 const { getAnalytics } = useAnalytics()
 
 const skeleton = ref(true)
+
+const showDatePicker = ref(false)
 
 interface StatItem {
   id: number
@@ -33,7 +36,7 @@ const userGrowthSeries = ref([
   { name: 'Lawyers', data: [1100, 1400, 1800, 1700, 2100, 2400, 3100, 3800] }
 ])
 
-const userGrowthOptions = {
+const userGrowthOptions = ref({
   chart: { type: 'line', toolbar: { show: false } },
   colors: ['#003357', '#93E2FF'],
   stroke: { curve: 'smooth', width: 3 },
@@ -45,35 +48,94 @@ const userGrowthOptions = {
   },
   grid: { strokeDashArray: 4 },
   legend: { position: 'top', horizontalAlign: 'left' }
+})
+
+const dateRange = ref({ start: null as Date | null, end: null as Date | null })
+
+// Format dates for the date range
+const selectedDateFrom = computed({
+  get: () => dateRange.value.start ? dateRange.value.start.toISOString().split('T')[0] : '',
+  set: (val: string) => { dateRange.value.start = val ? new Date(val) : null }
+})
+
+const selectedDateTo = computed({
+  get: () => dateRange.value.end ? dateRange.value.end.toISOString().split('T')[0] : '',
+  set: (val: string) => { dateRange.value.end = val ? new Date(val) : null }
+})
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const formatChartDataByPeriod = (data: any[]): { categories: string[], clientData: number[], lawyerData: number[] } => {
+  if (!data || data.length === 0) {
+    return { categories: [], clientData: [], lawyerData: [] }
+  }
+
+  const clientData: number[] = []
+  const lawyerData: number[] = []
+  const categories: string[] = []
+
+  // Always show monthly data - aggregate by month
+  const monthlyData = new Map<string, { clients: number, lawyers: number, display: string }>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data.forEach((point: any) => {
+    const date = new Date(point.date)
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const monthName = new Date(date.getFullYear(), date.getMonth()).toLocaleString('default', { month: 'short' })
+
+    if (!monthlyData.has(monthKey)) {
+      monthlyData.set(monthKey, { clients: 0, lawyers: 0, display: monthName })
+    }
+    const existing = monthlyData.get(monthKey)!
+    existing.clients += point.clients
+    existing.lawyers += point.lawyers
+  })
+
+  // Sort by date and push to arrays
+  Array.from(monthlyData.entries())
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+    .forEach(([_key, value]) => {
+      categories.push(value.display)
+      clientData.push(value.clients)
+      lawyerData.push(value.lawyers)
+    })
+
+  return { categories, clientData, lawyerData }
 }
 
-const practiceAreaSeries = ref([54, 25, 12, 9])
-const practiceAreaOptions = {
+const practiceAreaSeries = ref([0, 0, 0, 0, 0])
+const practiceAreaData = ref<Array<{ name: string; pct: number; change?: number }>>([])
+const practiceAreaOptions = ref({
   chart: { type: 'donut' },
-  labels: ['Criminal', 'Family', 'Commercial', 'Other'],
-  colors: ['#60A5FA', '#34D399', '#FB923C', '#F87171'],
+  labels: [] as string[],
+  colors: ['#60A5FA', '#34D399', '#FB923C', '#F87171', '#1c1c1c'],
   legend: { show: false },
   plotOptions: {
     pie: {
       donut: {
         labels: {
           show: true,
-          total: { show: true, label: 'lawyers', formatter: () => '581' }
+          total: {
+            show: true,
+            label: 'lawyers',
+            formatter: () => {
+              const total = practiceAreaSeries.value.reduce((a, b) => a + b, 0)
+              return String(total) || '0'
+            }
+          }
         }
       }
     }
   }
-}
+})
 
 type ProgressColor = 'success' | 'primary' | 'neutral' | 'error' | 'info' | 'warning' | 'secondary'
 
-const categories = ref([
-  { label: 'Criminal law', value: 3812, color: 'success' as ProgressColor, total: 5000 },
-  { label: 'Family Law', value: 2640, color: 'primary' as ProgressColor, total: 5000 },
-  { label: 'Property Law', value: 1920, color: 'neutral' as ProgressColor, total: 5000 },
-  { label: 'Commercial Law', value: 1104, color: 'neutral' as ProgressColor, total: 5000 },
-  { label: 'Labor Law', value: 734, color: 'neutral' as ProgressColor, total: 5000 }
-])
+const categories = ref<{
+  label: string
+  value: number
+  color: ProgressColor
+  pct: number
+  total: number
+}[]>([])
 
 const experience = ref([
   { label: '40+ Years', value: 3812, color: 'primary' as ProgressColor, total: 5000 },
@@ -84,18 +146,92 @@ const experience = ref([
 ])
 
 const locations = ref([
-  { name: 'Lagos', clients: 2104, lawyers: 1104 },
-  { name: 'Abuja', clients: 2104, lawyers: 1104 },
-  { name: 'Port Harcourt', clients: 2104, lawyers: 1104 },
-  { name: 'Kano', clients: 2104, lawyers: 1104 },
-  { name: 'Ibadan', clients: 2104, lawyers: 1104 }
+  { name: 'Lagos', clients: 85, lawyers: 75, clientsTotal: 2104, lawyersTotal: 1104 },
+  { name: 'Abuja', clients: 72, lawyers: 68, clientsTotal: 2104, lawyersTotal: 1104 },
+  { name: 'Port Harcourt', clients: 68, lawyers: 62, clientsTotal: 2104, lawyersTotal: 1104 },
+  { name: 'Kano', clients: 55, lawyers: 48, clientsTotal: 2104, lawyersTotal: 1104 },
+  { name: 'Ibadan', clients: 60, lawyers: 52, clientsTotal: 2104, lawyersTotal: 1104 }
 ])
 
 const fetchAnalytics = async () => {
-  const result = await getAnalytics()
-  if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const params: Record<string, any> = {}
+
+  if (selectedDateFrom.value && selectedDateTo.value) {
+    params.date_from = selectedDateFrom.value
+    params.date_to = selectedDateTo.value
+  } else {
+    params.period = '30_days'
+  }
+
+  const result = await getAnalytics(params)
+
+  if (result && result.data && (result.data as any).data && (result.data as any).data.success) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const data = (result.data as any).data.data // eslint-disable-line @typescript-eslint/no-explicit-any
+    console.log(data, 'result')
     // Map real API data if available — for now the page uses static data
     // as the analytics API may not return all fields yet
+    stats.value = [
+      { id: 1, title: 'Total users', value: data.cards.total_users.count, trend: String(data.cards.total_users.change_pct), trendType: data.cards.total_users.change_pct > -1 ? 'positive' : 'negative', trendSuffix: `vs ${data.cards.total_users.count} last month`, sparklineData: [30, 40, 35, 50, 49, 60, 70, 91], color: '#013355', secondColor: '#8BCFFE', withChart: true },
+      //
+      { id: 2, title: 'Active users', value: data.cards.active_users.count, trend: String(data.cards.active_users.change_pct), trendType: data.cards.active_users.change_pct > -1 ? 'positive' : 'negative', trendSuffix: `${data.cards.active_users.count} of total base`, sparklineData: [20, 30, 25, 40, 39, 50, 60, 80], color: '#008236', secondColor: '#00823633', withChart: true },
+      //
+      { id: 3, title: 'Case acceptance rate', value: data.cards.case_acceptance_rate.value_pct + '%', trend: String(data.cards.case_acceptance_rate.change_pct), trendType: data.cards.case_acceptance_rate.change_pct > -1 ? 'positive' : 'negative', trendSuffix: `vs ${data.cards.case_acceptance_rate.value_pct} last period`, sparklineData: [10, 20, 15, 30, 29, 40, 50, 70], color: '#4A0155', secondColor: '#4A015533', withChart: true },
+      //
+      { id: 4, title: 'Lawyer-client match rate', value: data.cards.lawyer_client_match_rate.value_pct + '%', trend: String(data.cards.lawyer_client_match_rate.change_pct), trendType: data.cards.lawyer_client_match_rate.change_pct > -1 ? 'positive' : 'negative', trendSuffix: `vs ${data.cards.lawyer_client_match_rate.value_pct} last period`, sparklineData: [80, 70, 75, 60, 61, 50, 40, 30], color: '#FD9A00', secondColor: '#FD9A004D', withChart: true }
+    ]
+
+    // area chart
+    const clientList = []
+    const lawyerList = []
+    const dateList = []
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data.user_growth.points.forEach((point: any) => {
+      clientList.push(point.clients)
+      lawyerList.push(point.lawyers)
+      dateList.push(point.date)
+    })
+
+    // Format chart data - always group by monthly
+    const formatted = formatChartDataByPeriod(data.user_growth.points)
+
+    userGrowthSeries.value = [
+      { name: 'Clients', data: formatted.clientData },
+      { name: 'Lawyers', data: formatted.lawyerData }
+    ]
+
+    userGrowthOptions.value = {
+      ...userGrowthOptions.value,
+      xaxis: { categories: formatted.categories }
+    }
+
+    // practice area chart
+
+    practiceAreaSeries.value = []
+    practiceAreaOptions.value.labels = []
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data.practice_area_breakdown.items.forEach((area: any) => {
+      practiceAreaSeries.value.push(area.pct)
+      practiceAreaOptions.value.labels.push(area.name)
+    })
+
+    console.log(practiceAreaSeries.value, practiceAreaOptions.value.labels)
+
+    // categories
+    // data.case_categories_distribution.items.map((category: {
+    //   name: string
+    //   count: number
+    //   pct: number
+    //   total: number
+    // }) => ({
+    //   label: category.name,
+    //   value: category.count,
+    //   color: 'success' as ProgressColor,
+    //   pct: category.pct,
+    //   total: category.total
+    // }))
   }
 }
 
@@ -120,20 +256,6 @@ onMounted(() => start())
           Platform insights and trends
         </p>
       </div>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
     </div>
 
     <!-- Skeleton Loading -->
@@ -154,7 +276,7 @@ onMounted(() => start())
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <UCard class="lg:col-span-2">
           <USkeleton class="h-5 w-32 mb-4" />
-          <USkeleton class="h-[380px] w-full rounded-xl" />
+          <USkeleton class="h-95 w-full rounded-xl" />
         </UCard>
         <UCard>
           <USkeleton class="h-5 w-32 mb-4" />
@@ -182,18 +304,63 @@ onMounted(() => start())
               <h3 class="font-bold text-gray-900">
                 User growth
               </h3>
-              <USelect
-                :items="['Last 30 days']"
-                size="sm"
-                variant="outline"
-                class="w-32 rounded-[36px] text-[16px] py-[7px]"
-              />
+              <div class="flex items-center gap-2">
+                <UButton
+                  icon="i-lucide-calendar"
+                  color="primary"
+                  variant="outline"
+                  label="Select dates"
+                  @click="showDatePicker = !showDatePicker"
+                />
+                <UCard
+                  v-if="showDatePicker"
+                  class="absolute mt-2 z-10 w-60"
+                >
+                  <div class="p-4 space-y-4">
+                    <div class="space-y-2">
+                      <label class="text-xs font-medium text-gray-700">From</label>
+                      <UInput
+                        v-model="selectedDateFrom"
+                        type="date"
+                        size="sm"
+                      />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-medium text-gray-700">To</label>
+                      <UInput
+                        v-model="selectedDateTo"
+                        type="date"
+                        size="sm"
+                      />
+                    </div>
+                    <div class="flex gap-2">
+                      <UButton
+                        size="sm"
+                        color="primary"
+                        @click="fetchAnalytics(); showDatePicker = false"
+                      >
+                        Apply
+                      </UButton>
+                      <UButton
+                        v-if="selectedDateFrom && selectedDateTo"
+                        size="sm"
+                        color="neutral"
+                        variant="outline"
+                        @click="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics(); showDatePicker = false; }"
+                      >
+                        Clear
+                      </UButton>
+                    </div>
+                  </div>
+                </UCard>
+              </div>
             </div>
           </template>
-          <div class="w-full overflow-hidden">
+          <div class="w-full h-96 overflow-hidden rounded-md">
             <ClientOnly>
               <apexchart
                 type="line"
+                width="100%"
                 height="380"
                 :options="userGrowthOptions"
                 :series="userGrowthSeries"
@@ -212,23 +379,24 @@ onMounted(() => start())
             </p>
           </template>
           <div class="flex flex-col items-center">
-            <div class="h-48 w-full">
+            <div class="h-64 w-full">
               <ClientOnly>
                 <apexchart
                   type="donut"
+                  width="100%"
                   height="240"
                   :options="practiceAreaOptions"
                   :series="practiceAreaSeries"
                 />
               </ClientOnly>
             </div>
-            <div class="mt-4 w-full space-y-2 mt-20">
+            <div class="mt-20 w-full space-y-2">
               <div
                 v-for="(label, i) in practiceAreaOptions.labels"
                 :key="label"
                 class="flex items-center justify-between text-xs"
               >
-                <div class="flex h-[20px] items-center gap-2 font-medium text-gray-600">
+                <div class="flex h-5 items-center gap-2 font-medium text-gray-600">
                   <span
                     :style="{ backgroundColor: practiceAreaOptions.colors[i] }"
                     class="w-2 h-2 rounded-full"
@@ -307,7 +475,7 @@ onMounted(() => start())
               :items="['All']"
               size="sm"
               variant="outline"
-              class="w-20 rounded-[36px] text-[16px] py-[7px]"
+              class="w-20 rounded-[36px] text-[16px] py-1.75"
             />
           </div>
         </template>
@@ -320,18 +488,18 @@ onMounted(() => start())
             <div class="flex justify-between items-center text-xs font-bold">
               <span class="text-gray-900">{{ loc.name }}</span>
               <div class="flex gap-4">
-                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#003357] rounded-full" /> {{ formatCompactNumber(loc.clients) }} <span class="text-gray-400 font-medium">clients</span></span>
-                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#93E2FF] rounded-full" /> {{ formatCompactNumber(loc.lawyers) }} <span class="text-gray-400 font-medium">lawyers</span></span>
+                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#003357] rounded-full" /> {{ formatCompactNumber(loc.clientsTotal) }} <span class="text-gray-400 font-medium">clients</span></span>
+                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#93E2FF] rounded-full" /> {{ formatCompactNumber(loc.lawyersTotal) }} <span class="text-gray-400 font-medium">lawyers</span></span>
               </div>
             </div>
             <div class="space-y-1">
               <UProgress
-                v-model="loc.clients"
+                :model-value="loc.clients"
                 :max="100"
                 :ui="{ indicator: 'bg-[#0370BA]! h-1.5', base: 'h-1.5' }"
               />
               <UProgress
-                v-model="loc.lawyers"
+                :model-value="loc.lawyers"
                 :max="100"
                 color="primary"
                 :ui="{ indicator: 'bg-[#7DC9FD]! h-1.5', base: 'h-1.5' }"

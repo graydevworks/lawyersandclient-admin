@@ -4,16 +4,25 @@ import { ref } from 'vue'
 definePageMeta({ middleware: 'auth' })
 
 // --- Fetch practice areas on mount ---
-const { getPracticeArea } = usePracticeArea()
+const { getPracticeArea, createPracticeArea, deletePracticeArea, togglePracticeArea } = usePracticeArea()
 
 const skeleton = ref(true)
+const currentPage = ref(1)
+const perPage = ref(10)
+const totalItems = ref(0)
+const totalPages = ref(1)
 
-const fetchPracticeAreas = async () => {
-  const result = await getPracticeArea()
+const fetchPracticeAreas = async (page: number = 1) => {
+  const result = await getPracticeArea({ page, per_page: perPage.value })
   // Map real API data when available
   console.log(result, 'result')
   if (result && result.data && result.data.data && result.data.data.success) {
     console.log(result.data.data.data, 'data')
+
+    const meta = result.data.data.meta
+    currentPage.value = meta.current_page || 1
+    totalItems.value = meta.total || 0
+    totalPages.value = meta.last_page || 1
 
     practiceAreas.value = result.data.data.data.map((area: any) => ({
       id: area.id,
@@ -30,7 +39,7 @@ onMounted(async () => {
 })
 
 // Silent background refresh every 60 seconds
-const { start } = useIntervalFetch(fetchPracticeAreas, 60000)
+const { start } = useIntervalFetch(() => fetchPracticeAreas(currentPage.value), 60000)
 onMounted(() => start())
 
 const searchQuery = ref('')
@@ -39,12 +48,71 @@ const searchQuery = ref('')
 const isAddModalOpen = ref(false)
 const isSuccessModalOpen = ref(false)
 const lastAddedName = ref('')
+const isDeleteConfirmOpen = ref(false)
+const deleteItemId = ref<number | null>(null)
+const isToggleConfirmOpen = ref(false)
+const toggleItemId = ref<number | null>(null)
+const toggleItemState = ref(false)
 
-const handleSavePracticeArea = (name: string) => {
+const handleSavePracticeArea = async (name: string) => {
   console.log('[Practice Area] New area:', name)
-  lastAddedName.value = name
-  isAddModalOpen.value = false
-  isSuccessModalOpen.value = true
+  const result = await createPracticeArea({ name })
+  if (result.success) {
+    lastAddedName.value = name
+    isAddModalOpen.value = false
+    isSuccessModalOpen.value = true
+    await fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const handleDeleteClick = (id: number) => {
+  deleteItemId.value = id
+  isDeleteConfirmOpen.value = true
+}
+
+const confirmDelete = async () => {
+  if (deleteItemId.value === null) return
+  const result = await deletePracticeArea(deleteItemId.value)
+  if (result.success) {
+    isDeleteConfirmOpen.value = false
+    deleteItemId.value = null
+    await fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const handleToggleClick = (id: number, currentState: boolean) => {
+  toggleItemId.value = id
+  toggleItemState.value = !currentState
+  isToggleConfirmOpen.value = true
+}
+
+const confirmToggle = async () => {
+  if (toggleItemId.value === null) return
+  const result = await togglePracticeArea(toggleItemId.value, { is_active: toggleItemState.value })
+  if (result.success) {
+    isToggleConfirmOpen.value = false
+    toggleItemId.value = null
+    await fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchPracticeAreas(page)
 }
 
 const practiceAreas = ref<{
@@ -126,16 +194,17 @@ const practiceAreas = ref<{
               {{ area.name }}
             </h3>
             <USwitch
-              v-model="area.active"
+              :model-value="area.active"
               class="shrink-0"
               :ui="{ base: 'bg-[#013355]! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
+              @update:model-value="handleToggleClick(area.id, area.active)"
             />
           </div>
           <div class="flex items-center justify-between">
             <span class="text-[14px] text-[#8A9BB1] font-normal">
               {{ area.lawyers }} lawyers
             </span>
-            <button class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors">
+            <button class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors" @click="handleDeleteClick(area.id)">
               Delete
             </button>
           </div>
@@ -148,7 +217,7 @@ const practiceAreas = ref<{
       v-if="!skeleton && practiceAreas.length > 0"
       class="flex items-center justify-between text-sm text-gray-500 pt-2"
     >
-      <span>Showing 1–10 of 20 practice areas</span>
+      <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} practice areas</span>
       <div class="flex items-center gap-1.5">
         <UButton
           variant="ghost"
@@ -156,17 +225,20 @@ const practiceAreas = ref<{
           size="sm"
           icon="i-heroicons-arrow-left"
           class="font-medium text-gray-500"
+          :disabled="currentPage === 1"
+          @click="handlePrevPage"
         >
           Prev
         </UButton>
         <UButton
-          v-for="page in 5"
+          v-for="page in Math.min(5, totalPages)"
           :key="page"
-          :variant="page === 1 ? 'solid' : 'ghost'"
-          :color="page === 1 ? 'primary' : 'neutral'"
+          :variant="page === currentPage ? 'solid' : 'ghost'"
+          :color="page === currentPage ? 'primary' : 'neutral'"
           size="sm"
           class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
-          :class="page === 1 ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+          :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+          @click="goToPage(page)"
         >
           {{ page }}
         </UButton>
@@ -176,6 +248,8 @@ const practiceAreas = ref<{
           size="sm"
           trailing-icon="i-heroicons-arrow-right"
           class="font-medium text-gray-500"
+          :disabled="currentPage === totalPages"
+          @click="handleNextPage"
         >
           Next
         </UButton>
@@ -194,5 +268,87 @@ const practiceAreas = ref<{
       title="Practice area added successfully"
       :description="`'${lastAddedName}' has been added to your practice areas list.`"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model="isDeleteConfirmOpen">
+      <UCard class="rounded-xl">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Delete Practice Area
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isDeleteConfirmOpen = false"
+            />
+          </div>
+        </template>
+        <div class="space-y-4">
+          <p class="text-gray-600">
+            Are you sure you want to delete this practice area? This action cannot be undone.
+          </p>
+        </div>
+        <template #footer>
+          <div class="flex gap-3">
+            <UButton
+              color="gray"
+              @click="isDeleteConfirmOpen = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              color="red"
+              @click="confirmDelete"
+            >
+              Delete
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+
+    <!-- Toggle Confirmation Modal -->
+    <UModal v-model="isToggleConfirmOpen">
+      <UCard class="rounded-xl">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">
+              {{ toggleItemState ? 'Activate' : 'Deactivate' }} Practice Area
+            </h3>
+            <UButton
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-x-mark-20-solid"
+              class="-my-1"
+              @click="isToggleConfirmOpen = false"
+            />
+          </div>
+        </template>
+        <div class="space-y-4">
+          <p class="text-gray-600">
+            Are you sure you want to {{ toggleItemState ? 'activate' : 'deactivate' }} this practice area?
+          </p>
+        </div>
+        <template #footer>
+          <div class="flex gap-3">
+            <UButton
+              color="gray"
+              @click="isToggleConfirmOpen = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              :color="toggleItemState ? 'green' : 'orange'"
+              @click="confirmToggle"
+            >
+              {{ toggleItemState ? 'Activate' : 'Deactivate' }}
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </UModal>
   </div>
 </template>
