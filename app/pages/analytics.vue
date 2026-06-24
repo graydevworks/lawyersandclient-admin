@@ -102,23 +102,25 @@ const formatChartDataByPeriod = (data: any[]): { categories: string[], clientDat
 }
 
 const practiceAreaSeries = ref([0, 0, 0, 0, 0])
-const practiceAreaData = ref<Array<{ name: string; pct: number; change?: number }>>([])
-const practiceAreaOptions = ref({
-  chart: { type: 'donut' },
-  labels: [] as string[],
-  colors: ['#60A5FA', '#34D399', '#FB923C', '#F87171', '#1c1c1c'],
-  legend: { show: false },
-  plotOptions: {
-    pie: {
-      donut: {
-        labels: {
-          show: true,
-          total: {
+const practiceAreaOptions = computed(() => {
+  return {
+    chart: { type: 'donut' },
+    labels: [] as string[],
+    colors: ['#60A5FA', '#34D399', '#FB923C', '#F87171', '#1c1c1c'],
+    legend: { show: false },
+    plotOptions: {
+      pie: {
+        donut: {
+          labels: {
             show: true,
-            label: 'lawyers',
-            formatter: () => {
-              const total = practiceAreaSeries.value.reduce((a, b) => a + b, 0)
-              return String(total) || '0'
+            total: {
+              show: true,
+              label: 'lawyers',
+
+              formatter: () => {
+                const total = practiceAreaSeries.value.reduce((a, b) => a + b, 0)
+                return String(total) || '0'
+              }
             }
           }
         }
@@ -137,21 +139,20 @@ const categories = ref<{
   total: number
 }[]>([])
 
-const experience = ref([
-  { label: '40+ Years', value: 3812, color: 'primary' as ProgressColor, total: 5000 },
-  { label: '35-39', value: 2640, color: 'primary' as ProgressColor, total: 5000 },
-  { label: '25-34', value: 1920, color: 'primary' as ProgressColor, total: 5000 },
-  { label: '15-24', value: 1104, color: 'neutral' as ProgressColor, total: 5000 },
-  { label: '10-14', value: 734, color: 'neutral' as ProgressColor, total: 5000 }
-])
+const experience = ref<{
+  label: string
+  value: number
+  color: ProgressColor
+  total: number
+}[]>([])
 
-const locations = ref([
-  { name: 'Lagos', clients: 85, lawyers: 75, clientsTotal: 2104, lawyersTotal: 1104 },
-  { name: 'Abuja', clients: 72, lawyers: 68, clientsTotal: 2104, lawyersTotal: 1104 },
-  { name: 'Port Harcourt', clients: 68, lawyers: 62, clientsTotal: 2104, lawyersTotal: 1104 },
-  { name: 'Kano', clients: 55, lawyers: 48, clientsTotal: 2104, lawyersTotal: 1104 },
-  { name: 'Ibadan', clients: 60, lawyers: 52, clientsTotal: 2104, lawyersTotal: 1104 }
-])
+const locations = ref<{
+  name: string
+  clients: number
+  lawyers: number
+  clientsTotal: number
+  lawyersTotal: number
+}[]>([])
 
 const fetchAnalytics = async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,18 +221,46 @@ const fetchAnalytics = async () => {
     console.log(practiceAreaSeries.value, practiceAreaOptions.value.labels)
 
     // categories
-    // data.case_categories_distribution.items.map((category: {
-    //   name: string
-    //   count: number
-    //   pct: number
-    //   total: number
-    // }) => ({
-    //   label: category.name,
-    //   value: category.count,
-    //   color: 'success' as ProgressColor,
-    //   pct: category.pct,
-    //   total: category.total
-    // }))
+    categories.value = data.case_categories_distribution.items.map((category: {
+      name: string
+      count: number
+      pct: number
+      total: number
+    }) => ({
+      label: category.name,
+      value: category.count,
+      color: 'success' as ProgressColor,
+      pct: category.pct,
+      total: category.total || 100
+    }))
+
+    // experience
+    experience.value = data.lawyer_experience_distribution.items.map((exp: {
+      label: string
+      count: number
+      pct: number
+    }) => ({
+      label: exp.label,
+      value: exp.count,
+      color: 'success' as ProgressColor,
+      pct: exp.pct || 100
+    }))
+
+    // location
+
+    locations.value = data.locations.items.map((exp: {
+      name: string
+      clients: number
+      lawyers: number
+      total: number
+    }) => ({
+      name: exp.name,
+      clients: exp.clients,
+      lawyers: exp.lawyers,
+      clientsTotal: exp.clients,
+      lawyersTotal: exp.lawyers,
+      total: exp.total
+    }))
   }
 }
 
