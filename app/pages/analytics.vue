@@ -152,13 +152,41 @@ const locations = ref<{
   lawyers: number
   clientsTotal: number
   lawyersTotal: number
+  topLga: string
 }[]>([])
+
+const locationDateRange = ref({ start: null as Date | null, end: null as Date | null })
+const locationDateFrom = computed({
+  get: () => locationDateRange.value.start ? locationDateRange.value.start.toISOString().split('T')[0] : '',
+  set: (val: string) => { locationDateRange.value.start = val ? new Date(val) : null }
+})
+const locationDateTo = computed({
+  get: () => locationDateRange.value.end ? locationDateRange.value.end.toISOString().split('T')[0] : '',
+  set: (val: string) => { locationDateRange.value.end = val ? new Date(val) : null }
+})
+
+const locationsLoading = ref(false)
+
+const applyLocationsFilter = async () => {
+  if (locationDateFrom.value && !locationDateTo.value) return
+  if (locationDateTo.value && !locationDateFrom.value) return
+
+  locationsLoading.value = true
+  try {
+    await fetchAnalytics()
+  } finally {
+    locationsLoading.value = false
+  }
+}
 
 const fetchAnalytics = async () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const params: Record<string, any> = {}
 
-  if (selectedDateFrom.value && selectedDateTo.value) {
+  if (locationDateFrom.value && locationDateTo.value) {
+    params.date_from = locationDateFrom.value
+    params.date_to = locationDateTo.value
+  } else if (selectedDateFrom.value && selectedDateTo.value) {
     params.date_from = selectedDateFrom.value
     params.date_to = selectedDateTo.value
   } else {
@@ -242,7 +270,7 @@ const fetchAnalytics = async () => {
     }) => ({
       label: exp.label,
       value: exp.count,
-      color: 'success' as ProgressColor,
+      color: 'info' as ProgressColor,
       pct: exp.pct || 100
     }))
 
@@ -253,13 +281,18 @@ const fetchAnalytics = async () => {
       clients: number
       lawyers: number
       total: number
+      top_lgas: {
+        name: string
+        total: number
+      }[]
     }) => ({
       name: exp.name,
       clients: exp.clients,
       lawyers: exp.lawyers,
       clientsTotal: exp.clients,
       lawyersTotal: exp.lawyers,
-      total: exp.total
+      total: exp.total,
+      topLga: exp.top_lgas
     }))
   }
 }
@@ -496,16 +529,10 @@ onMounted(() => start())
       <!-- Locations -->
       <UCard>
         <template #header>
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h3 class="font-bold text-gray-900">
               Most active locations
             </h3>
-            <USelect
-              :items="['All']"
-              size="sm"
-              variant="outline"
-              class="w-20 rounded-[36px] text-[16px] py-1.75"
-            />
           </div>
         </template>
         <div class="space-y-8">
@@ -515,7 +542,22 @@ onMounted(() => start())
             class="space-y-3"
           >
             <div class="flex justify-between items-center text-xs font-bold">
-              <span class="text-gray-900">{{ loc.name }}</span>
+              <div>
+                <p class="text-gray-900">
+                  {{ loc.name }} <span class="text-gray-400 font-light">({{ loc.total }})</span>
+                </p>
+                <div class="flex flex-wrap gap-3 mt-1">
+                  <div
+                    v-for="(value, index) in loc.topLga"
+                    :key="index"
+                  >
+                    <span class="text-gray-900 font-normal">
+                      {{ value?.name }}
+                    </span>
+                    <span class="text-gray-400 font-light ml-[3px]">({{ value?.total }})</span>
+                  </div>
+                </div>
+              </div>
               <div class="flex gap-4">
                 <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#003357] rounded-full" /> {{ formatCompactNumber(loc.clientsTotal) }} <span class="text-gray-400 font-medium">clients</span></span>
                 <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#93E2FF] rounded-full" /> {{ formatCompactNumber(loc.lawyersTotal) }} <span class="text-gray-400 font-medium">lawyers</span></span>

@@ -50,7 +50,7 @@ export const useBanner = () => {
     }
   }
 
-  const reorderBanners = async (body: Record<string, unknown>) => {
+  const reorderBanners = async (body: FormData | Record<string, unknown>) => {
     updating.value = true
     try {
       const data = await $fetch('/api/banner/reorder', { method: 'POST', body })

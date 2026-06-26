@@ -1,11 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { z } from 'zod'
 
 definePageMeta({ middleware: 'auth' })
 
 const activeTab = ref('Security')
 const activeContentTab = ref('Featured lawyers')
 const showContentMenu = ref(false)
+const toast = useToast()
+const {
+  loading: bannersLoading,
+  updating: bannersUpdating,
+  getBanners,
+  createBanner,
+  updateBanner,
+  deleteBanner,
+  reorderBanners
+} = useBanner()
 
 const tabs = [
   { id: 'General', label: 'General', icon: 'i-lucide-settings' },
@@ -42,11 +53,250 @@ const featuredLawyers = [
   { id: 8, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false }
 ]
 
-const appBanners = [
-  { id: 1, title: 'Find your lawyer today', subtitle: 'Verified legal professionals across Nigeria', link: 'https://lawyersclients.ng/search', status: 'Live' },
-  { id: 2, title: 'Family law made simple', subtitle: 'Trusted advice for custody, divorce & more', link: 'https://lawyersclients.ng/family-law', status: 'Live' },
-  { id: 3, title: 'New on the platform', subtitle: 'Commercial lawyers now available in Abuja', link: 'https://lawyersclients.ng/commercial', status: 'Hidden' }
-]
+type BannerStatus = 'active' | 'inactive'
+
+type AppBanner = {
+  id: number
+  title: string
+  subtitle: string
+  link: string
+  status: BannerStatus
+  image?: string
+}
+
+const bannerSchema = z.object({
+  image: z.instanceof(File).optional(),
+  title: z.string().trim().optional(),
+  subtitle: z.string().trim().optional(),
+  link: z.string().trim().optional(),
+  status: z.enum(['active', 'inactive'])
+})
+
+const appBanners = ref<AppBanner[]>([])
+const isBannerModalOpen = ref(false)
+const editingBanner = ref<AppBanner | null>(null)
+const bannerForm = reactive<{
+  image: File | null
+  title: string
+  subtitle: string
+  link: string
+  status: BannerStatus
+}>({
+  image: null,
+  title: '',
+  subtitle: '',
+  link: '',
+  status: 'active'
+})
+const bannerFileInputKey = ref(0)
+const bannerFormError = ref('')
+const draggingBannerIndex = ref<number | null>(null)
+
+const activeBannerCount = computed(() => appBanners.value.filter(banner => banner.status === 'active').length)
+const bannerModalTitle = computed(() => editingBanner.value ? 'Edit banner' : 'Add banner')
+const bannerStatusOptions = ['active', 'inactive']
+
+const responseSucceeded = (result: any) => {
+  const status = Number(result?.data?.status ?? result?.data?.data?.status ?? 200)
+  return Boolean(result?.success) && status >= 200 && status < 400
+}
+
+const responseMessage = (result: any, fallback: string) => {
+  return (result?.data as { message?: string } | undefined)?.message || fallback
+}
+
+const extractBannerList = (response: any): any[] => {
+  const payload = response?.data?.data?.data ?? response?.data?.data ?? response?.data ?? response
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.banners)) return payload.banners
+  return []
+}
+
+const normalizeBannerStatus = (status: unknown): BannerStatus => {
+  if (status === true || status === 1 || String(status).toLowerCase() === 'active' || String(status).toLowerCase() === 'live') {
+    return 'active'
+  }
+
+  return 'inactive'
+}
+
+const normalizeBanner = (banner: any): AppBanner => ({
+  id: Number(banner.id),
+  title: banner.title || '',
+  subtitle: banner.subtitle || '',
+  link: banner.link || '',
+  status: normalizeBannerStatus(banner.status ?? banner.is_active),
+  image: banner.image || banner.image_url || banner.banner_image || banner.photo_url || ''
+})
+
+const fetchAppBanners = async () => {
+  const result = await getBanners()
+  console.log('[App banners] API response:', result)
+
+  if (responseSucceeded(result)) {
+    appBanners.value = extractBannerList(result).map(normalizeBanner).filter(banner => Number.isFinite(banner.id))
+  } else {
+    toast.add({
+      title: 'Could not load banners',
+      description: result?.data?.message || 'Please try again.',
+      color: 'error'
+    })
+  }
+}
+
+onMounted(fetchAppBanners)
+
+const resetBannerForm = () => {
+  bannerForm.image = null
+  bannerForm.title = ''
+  bannerForm.subtitle = ''
+  bannerForm.link = ''
+  bannerForm.status = 'active'
+  bannerFormError.value = ''
+  bannerFileInputKey.value++
+}
+
+const openCreateBannerModal = () => {
+  editingBanner.value = null
+  resetBannerForm()
+  isBannerModalOpen.value = true
+}
+
+const openEditBannerModal = (banner: AppBanner) => {
+  editingBanner.value = banner
+  bannerForm.image = null
+  bannerForm.title = banner.title
+  bannerForm.subtitle = banner.subtitle
+  bannerForm.link = banner.link
+  bannerForm.status = banner.status
+  bannerFormError.value = ''
+  bannerFileInputKey.value++
+  isBannerModalOpen.value = true
+}
+
+const closeBannerModal = () => {
+  isBannerModalOpen.value = false
+  editingBanner.value = null
+  resetBannerForm()
+}
+
+const handleBannerImageChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  bannerForm.image = input.files?.[0] || null
+}
+
+const buildBannerFormData = () => {
+  const formData = new FormData()
+  if (bannerForm.image) formData.append('image', bannerForm.image)
+  formData.append('title', bannerForm.title.trim())
+  formData.append('subtitle', bannerForm.subtitle.trim())
+  formData.append('link', bannerForm.link.trim())
+  formData.append('status', bannerForm.status)
+  return formData
+}
+
+const submitBannerForm = async () => {
+  const parsed = bannerSchema.safeParse({
+    image: bannerForm.image || undefined,
+    title: bannerForm.title,
+    subtitle: bannerForm.subtitle,
+    link: bannerForm.link,
+    status: bannerForm.status
+  })
+
+  if (!parsed.success) {
+    bannerFormError.value = parsed.error.issues[0]?.message || 'Please check the banner details.'
+    return
+  }
+
+  if (!editingBanner.value && !bannerForm.image) {
+    bannerFormError.value = 'Banner image is required.'
+    return
+  }
+
+  bannerFormError.value = ''
+  const result = editingBanner.value
+    ? await updateBanner(editingBanner.value.id, buildBannerFormData())
+    : await createBanner(buildBannerFormData())
+
+  if (!responseSucceeded(result)) {
+    bannerFormError.value = responseMessage(result, `Failed to ${editingBanner.value ? 'update' : 'create'} banner.`)
+    return
+  }
+
+  toast.add({
+    title: editingBanner.value ? 'Banner updated' : 'Banner created',
+    color: 'success'
+  })
+  closeBannerModal()
+  await fetchAppBanners()
+}
+
+const buildReorderFormData = () => {
+  const formData = new FormData()
+  appBanners.value.forEach((banner) => {
+    formData.append('banner_ids[]', String(banner.id))
+  })
+  return formData
+}
+
+const persistBannerOrder = async (previousOrder: AppBanner[]) => {
+  const result = await reorderBanners(buildReorderFormData())
+
+  if (!responseSucceeded(result)) {
+    appBanners.value = previousOrder
+    toast.add({
+      title: 'Reorder failed',
+      description: responseMessage(result, 'The previous banner order was restored.'),
+      color: 'error'
+    })
+    return
+  }
+
+  console.log('[App banners] reordered ids:', appBanners.value.map(banner => banner.id))
+}
+
+const moveBanner = async (fromIndex: number, toIndex: number) => {
+  if (fromIndex === toIndex || toIndex < 0 || toIndex >= appBanners.value.length || bannersUpdating.value) return
+
+  const previousOrder = [...appBanners.value]
+  const nextOrder = [...appBanners.value]
+  const [movedBanner] = nextOrder.splice(fromIndex, 1)
+  if (!movedBanner) return
+
+  nextOrder.splice(toIndex, 0, movedBanner)
+  appBanners.value = nextOrder
+  await persistBannerOrder(previousOrder)
+}
+
+const handleBannerDrop = async (toIndex: number) => {
+  if (draggingBannerIndex.value === null) return
+  const fromIndex = draggingBannerIndex.value
+  draggingBannerIndex.value = null
+  await moveBanner(fromIndex, toIndex)
+}
+
+const removeBanner = async (banner: AppBanner) => {
+  const previousBanners = [...appBanners.value]
+  appBanners.value = appBanners.value.filter(item => item.id !== banner.id)
+
+  const result = await deleteBanner(banner.id)
+  if (!responseSucceeded(result)) {
+    appBanners.value = previousBanners
+    toast.add({
+      title: 'Delete failed',
+      description: responseMessage(result, 'The banner was restored.'),
+      color: 'error'
+    })
+    return
+  }
+
+  toast.add({
+    title: 'Banner removed',
+    color: 'success'
+  })
+}
 
 const adminAccounts = [
   { name: 'Super Admin', email: 'admin@lawyersclient.ng', role: 'Super Admin', color: 'primary' as const },
@@ -393,108 +643,171 @@ const sessionTimeout = ref('30 minutes')
               v-if="activeContentTab === 'App banners'"
               class="p-6 md:p-8 space-y-6"
             >
-              <div class="flex items-start justify-between">
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <h2 class="text-lg font-bold text-gray-900">
                     App banners
                   </h2>
                   <p class="text-sm text-gray-400">
-                    Shown in the carousel at the top of the mobile app home screen · 2 of 3 active
+                    Shown in the carousel at the top of the mobile app home screen · {{ activeBannerCount }} of {{ appBanners.length }} active
                   </p>
                 </div>
+                <UButton
+                  icon="i-lucide-plus"
+                  class="bg-[#003357] hover:bg-[#004474] text-white rounded-lg px-4 font-bold"
+                  @click="openCreateBannerModal"
+                >
+                  Add banner
+                </UButton>
               </div>
 
               <div class="space-y-4">
                 <div
-                  v-for="(banner, idx) in appBanners"
-                  :key="banner.id"
-                  class="p-6 border border-gray-100 rounded-2xl flex flex-col md:flex-row gap-6 relative group overflow-hidden"
+                  v-if="bannersLoading"
+                  class="space-y-4"
                 >
-                  <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-200 group-hover:bg-[#003357] transition-colors" />
-
-                  <div class="w-full md:w-48 aspect-video bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400 gap-2 shrink-0">
-                    <UIcon
-                      name="i-lucide-image"
-                      class="w-8 h-8"
-                    />
-                    <span class="text-xs font-medium">Upload image</span>
-                  </div>
-
-                  <div class="flex-1 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                      <p class="text-sm font-medium text-gray-400">
-                        Title
-                      </p>
-                      <UInput
-                        v-model="banner.title"
-                        class="md:col-span-2 rounded-lg"
-                      />
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                      <p class="text-sm font-medium text-gray-400">
-                        Subtitle
-                      </p>
-                      <UInput
-                        v-model="banner.subtitle"
-                        class="md:col-span-2 rounded-lg"
-                      />
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                      <p class="text-sm font-medium text-gray-400">
-                        Link
-                      </p>
-                      <UInput
-                        v-model="banner.link"
-                        class="md:col-span-2 rounded-lg"
-                      />
-                    </div>
-
-                    <div class="flex items-center justify-between pt-2">
-                      <div class="flex items-center gap-3">
-                        <UToggle
-                          :model-value="banner.status === 'Live'"
-                          color="primary"
-                        />
-                        <span
-                          class="text-xs font-bold"
-                          :class="banner.status === 'Live' ? 'text-[#003357]' : 'text-gray-400'"
-                        >
-                          {{ banner.status }}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <UButton
-                          icon="i-lucide-arrow-up"
-                          size="xs"
-                          color="neutral"
-                          variant="ghost"
-                          class="border border-gray-200"
-                        />
-                        <UButton
-                          icon="i-lucide-arrow-down"
-                          size="xs"
-                          color="neutral"
-                          variant="ghost"
-                          class="border border-gray-200"
-                        />
-                        <UButton
-                          color="error"
-                          variant="subtle"
-                          size="sm"
-                          class="px-4 font-bold"
-                        >
-                          Remove
-                        </UButton>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="absolute top-4 left-4 w-6 h-6 rounded-full bg-black text-white text-[10px] flex items-center justify-center font-bold">
-                    {{ idx + 1 }}
-                  </div>
+                  <USkeleton
+                    v-for="i in 3"
+                    :key="i"
+                    class="h-44 w-full rounded-2xl"
+                  />
                 </div>
 
-                <button class="w-full py-6 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-all flex items-center justify-center gap-2 font-bold text-sm">
+                <div
+                  v-else-if="appBanners.length === 0"
+                  class="border border-dashed border-gray-200 rounded-2xl py-12"
+                >
+                  <SharedEmptyState
+                    icon="i-lucide-image"
+                    title="No app banners"
+                    description="Create the first app banner for the mobile app carousel."
+                    action-label="Add banner"
+                    @action="openCreateBannerModal"
+                  />
+                </div>
+
+                <template v-else>
+                  <div
+                    v-for="(banner, idx) in appBanners"
+                    :key="banner.id"
+                    class="p-6 border border-gray-100 rounded-2xl flex flex-col md:flex-row gap-6 relative group overflow-hidden bg-white transition-shadow"
+                    :class="draggingBannerIndex === idx ? 'opacity-60 shadow-lg' : 'hover:shadow-sm'"
+                    draggable="true"
+                    @dragstart="draggingBannerIndex = idx"
+                    @dragover.prevent
+                    @drop="handleBannerDrop(idx)"
+                    @dragend="draggingBannerIndex = null"
+                  >
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-200 group-hover:bg-[#003357] transition-colors" />
+
+                    <div class="w-full md:w-48 aspect-video bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400 gap-2 shrink-0 overflow-hidden">
+                      <img
+                        v-if="banner.image"
+                        :src="banner.image"
+                        :alt="banner.title || 'App banner'"
+                        class="w-full h-full object-cover"
+                      >
+                      <template v-else>
+                        <UIcon
+                          name="i-lucide-image"
+                          class="w-8 h-8"
+                        />
+                        <span class="text-xs font-medium">No image</span>
+                      </template>
+                    </div>
+
+                    <div class="flex-1 space-y-4">
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <p class="text-sm font-medium text-gray-400">
+                          Title
+                        </p>
+                        <p class="md:col-span-2 text-sm font-semibold text-gray-900">
+                          {{ banner.title || 'Untitled banner' }}
+                        </p>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <p class="text-sm font-medium text-gray-400">
+                          Subtitle
+                        </p>
+                        <p class="md:col-span-2 text-sm text-gray-600">
+                          {{ banner.subtitle || 'No subtitle' }}
+                        </p>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <p class="text-sm font-medium text-gray-400">
+                          Link
+                        </p>
+                        <p class="md:col-span-2 text-sm text-gray-600 break-all">
+                          {{ banner.link || 'No link' }}
+                        </p>
+                      </div>
+
+                      <div class="flex items-center justify-between pt-2">
+                        <div class="flex items-center gap-3">
+                          <UToggle
+                            :model-value="banner.status === 'active'"
+                            color="primary"
+                            disabled
+                          />
+                          <span
+                            class="text-xs font-bold"
+                            :class="banner.status === 'active' ? 'text-[#003357]' : 'text-gray-400'"
+                          >
+                            {{ banner.status === 'active' ? 'Active' : 'Inactive' }}
+                          </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <UButton
+                            icon="i-lucide-pencil"
+                            size="xs"
+                            color="neutral"
+                            variant="ghost"
+                            class="border border-gray-200"
+                            @click="openEditBannerModal(banner)"
+                          />
+                          <UButton
+                            icon="i-lucide-arrow-up"
+                            size="xs"
+                            color="neutral"
+                            variant="ghost"
+                            class="border border-gray-200"
+                            :disabled="idx === 0 || bannersUpdating"
+                            @click="moveBanner(idx, idx - 1)"
+                          />
+                          <UButton
+                            icon="i-lucide-arrow-down"
+                            size="xs"
+                            color="neutral"
+                            variant="ghost"
+                            class="border border-gray-200"
+                            :disabled="idx === appBanners.length - 1 || bannersUpdating"
+                            @click="moveBanner(idx, idx + 1)"
+                          />
+                          <UButton
+                            color="error"
+                            variant="subtle"
+                            size="sm"
+                            class="px-4 font-bold"
+                            :loading="bannersUpdating"
+                            @click="removeBanner(banner)"
+                          >
+                            Remove
+                          </UButton>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="absolute top-4 left-4 w-6 h-6 rounded-full bg-black text-white text-[10px] flex items-center justify-center font-bold">
+                      {{ idx + 1 }}
+                    </div>
+                  </div>
+                </template>
+
+                <button
+                  v-if="!bannersLoading && appBanners.length > 0"
+                  class="w-full py-6 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-all flex items-center justify-center gap-2 font-bold text-sm"
+                  @click="openCreateBannerModal"
+                >
                   <UIcon
                     name="i-lucide-plus"
                     class="w-5 h-5"
@@ -740,5 +1053,116 @@ const sessionTimeout = ref('30 minutes')
         </div>
       </div>
     </div>
+
+    <SharedBaseModal
+      v-model="isBannerModalOpen"
+      :title="bannerModalTitle"
+      max-width="max-w-[560px]"
+      @update:model-value="(open) => { if (!open) closeBannerModal() }"
+    >
+      <form
+        class="mt-4 space-y-5"
+        @submit.prevent="submitBannerForm"
+      >
+        <div class="space-y-2">
+          <label class="block text-[14px] font-medium text-gray-500">
+            Image
+          </label>
+          <UInput
+            :key="bannerFileInputKey"
+            type="file"
+            accept="image/*"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+            @change="handleBannerImageChange"
+          />
+          <p
+            v-if="editingBanner"
+            class="text-xs text-gray-400"
+          >
+            Leave empty to keep the current image.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[14px] font-medium text-gray-500">
+            Title
+          </label>
+          <UInput
+            v-model="bannerForm.title"
+            placeholder="e.g Find your lawyer today"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[14px] font-medium text-gray-500">
+            Subtitle
+          </label>
+          <UInput
+            v-model="bannerForm.subtitle"
+            placeholder="e.g Verified legal professionals across Nigeria"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[14px] font-medium text-gray-500">
+            Link
+          </label>
+          <UInput
+            v-model="bannerForm.link"
+            placeholder="https://lawyersclients.ng/search"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[14px] font-medium text-gray-500">
+            Status
+          </label>
+          <USelect
+            v-model="bannerForm.status"
+            :options="bannerStatusOptions"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+          />
+        </div>
+
+        <p
+          v-if="bannerFormError"
+          class="text-sm font-medium text-red-600"
+        >
+          {{ bannerFormError }}
+        </p>
+
+        <div class="flex items-center justify-end gap-3 pt-1">
+          <UButton
+            type="button"
+            variant="outline"
+            color="neutral"
+            class="border border-[#D1D5DB] text-gray-900 rounded-[8px] px-5 py-2.5 text-[14px] font-medium hover:bg-gray-50"
+            @click="closeBannerModal"
+          >
+            Cancel
+          </UButton>
+          <UButton
+            type="submit"
+            class="bg-[#003357] hover:bg-[#004474] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-medium"
+            :loading="bannersUpdating"
+          >
+            {{ editingBanner ? 'Save changes' : 'Create banner' }}
+          </UButton>
+        </div>
+      </form>
+    </SharedBaseModal>
   </div>
 </template>
