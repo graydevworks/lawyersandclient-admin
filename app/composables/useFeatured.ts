@@ -14,7 +14,7 @@ export const useFeatured = () => {
     }
   }
 
-  const updateFeaturedLawyers = async (body: Record<string, unknown>) => {
+  const updateFeaturedLawyers = async (body: FormData | Record<string, unknown>) => {
     updating.value = true
     try {
       const data = await $fetch('/api/featured', { method: 'PUT', body })

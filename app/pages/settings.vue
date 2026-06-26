@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
 
 definePageMeta({ middleware: 'auth' })
@@ -8,6 +8,7 @@ const activeTab = ref('Security')
 const activeContentTab = ref('Featured lawyers')
 const showContentMenu = ref(false)
 const toast = useToast()
+
 const {
   loading: bannersLoading,
   updating: bannersUpdating,
@@ -17,6 +18,40 @@ const {
   deleteBanner,
   reorderBanners
 } = useBanner()
+
+const {
+  loading: featuredLoading,
+  updating: featuredUpdating,
+  getFeaturedLawyers,
+  updateFeaturedLawyers,
+  searchFeaturedLawyers
+} = useFeatured()
+
+const { getWebAds } = useWebAd()
+
+const featuredSearchQ = ref('')
+let featuredSearchLimit = 6
+const selectedFeaturedIds = ref<number[]>([])
+const infoModalOpen = ref(false)
+const infoModalMessage = ref('')
+const maxFeatured = 6
+
+type FeaturedSearchResult = FeaturedLawyer & {
+  avatarUrl?: string
+  practiceArea?: string
+}
+
+const featuredSearchResults = ref<FeaturedSearchResult[]>([])
+const featuredDropdownOpen = ref(false)
+
+type FeaturedLawyer = {
+  id: number
+  name: string
+  practice: string
+  location: string
+}
+
+const featuredLawyers = ref<FeaturedLawyer[]>([])
 
 const tabs = [
   { id: 'General', label: 'General', icon: 'i-lucide-settings' },
@@ -42,16 +77,155 @@ const handleBackToSettings = () => {
   activeTab.value = 'General'
 }
 
-const featuredLawyers = [
-  { id: 1, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false },
-  { id: 2, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: true },
-  { id: 3, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: true },
-  { id: 4, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: true },
-  { id: 5, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false },
-  { id: 6, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false },
-  { id: 7, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false },
-  { id: 8, name: 'Adaeze Okonkwo', practice: 'Criminal Law', location: 'Lagos', selected: false }
-]
+const normalizeFeaturedLawyer = (lawyer: any): FeaturedLawyer => ({
+  id: Number(lawyer?.id),
+  name: lawyer?.name || lawyer?.full_name || lawyer?.fullName || '',
+  practice: lawyer?.practice || lawyer?.practice_area || lawyer?.practiceArea || '',
+  location: lawyer?.location || lawyer?.city || lawyer?.state || ''
+})
+
+const loadFeatured = async () => {
+  const result = await getFeaturedLawyers()
+  console.log('[Featured lawyers] API response:', result)
+
+  if (!result?.success) {
+    toast.add({
+      title: 'Could not load featured lawyers',
+      description: (result as any)?.error?.data?.message || 'Please try again.',
+      color: 'error'
+    })
+    return
+  }
+
+  // Observed response shape:
+  // {
+  //   status,
+  //   message,
+  //   data: {
+  //     success,
+  //     message,
+  //     data: { max, featured: [] }
+  //   }
+  // }
+  const outerData = (result as any)?.data
+  const innerData = outerData?.data?.data ?? outerData?.data ?? outerData
+
+  const featuredList: any[] = Array.isArray(innerData?.featured)
+    ? innerData.featured
+    : []
+
+
+  // When "featured" returns only featured lawyers, treat all returned as selected.
+  const normalized = featuredList.map(normalizeFeaturedLawyer).filter(l => Number.isFinite(l.id))
+  featuredLawyers.value = normalized
+  selectedFeaturedIds.value = normalized.map(l => l.id)
+
+  // Keep the UI constraint aligned with backend max (default 6).
+  const maxFromApi = Number(innerData?.max)
+  if (Number.isFinite(maxFromApi)) {
+    featuredSearchLimit = maxFromApi
+  }
+}
+
+const loadFeaturedSearch = async () => {
+  if (!featuredSearchQ.value?.trim()) {
+    featuredSearchResults.value = []
+    featuredDropdownOpen.value = false
+    return
+  }
+
+  const result = await searchFeaturedLawyers({
+    q: featuredSearchQ.value,
+    limit: featuredSearchLimit
+  })
+
+  if (!result?.success) {
+    toast.add({
+      title: 'Could not search featured lawyers',
+      description: (result as any)?.error?.data?.message || 'Please try again.',
+      color: 'error'
+    })
+    featuredSearchResults.value = []
+    featuredDropdownOpen.value = false
+    return
+  }
+
+  const outerData = (result as any)?.data
+  const innerData = outerData?.data?.data ?? outerData?.data ?? outerData
+
+  const featuredList: any[] = Array.isArray(innerData?.featured)
+    ? innerData.featured
+    : Array.isArray(innerData?.data?.featured)
+      ? innerData.data.featured
+      : Array.isArray(innerData?.lawyers)
+        ? innerData.lawyers
+        : []
+
+  featuredSearchResults.value = featuredList
+    .map((x: any) => {
+      const normalized = normalizeFeaturedLawyer(x)
+      return {
+        ...normalized,
+        avatarUrl: x?.profile_photo_url || x?.avatar || x?.image || x?.photo_url || '',
+        practiceArea: x?.practice || x?.practice_area || x?.practiceArea || normalized.practice
+      }
+    })
+    .filter(l => Number.isFinite(l.id))
+
+  featuredDropdownOpen.value = featuredSearchResults.value.length > 0
+}
+
+const showInfoModal = (message: string) => {
+  infoModalMessage.value = message
+  infoModalOpen.value = true
+}
+
+const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) => {
+  if (featuredUpdating.value) return
+
+  const alreadySelected = selectedFeaturedIds.value.includes(lawyerId)
+
+  if (nextSelected && !alreadySelected && selectedFeaturedIds.value.length >= maxFeatured) {
+    showInfoModal(`You cannot select more than ${maxFeatured} featured lawyers and return.`)
+    return
+  }
+
+  const nextIds = nextSelected
+    ? Array.from(new Set([...selectedFeaturedIds.value, lawyerId]))
+    : selectedFeaturedIds.value.filter(id => id !== lawyerId)
+
+  const formData = new FormData()
+  nextIds.forEach(id => formData.append('lawyer_ids[]', String(id)))
+
+  const result = await updateFeaturedLawyers(formData)
+  if (!result?.success) {
+    toast.add({
+      title: 'Update failed',
+      description: (result as any)?.error?.data?.message || 'Please try again.',
+      color: 'error'
+    })
+    return
+  }
+
+  selectedFeaturedIds.value = nextIds
+
+  // Refresh selected list after successful update so the grid stays accurate.
+  await loadFeatured()
+}
+
+const loadWebsiteAdsAndLog = async () => {
+  const result = await getWebAds()
+  console.log('[Website Ads] API response:', result)
+}
+
+watch(
+  () => activeContentTab.value,
+  async (tab) => {
+    if (tab === 'Featured lawyers') await loadFeatured()
+    if (tab === 'Website Ads') await loadWebsiteAdsAndLog()
+  },
+  { immediate: true }
+)
 
 type BannerStatus = 'active' | 'inactive'
 
@@ -439,21 +613,76 @@ const sessionTimeout = ref('30 minutes')
                 </p>
               </div>
 
-              <div class="flex items-center gap-3 max-w-xl">
-                <UInput
-                  icon="i-lucide-search"
-                  placeholder="Search lawyers by name or practice"
-                  class="flex-1"
-                  size="lg"
-                  :ui="{ base: 'rounded-lg' }"
-                />
-                <UButton
-                  color="primary"
-                  class="bg-[#003357] px-6"
-                  size="lg"
+              <div class="relative max-w-xl">
+                <div class="flex items-center gap-3">
+                  <UInput
+                    v-model="featuredSearchQ"
+                    icon="i-lucide-search"
+                    placeholder="Search lawyers by name or practice"
+                    class="flex-1"
+                    size="lg"
+                    :ui="{ base: 'rounded-lg' }"
+                    @keydown.enter="loadFeaturedSearch"
+                  />
+                  <UButton
+                    color="primary"
+                    class="bg-[#003357] px-6"
+                    size="lg"
+                    @click="loadFeaturedSearch"
+                  >
+                    Search
+                  </UButton>
+                </div>
+
+                <div
+                  v-if="featuredDropdownOpen"
+                  class="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  Search
-                </UButton>
+                  <div class="px-3 py-2 text-xs font-bold text-gray-400 border-b border-gray-100">
+                    Select up to {{ maxFeatured }}
+                  </div>
+
+                  <div class="max-h-64 overflow-auto">
+                    <button
+                      v-for="l in featuredSearchResults"
+                      :key="l.id"
+                      type="button"
+                      class="w-full text-left px-3 py-3 hover:bg-gray-50 flex items-center justify-between gap-3"
+                      @click.prevent="toggleFeaturedSelection(l.id, !selectedFeaturedIds.includes(l.id))"
+                    >
+                      <div class="flex items-center gap-3 min-w-0">
+                        <UAvatar
+                          size="md"
+                          :src="l.avatarUrl"
+                          class="bg-gray-100"
+                        />
+                        <div class="min-w-0">
+                          <div class="font-bold text-gray-900 text-sm truncate">
+                            {{ l.name }}
+                          </div>
+                          <div class="text-[11px] text-gray-400 truncate">
+                            {{ l.practiceArea }} · {{ l.location }}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="shrink-0">
+                        <UCheckbox
+                          :model-value="selectedFeaturedIds.includes(l.id)"
+                          color="primary"
+                          class="rounded-lg"
+                        />
+                      </div>
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="featuredSearchResults.length === 0"
+                    class="px-3 py-4 text-sm text-gray-500"
+                  >
+                    No results
+                  </div>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
@@ -461,7 +690,7 @@ const sessionTimeout = ref('30 minutes')
                   v-for="lawyer in featuredLawyers"
                   :key="lawyer.id"
                   class="p-4 border rounded-xl flex items-center justify-between transition-all"
-                  :class="lawyer.selected ? 'border-[#3B82F6] bg-blue-50/30' : 'border-gray-100 hover:border-gray-200'"
+                  :class="selectedFeaturedIds.includes(lawyer.id) ? 'border-[#3B82F6] bg-blue-50/30' : 'border-gray-100 hover:border-gray-200'"
                 >
                   <div class="flex items-center gap-3">
                     <UAvatar
@@ -477,19 +706,12 @@ const sessionTimeout = ref('30 minutes')
                       </p>
                     </div>
                   </div>
+
                   <UCheckbox
-                    v-if="lawyer.selected"
-                    :model-value="true"
+                    :model-value="selectedFeaturedIds.includes(lawyer.id)"
                     color="primary"
                     class="rounded-lg"
-                  />
-                  <UButton
-                    v-else
-                    icon="i-lucide-plus"
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    class="text-gray-300"
+                    @update:model-value="(val) => toggleFeaturedSelection(lawyer.id, val)"
                   />
                 </div>
               </div>
@@ -1163,6 +1385,28 @@ const sessionTimeout = ref('30 minutes')
           </UButton>
         </div>
       </form>
+    </SharedBaseModal>
+
+    <SharedBaseModal
+      v-model="infoModalOpen"
+      title="Info"
+      max-width="max-w-[520px]"
+      @update:model-value="(open) => { if (!open) infoModalMessage = '' }"
+    >
+      <div class="mt-4">
+        <p class="text-sm text-gray-700">
+          {{ infoModalMessage }}
+        </p>
+        <div class="flex justify-end pt-6">
+          <UButton
+            color="primary"
+            class="bg-[#003357] hover:bg-[#004474]"
+            @click="infoModalOpen = false"
+          >
+            OK
+          </UButton>
+        </div>
+      </div>
     </SharedBaseModal>
   </div>
 </template>
