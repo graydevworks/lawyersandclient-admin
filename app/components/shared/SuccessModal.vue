@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 /**
  * SuccessModal — green checkmark confirmation modal.
  * Matches the app's success feedback pattern.
@@ -19,6 +21,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits(['update:modelValue', 'complete'])
 
 const isOpen = computed({
+
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value)
 })
@@ -39,15 +42,16 @@ const contentClasses = [
   'fixed bottom-0 left-0 right-0 translate-x-0 translate-y-0',
   'w-full',
   'max-h-[85vh] overflow-y-auto',
-  'md:bottom-auto md:left-auto md:right-auto md:translate-x-[-50%] md:translate-y-[-50%]',
-  'md:top-1/2 md:w-auto'
+  'md:bottom-auto md:left-1/2 md:top-1/2 md:translate-x-[-50%] md:translate-y-[-50%]',
+  'md:w-auto'
+
 ].join(' ')
 </script>
 
 <template>
   <UModal
     v-model:open="isOpen"
-    :ui="{ content: contentClasses, overlay: 'z-[100]', backdrop: 'z-[100]' }"
+    :ui="{ content: contentClasses, overlay: 'z-[9999]', backdrop: 'z-[9998]' }"
   >
     <template #content>
       <div class="bg-white px-6 py-8 flex flex-col items-center text-center relative">

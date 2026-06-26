@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
+      // Forward multipart payload received from client
       body: formData
     })
 

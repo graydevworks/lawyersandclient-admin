@@ -3,8 +3,14 @@ import { formatRelativeDate, formatCompactNumber } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
+type DashboardQuery = {
+  from?: string
+  to?: string
+}
+
 // --- Fetch dashboard data on mount ---
 const { getDashboard } = useDashboard()
+
 const { getVerificationQueue } = useVerification()
 
 const skeleton = ref(true)
@@ -17,11 +23,43 @@ interface StatItem {
   trendSuffix?: string
 }
 
+const swap = (x: number, y: number) => {
+  const z: number = x
+  x = y
+  y = z
+
+  return [x, y]
+}
+
+console.log(swap(1, 2)) // Output: [2, 1]
+
 const stats = ref<StatItem[]>([])
 
-const filterDate = ref('This week')
+const fromDate = ref<string>('')
+const toDate = ref<string>('')
+
+const showSignupsDatePicker = ref(false)
+const signupsDateFrom = ref<string>('')
+const signupsDateTo = ref<string>('')
+
+const applySignupsFilter = async () => {
+  fromDate.value = signupsDateFrom.value
+  toDate.value = signupsDateTo.value
+  showSignupsDatePicker.value = false
+  await fetchDashboardData()
+}
+
+const clearSignupsFilter = async () => {
+  signupsDateFrom.value = ''
+  signupsDateTo.value = ''
+  fromDate.value = ''
+  toDate.value = ''
+  showSignupsDatePicker.value = false
+  await fetchDashboardData()
+}
 
 const signUpsSeries = ref([
+
   {
     name: 'Clients',
     data: [0, 0, 0, 0, 0, 0, 0, 0]
@@ -108,7 +146,13 @@ const viewQueueItem = (id: string) => {
 }
 
 const fetchDashboardData = async () => {
-  const [result, queue] = await Promise.all([getDashboard(), getVerificationQueue()])
+  const query: DashboardQuery = {
+    from: fromDate.value || undefined,
+    to: toDate.value || undefined
+  }
+
+  // Backend accepts query params; keep typing loose to avoid casting errors in UI.
+  const [result, queue] = await Promise.all([getDashboard(query), getVerificationQueue()])
 
   if (result && result.data && result.data.data && result.data.data.success) {
     // stats
@@ -120,7 +164,8 @@ const fetchDashboardData = async () => {
     ]
 
     // Recent Activity
-    recentActivity.value = result.data.data.data.activity.map((item: any) => ({
+    recentActivity.value = result.data.data.data.activity.map((item: { actor: string, label: string, time_ago?: string, avatar?: string }) => ({
+
       name: item.actor,
       action: item.label,
       timestamp: item.time_ago ? formatRelativeDate(item.time_ago) : '',
@@ -128,10 +173,10 @@ const fetchDashboardData = async () => {
     })).splice(0, 6)
 
     // Sign Ups
-    const lawyersSignups: any[] = []
-    const clientsSignups: any[] = []
+    const lawyersSignups: number[] = []
+    const clientsSignups: number[] = []
 
-    result.data.data.data.signups.forEach((item: any) => {
+    result.data.data.data.signups.forEach((item: { lawyers: number, clients: number }) => {
       lawyersSignups.push(item.lawyers)
       clientsSignups.push(item.clients)
     })
@@ -154,8 +199,9 @@ const fetchDashboardData = async () => {
     ]
 
     // online users
-    onlineNow.value = result.data.data.data.online_users.map((item: any) => ({
+    onlineNow.value = result.data.data.data.online_users.map((item: { name: string, role: string, profile_photo_url: string }) => ({
       name: item.name,
+
       role: item.role,
       avatar: item.profile_photo_url,
       time: 'online'
@@ -163,7 +209,8 @@ const fetchDashboardData = async () => {
   }
 
   if (queue && queue.data && queue.data.data && queue.data.data.success) {
-    verificationQueue.value = queue.data.data.data.submissions.map((item: any) => ({
+    verificationQueue.value = queue.data.data.data.submissions.map((item: { id: number, full_name: string, email: string, submitted_at?: string, profile_photo_url: string }) => ({
+
       id: String(item.id),
       name: item.full_name,
       specialty: item.email,
@@ -289,12 +336,62 @@ onMounted(() => start())
               Sign ups
             </h3>
             <div class="flex items-center gap-4">
-              <USelect
-                v-model="filterDate"
-                :items="['This week', 'Last week', 'Last month']"
-                variant="outline"
-                class="w-28 rounded-[36px] text-[16px] py-[7px]"
-              />
+              <div class="relative">
+                <UButton
+                  icon="i-lucide-calendar"
+                  color="neutral"
+                  variant="outline"
+                  class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] px-4 py-[7px] rounded-full"
+                  label="Select dates"
+                  @click="showSignupsDatePicker = !showSignupsDatePicker"
+                />
+
+                <UCard
+                  v-if="showSignupsDatePicker"
+                  class="absolute right-0 mt-2 z-20 w-64"
+                >
+                  <div class="p-4 space-y-4">
+                    <div class="space-y-2">
+                      <label class="text-xs font-medium text-gray-700">From</label>
+                      <UInput
+                        v-model="signupsDateFrom"
+                        type="date"
+                        size="sm"
+                        variant="outline"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-xs font-medium text-gray-700">To</label>
+                      <UInput
+                        v-model="signupsDateTo"
+                        type="date"
+                        size="sm"
+                        variant="outline"
+                      />
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <UButton
+                        size="sm"
+                        color="primary"
+                        @click="applySignupsFilter"
+                      >
+                        Apply
+                      </UButton>
+                      <UButton
+                        v-if="signupsDateFrom && signupsDateTo"
+                        size="sm"
+                        color="neutral"
+                        variant="outline"
+                        @click="clearSignupsFilter"
+                      >
+                        Clear
+                      </UButton>
+                    </div>
+                  </div>
+                </UCard>
+              </div>
             </div>
           </div>
           <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">

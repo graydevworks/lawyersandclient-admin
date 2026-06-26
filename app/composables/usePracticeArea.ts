@@ -144,9 +144,16 @@ export const usePracticeArea = () => {
     createPracticeArea: async (body: Record<string, unknown>) => {
       updating.value = true
       try {
+        const formData = new FormData()
+        // backend expects multipart/form-data (readFormData)
+        for (const [key, value] of Object.entries(body)) {
+          if (value === undefined || value === null) continue
+          formData.append(key, String(value))
+        }
+
         const data = await $fetch('/api/practice-area', {
           method: 'POST',
-          body
+          body: formData
         })
         return { success: true, data }
       } catch (error) {
@@ -185,9 +192,16 @@ export const usePracticeArea = () => {
     togglePracticeArea: async (id: string | number, body: Record<string, unknown> = {}) => {
       updating.value = true
       try {
+        const formData = new FormData()
+        const next = body?.is_active
+
+        // backend reads form-data; send is_active explicitly as 1/0
+        if (typeof next === 'boolean') formData.append('is_active', next ? '1' : '0')
+        else if (next !== undefined && next !== null) formData.append('is_active', String(next))
+
         const data = await $fetch(`/api/practice-area/${id}/toggle`, {
           method: 'PUT',
-          body
+          body: formData
         })
         return { success: true, data }
       } catch (error) {

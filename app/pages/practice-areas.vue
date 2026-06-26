@@ -24,7 +24,7 @@ const fetchPracticeAreas = async (page: number = 1) => {
     totalItems.value = meta.total || 0
     totalPages.value = meta.last_page || 1
 
-    practiceAreas.value = result.data.data.data.map((area: any) => ({
+    practiceAreas.value = result.data.data.data.map((area: { id: number, name: string, lawyers_count: number, is_active: boolean }) => ({
       id: area.id,
       name: area.name,
       lawyers: area.lawyers_count,
@@ -204,7 +204,10 @@ const practiceAreas = ref<{
             <span class="text-[14px] text-[#8A9BB1] font-normal">
               {{ area.lawyers }} lawyers
             </span>
-            <button class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors" @click="handleDeleteClick(area.id)">
+            <button
+              class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors"
+              @click="handleDeleteClick(area.id)"
+            >
               Delete
             </button>
           </div>

@@ -20,7 +20,8 @@ const {
 } = useBanner()
 
 const {
-  loading: featuredLoading,
+  loading: _featuredLoading,
+
   updating: featuredUpdating,
   getFeaturedLawyers,
   updateFeaturedLawyers,
@@ -43,6 +44,11 @@ type FeaturedSearchResult = FeaturedLawyer & {
 
 const featuredSearchResults = ref<FeaturedSearchResult[]>([])
 const featuredDropdownOpen = ref(false)
+
+const featuredWrapperRef = ref<HTMLElement | null>(null)
+
+
+
 
 type FeaturedLawyer = {
   id: number
@@ -114,7 +120,6 @@ const loadFeatured = async () => {
     ? innerData.featured
     : []
 
-
   // When "featured" returns only featured lawyers, treat all returned as selected.
   const normalized = featuredList.map(normalizeFeaturedLawyer).filter(l => Number.isFinite(l.id))
   featuredLawyers.value = normalized
@@ -128,11 +133,15 @@ const loadFeatured = async () => {
 }
 
 const loadFeaturedSearch = async () => {
+
   if (!featuredSearchQ.value?.trim()) {
     featuredSearchResults.value = []
     featuredDropdownOpen.value = false
     return
   }
+
+  // reopen dropdown after user types/searches again
+  featuredDropdownOpen.value = true
 
   const result = await searchFeaturedLawyers({
     q: featuredSearchQ.value,
@@ -182,6 +191,9 @@ const showInfoModal = (message: string) => {
 
 const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) => {
   if (featuredUpdating.value) return
+
+  // close dropdown after toggling; it will reopen only after new search input
+  featuredDropdownOpen.value = false
 
   const alreadySelected = selectedFeaturedIds.value.includes(lawyerId)
 
@@ -320,6 +332,29 @@ const fetchAppBanners = async () => {
 }
 
 onMounted(fetchAppBanners)
+
+// Click-outside: hide the dropdown when user clicks outside search area
+onMounted(() => {
+  if (!featuredWrapperRef.value) return
+
+  const handler = (e: MouseEvent) => {
+    if (!featuredDropdownOpen.value) return
+
+    const el = featuredWrapperRef.value
+    const target = e.target as Node | null
+    if (!el || !target) return
+
+    if (!el.contains(target)) {
+      featuredDropdownOpen.value = false
+    }
+  }
+
+  document.addEventListener('mousedown', handler)
+  return () => document.removeEventListener('mousedown', handler)
+})
+
+
+
 
 const resetBannerForm = () => {
   bannerForm.image = null

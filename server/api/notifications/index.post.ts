@@ -4,7 +4,9 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const formData = await readFormData(event)
+    const body = await readBody(event)
+
+    console.log(body, 'sbbsdkhjds')
 
     const response = await $fetch(`${apiBase}/admin/notifications`, {
       method: 'POST',
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
-      body: formData
+      body
     })
 
     const responseData = response as Record<string, unknown>
