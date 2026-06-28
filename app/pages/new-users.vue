@@ -147,14 +147,32 @@ const rows = ref([
   { id: 'VCST-09', name: 'Flores, Juanita', contact: 'giafly@hotmail.com', role: 'client', status: 'new', joined: '8 Sep, 2020', location: 'Kwara', avatar: 'https://i.pravatar.cc/150?u=17' }
 ])
 
+const searchQuery = ref('')
+const fromDate = ref('')
+const toDate = ref('')
+
+const { debounceSearch } = useSearch()
+
 const fetchUsers = async (page: number = 1) => {
-  const result = await getUsers({ page, per_page: perPage.value, role: activeTab.value })
+  const params: Record<string, string | number | undefined> = {
+    page,
+    per_page: perPage.value,
+    role: activeTab.value,
+    from: fromDate.value || undefined,
+    to: toDate.value || undefined
+  }
+
+  if (searchQuery.value.trim()) {
+    params.q = searchQuery.value.trim()
+  }
+
+  const result = await getUsers(params)
   // Map real API data when available
 
   if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
     const userList = result.data.user.data.data
     const statistics = result.data.user.data.data.stats
-    const meta = result.data.user.data.meta
+    const meta = result.data.user.data.data.users.meta
 
     // Update pagination for current tab
     if (activeTab.value === 'clients') {
@@ -258,6 +276,26 @@ onMounted(async () => {
   skeleton.value = false
 })
 
+watch(searchQuery, () => {
+  const page = 1
+  if (activeTab.value === 'clients') clientsCurrentPage.value = page
+  else lawyersCurrentPage.value = page
+  debounceSearch(() => fetchUsers(page))
+})
+
+const applyDateFilter = () => {
+  const page = 1
+  if (activeTab.value === 'clients') clientsCurrentPage.value = page
+  else lawyersCurrentPage.value = page
+  fetchUsers(page)
+}
+
+const clearDateFilter = () => {
+  fromDate.value = ''
+  toDate.value = ''
+  applyDateFilter()
+}
+
 // Silent background refresh every 60 seconds
 const { start } = useIntervalFetch(() => fetchUsers(currentPage.value), 60000)
 onMounted(() => start())
@@ -269,20 +307,13 @@ onMounted(() => start())
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         New Users
       </h1>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
+      <SharedDateRangePicker
+        v-model:from="fromDate"
+        v-model:to="toDate"
+        variant="header"
+        @apply="applyDateFilter"
+        @clear="clearDateFilter"
+      />
     </div>
 
     <!-- Skeleton Loading -->
@@ -375,6 +406,7 @@ onMounted(() => start())
             />
             <div class="flex items-center gap-4">
               <UInput
+                v-model="searchQuery"
                 icon="i-lucide-search"
                 placeholder="Search by name or email..."
                 class="w-full md:w-[367px]"

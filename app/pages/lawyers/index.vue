@@ -53,8 +53,16 @@ const perPage = ref(10)
 const totalItems = ref(0)
 const totalPages = ref(1)
 
+const fromDate = ref('')
+const toDate = ref('')
+
 const fetchLawyers = async (page: number = 1) => {
-  const result = await getLawyers({ page, per_page: perPage.value })
+  const result = await getLawyers({
+    page,
+    per_page: perPage.value,
+    from: fromDate.value || undefined,
+    to: toDate.value || undefined
+  })
   // Map real API data when available
 
   console.log(result)
@@ -115,6 +123,18 @@ onMounted(async () => {
   skeleton.value = false
 })
 
+const applyDateFilter = () => {
+  currentPage.value = 1
+  fetchLawyers(1)
+}
+
+const clearDateFilter = () => {
+  fromDate.value = ''
+  toDate.value = ''
+  currentPage.value = 1
+  fetchLawyers(1)
+}
+
 // Silent background refresh every 60 seconds
 const { start } = useIntervalFetch(() => fetchLawyers(currentPage.value), 60000)
 onMounted(() => start())
@@ -126,20 +146,13 @@ onMounted(() => start())
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Lawyers
       </h1>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
+      <SharedDateRangePicker
+        v-model:from="fromDate"
+        v-model:to="toDate"
+        variant="header"
+        @apply="applyDateFilter"
+        @clear="clearDateFilter"
+      />
     </div>
 
     <!-- Skeleton Loading -->

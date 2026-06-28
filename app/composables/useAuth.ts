@@ -24,10 +24,15 @@ export const useAuth = () => {
    */
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response: { status: number, message: string, data?: Record<string, unknown> } = await $fetch('/api/login', {
+      const response: { status: number, message: string, data?: Record<string, unknown>, requires_2fa?: boolean } = await $fetch('/api/login', {
         method: 'POST',
         body: credentials
       })
+
+      if (response.requires_2fa) {
+        await navigateTo({ path: '/verify-2fa', query: { email: credentials.email } })
+        return { success: true, requires_2fa: true }
+      }
 
       if (response.status === 200) {
         toast.add({

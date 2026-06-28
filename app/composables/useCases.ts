@@ -116,18 +116,28 @@ export const useCases = () => {
     return { success: false, error: 'Route not available: use suspend/reinstate.' }
   }
 
-  const updateCaseStatus = async (id: string | number, status: string) => {
+  const updateCaseStatus = async (id: string | number, status: string, reason?: string) => {
     mutationController.value?.abort()
     mutationController.value = new AbortController()
 
     updating.value = true
     try {
-      const route = status.toLowerCase() === 'active'
+      const isReinstate = status.toLowerCase() === 'active' || status.toLowerCase() === 'reinstate'
+      const route = isReinstate
         ? `/api/cases/${id}/reinstate`
         : `/api/cases/${id}/suspend`
 
+      const body = isReinstate
+        ? undefined
+        : (() => {
+            const formData = new FormData()
+            if (reason) formData.append('reason', reason)
+            return formData
+          })()
+
       response = await $fetch(route, {
         method: 'POST',
+        body,
         signal: mutationController.value.signal
       })
 

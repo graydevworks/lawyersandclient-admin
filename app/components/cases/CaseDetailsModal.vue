@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * CaseDetailsModal — case detail view with Suspend Case action.
- * Shows a confirmation dialog before suspending.
+ * CaseDetailsModal — case detail view with Suspend / Reinstate actions.
  */
 interface CaseDetails {
   id: string
@@ -16,7 +15,7 @@ interface CaseDetails {
     location: string
   }
   practiceArea: string
-  status: 'Active' | 'Stalled' | 'Pending' | 'Completed'
+  status: string
   openedDate: string
   timeElapsed: string
   lastActivity: string
@@ -27,37 +26,75 @@ const props = defineProps<{
   caseData: CaseDetails | null
 }>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'status-changed'])
 
 const isOpen = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value)
 })
 
+const { updateCaseStatus, updating } = useCases()
+
 const showSuspendConfirm = ref(false)
+const showSuccessModal = ref(false)
+const suspendReason = ref('')
+const successTitle = ref('')
+const successDescription = ref('')
+
+const isSuspended = computed(() => {
+  const s = (props.caseData?.status || '').toLowerCase()
+  return s.includes('suspend') || s === 'stalled'
+})
 
 const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'primary' | 'neutral' => {
   switch (status?.toLowerCase()) {
     case 'active': return 'success'
-    case 'stalled': return 'error'
+    case 'stalled':
+    case 'suspended': return 'error'
     case 'pending': return 'warning'
     case 'completed': return 'primary'
     default: return 'neutral'
   }
 }
 
-const handleSuspendClick = () => {
-  showSuspendConfirm.value = true
+const handleActionClick = () => {
+  if (isSuspended.value) {
+    confirmReinstate()
+  } else {
+    suspendReason.value = ''
+    showSuspendConfirm.value = true
+  }
 }
 
-const confirmSuspend = () => {
-  console.log('[Suspend Case] confirmed for:', props.caseData?.id)
-  showSuspendConfirm.value = false
+const confirmSuspend = async () => {
+  if (!props.caseData?.id || !suspendReason.value.trim()) return
+
+  const result = await updateCaseStatus(props.caseData.id, 'suspended', suspendReason.value.trim())
+  if (result?.success) {
+    showSuspendConfirm.value = false
+    suspendReason.value = ''
+    successTitle.value = 'Case suspended successfully'
+    successDescription.value = 'This case has been suspended. You can reinstate it later.'
+    showSuccessModal.value = true
+    emit('status-changed')
+  }
+}
+
+const confirmReinstate = async () => {
+  if (!props.caseData?.id) return
+
+  const result = await updateCaseStatus(props.caseData.id, 'active')
+  if (result?.success) {
+    successTitle.value = 'Case reinstated successfully'
+    successDescription.value = 'This case is active again.'
+    showSuccessModal.value = true
+    emit('status-changed')
+  }
+}
+
+const handleSuccessComplete = () => {
+  showSuccessModal.value = false
   isOpen.value = false
-}
-
-const cancelSuspend = () => {
-  showSuspendConfirm.value = false
 }
 </script>
 
@@ -68,7 +105,6 @@ const cancelSuspend = () => {
     max-width="max-w-[520px]"
   >
     <template v-if="caseData">
-      <!-- Matter Section -->
       <div class="mt-3 mb-6">
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
           Matter
@@ -81,7 +117,6 @@ const cancelSuspend = () => {
         </p>
       </div>
 
-      <!-- Parties Section -->
       <div class="mb-6">
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Parties
@@ -102,7 +137,6 @@ const cancelSuspend = () => {
         </div>
       </div>
 
-      <!-- Activity Section -->
       <div class="mb-6">
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Activity
@@ -133,40 +167,43 @@ const cancelSuspend = () => {
         </div>
       </div>
 
-      <!-- Suspend Case Button -->
       <UButton
         block
-        class="bg-[#FF9500] hover:bg-[#E68600] text-white font-semibold py-3 rounded-[8px] text-[14px]"
-        @click="handleSuspendClick"
+        :loading="updating"
+        class="font-semibold py-3 rounded-[8px] text-[14px] text-white"
+        :class="isSuspended ? 'bg-[#003357] hover:bg-[#004474]' : 'bg-[#FF9500] hover:bg-[#E68600]'"
+        @click="handleActionClick"
       >
-        Suspend case
+        {{ isSuspended ? 'Reinstate case' : 'Suspend case' }}
       </UButton>
     </template>
-
-    <!-- Suspend Confirmation -->
-    <div
-      v-if="showSuspendConfirm"
-      class="mt-4 pt-4 border-t border-gray-100"
-    >
-      <p class="text-[14px] text-gray-700 font-medium mb-4">
-        Are you sure you want to suspend this case? This will pause all activity.
-      </p>
-      <div class="flex items-center justify-end gap-3">
-        <UButton
-          variant="outline"
-          color="neutral"
-          class="border border-[#D1D5DB] text-gray-900 rounded-[8px] px-5 py-2.5 text-[14px] font-medium hover:bg-gray-50"
-          @click="cancelSuspend"
-        >
-          Cancel
-        </UButton>
-        <UButton
-          class="bg-[#FF9500] hover:bg-[#E68600] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-medium"
-          @click="confirmSuspend"
-        >
-          Yes, suspend
-        </UButton>
-      </div>
-    </div>
   </SharedBaseModal>
+
+  <SharedConfirmationModal
+    v-model="showSuspendConfirm"
+    title="Suspend case?"
+    description="Are you sure you want to suspend this case? This will pause all activity."
+    icon="i-lucide-flag"
+    confirm-text="Continue"
+    cancel-text="Cancel"
+    confirm-color="danger"
+    :loading="updating"
+    :confirm-disabled="!suspendReason.trim()"
+    @confirm="confirmSuspend"
+  >
+    <label class="text-[13px] font-semibold text-gray-600 mb-2 block">State reason</label>
+    <UTextarea
+      v-model="suspendReason"
+      placeholder="Enter reason for suspension..."
+      :rows="4"
+      class="w-full"
+    />
+  </SharedConfirmationModal>
+
+  <SharedSuccessModal
+    v-model="showSuccessModal"
+    :title="successTitle"
+    :description="successDescription"
+    @complete="handleSuccessComplete"
+  />
 </template>

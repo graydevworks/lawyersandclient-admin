@@ -35,26 +35,48 @@ console.log(swap(1, 2)) // Output: [2, 1]
 
 const stats = ref<StatItem[]>([])
 
+const headerFromDate = ref('')
+const headerToDate = ref('')
+
 const fromDate = ref<string>('')
 const toDate = ref<string>('')
 
-const showSignupsDatePicker = ref(false)
 const signupsDateFrom = ref<string>('')
 const signupsDateTo = ref<string>('')
+
+const applyHeaderDateFilter = async () => {
+  fromDate.value = headerFromDate.value
+  toDate.value = headerToDate.value
+  signupsDateFrom.value = headerFromDate.value
+  signupsDateTo.value = headerToDate.value
+  await fetchDashboardData()
+}
+
+const clearHeaderDateFilter = async () => {
+  headerFromDate.value = ''
+  headerToDate.value = ''
+  fromDate.value = ''
+  toDate.value = ''
+  signupsDateFrom.value = ''
+  signupsDateTo.value = ''
+  await fetchDashboardData()
+}
 
 const applySignupsFilter = async () => {
   fromDate.value = signupsDateFrom.value
   toDate.value = signupsDateTo.value
-  showSignupsDatePicker.value = false
+  headerFromDate.value = signupsDateFrom.value
+  headerToDate.value = signupsDateTo.value
   await fetchDashboardData()
 }
 
 const clearSignupsFilter = async () => {
   signupsDateFrom.value = ''
   signupsDateTo.value = ''
+  headerFromDate.value = ''
+  headerToDate.value = ''
   fromDate.value = ''
   toDate.value = ''
-  showSignupsDatePicker.value = false
   await fetchDashboardData()
 }
 
@@ -237,20 +259,13 @@ onMounted(() => start())
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
       </h1>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
+      <SharedDateRangePicker
+        v-model:from="headerFromDate"
+        v-model:to="headerToDate"
+        variant="header"
+        @apply="applyHeaderDateFilter"
+        @clear="clearHeaderDateFilter"
+      />
     </div>
 
     <!-- Skeleton Loading -->
@@ -336,62 +351,13 @@ onMounted(() => start())
               Sign ups
             </h3>
             <div class="flex items-center gap-4">
-              <div class="relative">
-                <UButton
-                  icon="i-lucide-calendar"
-                  color="neutral"
-                  variant="outline"
-                  class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] px-4 py-[7px] rounded-full"
-                  label="Select dates"
-                  @click="showSignupsDatePicker = !showSignupsDatePicker"
-                />
-
-                <UCard
-                  v-if="showSignupsDatePicker"
-                  class="absolute right-0 mt-2 z-20 w-64"
-                >
-                  <div class="p-4 space-y-4">
-                    <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-700">From</label>
-                      <UInput
-                        v-model="signupsDateFrom"
-                        type="date"
-                        size="sm"
-                        variant="outline"
-                      />
-                    </div>
-
-                    <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-700">To</label>
-                      <UInput
-                        v-model="signupsDateTo"
-                        type="date"
-                        size="sm"
-                        variant="outline"
-                      />
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                      <UButton
-                        size="sm"
-                        color="primary"
-                        @click="applySignupsFilter"
-                      >
-                        Apply
-                      </UButton>
-                      <UButton
-                        v-if="signupsDateFrom && signupsDateTo"
-                        size="sm"
-                        color="neutral"
-                        variant="outline"
-                        @click="clearSignupsFilter"
-                      >
-                        Clear
-                      </UButton>
-                    </div>
-                  </div>
-                </UCard>
-              </div>
+              <SharedDateRangePicker
+                v-model:from="signupsDateFrom"
+                v-model:to="signupsDateTo"
+                variant="inline"
+                @apply="applySignupsFilter"
+                @clear="clearSignupsFilter"
+              />
             </div>
           </div>
           <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">

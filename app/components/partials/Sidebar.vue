@@ -27,6 +27,8 @@ const navGroups = [
     label: 'SYSTEM',
     items: [
       { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
+      { label: 'Change Password', icon: 'i-lucide-key-round', to: '/change-password' },
+      { label: 'Two-Factor Auth', icon: 'i-lucide-shield-check', to: '/two-factor' },
       { label: 'Notifications', icon: 'i-lucide-bell', to: '/notifications' },
       { label: 'Logs', icon: 'i-lucide-scroll-text', to: '/logs' }
     ]

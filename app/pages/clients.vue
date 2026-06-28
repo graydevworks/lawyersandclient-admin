@@ -44,10 +44,23 @@ const clients = ref<{
 }[]>([])
 
 const searchQuery = ref('')
+const statusFilter = ref<string | undefined>(undefined)
+const statusOptions = [
+  { label: 'All statuses', value: undefined },
+  { label: 'Active', value: 'active' },
+  { label: 'Suspended', value: 'suspended' },
+  { label: 'New', value: 'new' }
+]
+
+const fromDate = ref('')
+const toDate = ref('')
+
 const currentPage = ref(1)
 const perPage = ref(10)
 const totalItems = ref(0)
 const totalPages = ref(1)
+
+const { searchClients, debounceSearch } = useSearch()
 
 interface ClientRow {
   id: string
@@ -77,12 +90,35 @@ const handleViewProfile = (client: ClientRow) => {
 }
 
 const fetchClients = async (page: number = 1) => {
-  const result = await getClients({ page, per_page: perPage.value })
+  const params: Record<string, string | number | undefined> = {
+    page,
+    per_page: perPage.value,
+    from: fromDate.value || undefined,
+    to: toDate.value || undefined
+  }
 
-  if (result && result.data && result.data.data && result.data.data.success) {
-    const clientList = result.data.data.data.clients
-    const statistics = result.data.data.data.stats
-    const meta = result.data.data.meta
+  if (statusFilter.value) {
+    params.status = statusFilter.value
+  }
+
+  let result
+
+  if (searchQuery.value.trim()) {
+    result = await searchClients({ q: searchQuery.value.trim(), ...params })
+  } else {
+    result = await getClients(params)
+  }
+
+  if (!result?.success) return
+
+  const raw = (result as { data?: unknown }).data as Record<string, unknown> | undefined
+  const nested = (raw?.data ?? raw) as { success?: boolean, data?: { clients?: unknown[], stats?: Record<string, string> }, meta?: Record<string, number> } | undefined
+  const inner = nested?.success ? nested : (raw as { success?: boolean, data?: { clients?: unknown[], stats?: Record<string, string> }, meta?: Record<string, number> })
+
+  if (inner?.success) {
+    const clientList = (inner.data?.clients || []) as Array<Record<string, unknown>>
+    const statistics = inner.data?.stats || {}
+    const meta = inner.meta || {}
 
     currentPage.value = meta.current_page || 1
     totalItems.value = meta.total || 0
@@ -133,6 +169,28 @@ onMounted(async () => {
   skeleton.value = false
 })
 
+watch(statusFilter, () => {
+  currentPage.value = 1
+  fetchClients(1)
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+  debounceSearch(() => fetchClients(1))
+})
+
+const applyDateFilter = () => {
+  currentPage.value = 1
+  fetchClients(1)
+}
+
+const clearDateFilter = () => {
+  fromDate.value = ''
+  toDate.value = ''
+  currentPage.value = 1
+  fetchClients(1)
+}
+
 // Silent background refresh every 60 seconds
 const { start } = useIntervalFetch(() => fetchClients(currentPage.value), 60000)
 onMounted(() => {
@@ -152,20 +210,13 @@ onMounted(() => {
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         Clients
       </h1>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
+      <SharedDateRangePicker
+        v-model:from="fromDate"
+        v-model:to="toDate"
+        variant="header"
+        @apply="applyDateFilter"
+        @clear="clearDateFilter"
+      />
     </div>
 
     <!-- Skeleton Loading -->
@@ -223,6 +274,14 @@ onMounted(() => {
               Users list
             </h3>
             <div class="flex items-center gap-4">
+              <USelect
+                v-model="statusFilter"
+                :items="statusOptions"
+                value-key="value"
+                label-key="label"
+                placeholder="Filter status"
+                class="w-[160px] rounded-[36px] text-[14px]"
+              />
               <UInput
                 v-model="searchQuery"
                 icon="i-lucide-search"

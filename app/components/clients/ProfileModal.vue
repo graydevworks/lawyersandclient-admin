@@ -1,8 +1,6 @@
 <script setup lang="ts">
 /**
- * ClientProfileModal — User details modal with Reset Password and Suspend Account actions.
- * Triggered from clients page "View Profile" button.
- * Includes confirmation modals and success feedback.
+ * ClientProfileModal — User details modal with Reset Password, Suspend and Reinstate actions.
  */
 
 interface ClientInfo {
@@ -41,15 +39,19 @@ const getStatusColor = (status: string) => {
 }
 
 const statusBadgeColor = computed(() => getStatusColor(props.client?.status || ''))
+const isSuspended = computed(() => (props.client?.status || '').toLowerCase().includes('suspend'))
 
-const { suspendClient, resetClientPassword, updating } = useClients()
+const { suspendClient, reinstateClient, resetClientPassword, updating } = useClients()
 
-// Modal state
 const showResetConfirm = ref(false)
 const showSuspendForm = ref(false)
+const showReinstateConfirm = ref(false)
 const showSuccessModal = ref(false)
+const showErrorModal = ref(false)
+const errorMessage = ref('')
 const successTitle = ref('')
 const successDescription = ref('')
+const successSecondaryText = ref('')
 const successButtonText = ref('Complete')
 
 const suspendReason = ref('')
@@ -75,8 +77,12 @@ const confirmResetPassword = async () => {
   if (result.success) {
     successTitle.value = 'Password reset link sent successfully'
     successDescription.value = `Password reset link has been sent to ${userEmail.value}. The user must click the link to reset their password.`
+    successSecondaryText.value = ''
     successButtonText.value = 'Complete'
     showSuccessModal.value = true
+  } else {
+    errorMessage.value = 'Failed to send password reset link.'
+    showErrorModal.value = true
   }
 }
 
@@ -92,10 +98,40 @@ const confirmSuspend = async () => {
   if (result.success) {
     successTitle.value = 'Account suspended successfully'
     successDescription.value = 'Suspended users cannot log in or interact with the platform. You can reinstate them later.'
+    successSecondaryText.value = 'Reinstate'
     successButtonText.value = 'Complete'
     showSuccessModal.value = true
     emit('action-complete')
+  } else {
+    errorMessage.value = 'Failed to suspend account.'
+    showErrorModal.value = true
   }
+}
+
+const handleReinstate = () => {
+  showReinstateConfirm.value = true
+}
+
+const confirmReinstate = async () => {
+  if (!props.client) return
+  showReinstateConfirm.value = false
+  const result = await reinstateClient(props.client.id)
+  if (result.success) {
+    successTitle.value = 'Account reinstated successfully'
+    successDescription.value = 'The user can now log in and interact with the platform again.'
+    successSecondaryText.value = ''
+    successButtonText.value = 'Complete'
+    showSuccessModal.value = true
+    emit('action-complete')
+  } else {
+    errorMessage.value = 'Failed to reinstate account.'
+    showErrorModal.value = true
+  }
+}
+
+const handleSuccessSecondary = () => {
+  showSuccessModal.value = false
+  handleReinstate()
 }
 
 const handleSuccessComplete = () => {
@@ -111,7 +147,6 @@ const handleSuccessComplete = () => {
     max-width="max-w-[520px]"
   >
     <template v-if="client">
-      <!-- Profile Header -->
       <div class="flex items-center gap-4 mt-3 mb-6">
         <UAvatar
           :src="client.avatar || `https://i.pravatar.cc/150?u=${client.id}`"
@@ -129,7 +164,6 @@ const handleSuccessComplete = () => {
         </div>
       </div>
 
-      <!-- Account Info Section -->
       <div class="mb-6">
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Account Info
@@ -160,7 +194,6 @@ const handleSuccessComplete = () => {
         </div>
       </div>
 
-      <!-- Activity Section -->
       <div class="mb-6">
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Activity
@@ -185,7 +218,6 @@ const handleSuccessComplete = () => {
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="flex flex-col gap-3">
         <UButton
           block
@@ -196,6 +228,7 @@ const handleSuccessComplete = () => {
           Reset password
         </UButton>
         <UButton
+          v-if="!isSuspended"
           block
           variant="outline"
           color="neutral"
@@ -205,86 +238,70 @@ const handleSuccessComplete = () => {
         >
           Suspend account
         </UButton>
+        <UButton
+          v-else
+          block
+          variant="outline"
+          color="neutral"
+          :loading="updating"
+          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px] text-[14px] hover:bg-gray-50"
+          @click="handleReinstate"
+        >
+          Reinstate account
+        </UButton>
       </div>
     </template>
   </SharedBaseModal>
 
-  <!-- Reset Password Confirmation -->
-  <SharedBaseModal
+  <SharedResetPasswordModal
     v-model="showResetConfirm"
-    title="Reset Password"
-    max-width="max-w-[440px]"
-  >
-    <div class="mt-2">
-      <p class="text-[14px] text-gray-500 mb-6">
-        Send a password reset link to the user's registered email: <span class="font-semibold text-gray-900">{{ userEmail }}</span>
-      </p>
-      <div class="flex gap-3">
-        <UButton
-          block
-          variant="outline"
-          color="neutral"
-          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px]"
-          @click="showResetConfirm = false"
-        >
-          Cancel
-        </UButton>
-        <UButton
-          block
-          :loading="updating"
-          class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px]"
-          @click="confirmResetPassword"
-        >
-          Confirm
-        </UButton>
-      </div>
-    </div>
-  </SharedBaseModal>
+    :email="userEmail"
+    @confirm="confirmResetPassword"
+  />
 
-  <!-- Suspend Account Form -->
-  <SharedBaseModal
+  <SharedConfirmationModal
     v-model="showSuspendForm"
     title="Suspend Account"
-    max-width="max-w-[440px]"
+    :description="`Temporarily disable ${userName}'s access to the platform. You can reinstate the account anytime.`"
+    icon="i-lucide-flag"
+    confirm-text="Suspend"
+    cancel-text="Cancel"
+    confirm-color="danger"
+    :loading="updating"
+    @confirm="confirmSuspend"
   >
-    <div class="mt-2">
-      <p class="text-[14px] text-gray-500 mb-5">
-        Temporarily disable {{ userName }}'s access to the platform. You can reinstate the account anytime.
-      </p>
-      <label class="text-[13px] font-semibold text-gray-600 mb-2 block">State reason</label>
-      <USelect
-        v-model="suspendReason"
-        :items="suspendReasons"
-        class="w-full mb-6"
-      />
-      <div class="flex gap-3">
-        <UButton
-          block
-          variant="outline"
-          color="neutral"
-          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px]"
-          @click="showSuspendForm = false"
-        >
-          Cancel
-        </UButton>
-        <UButton
-          block
-          :loading="updating"
-          class="bg-[#DC2626] hover:bg-[#B91C1C] text-white font-semibold py-3 rounded-[8px]"
-          @click="confirmSuspend"
-        >
-          Suspend
-        </UButton>
-      </div>
-    </div>
-  </SharedBaseModal>
+    <label class="text-[13px] font-semibold text-gray-600 mb-2 block">State reason</label>
+    <USelect
+      v-model="suspendReason"
+      :items="suspendReasons"
+      class="w-full"
+    />
+  </SharedConfirmationModal>
 
-  <!-- Success Modal (always on top) -->
+  <SharedConfirmationModal
+    v-model="showReinstateConfirm"
+    title="Reinstate account"
+    :description="`Restore ${userName}'s access to the platform.`"
+    icon="i-lucide-user-check"
+    confirm-text="Reinstate"
+    cancel-text="Cancel"
+    :loading="updating"
+    @confirm="confirmReinstate"
+  />
+
   <SharedSuccessModal
     v-model="showSuccessModal"
     :title="successTitle"
     :description="successDescription"
     :button-text="successButtonText"
+    :secondary-button-text="successSecondaryText || undefined"
+    @secondary="handleSuccessSecondary"
     @complete="handleSuccessComplete"
+  />
+
+  <SharedErrorModal
+    v-model="showErrorModal"
+    :description="errorMessage"
+    @complete="showErrorModal = false"
   />
 </template>

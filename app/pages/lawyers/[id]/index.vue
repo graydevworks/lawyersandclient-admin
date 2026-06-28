@@ -1,64 +1,412 @@
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth' })
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useLawyers } from '../../../composables/useLawyers'
 
 const route = useRoute()
+const router = useRouter()
 const id = route.params.id as string
 
-const lawyer = {
-  name: 'Adejumobi O.',
-  id: id || 'GSOC - 02',
-  location: 'Ibadan, Nigeria',
-  phone: '+234 8137496017',
-  email: 'adejumobi@gmail.com',
-  rating: 4.8,
-  experience: '12 Years',
-  status: 'Active',
-  languages: ['English', 'Yoruba'],
-  bio: 'I am a dedicated corporate lawyer with over 12 years of experience helping startups and established businesses navigate complex legal landscapes. My expertise spans corporate law, contract drafting, and startup advisory, with a proven track record of helping businesses succeed legally and strategically. Throughout my career, I have successfully advised numerous startups through their formative..',
-  practiceAreas: [
-    'Contract Drafting', 'Startup Advisory', 'Business Registration',
-    'Dispute Resolution', 'Intellectual Property', 'Employment Law',
-    'Regulatory Compliance', 'Corporate Law'
-  ],
-  activity: {
-    totalChats: 0,
-    reportsFiled: 1,
-    lastActive: 'Today, 2:14 pm',
-    joined: '22 Mar 2026'
+type Lawyer = {
+  name?: string
+  banner?: string
+  profilePicture?: string
+  id?: string
+  location?: string
+  phone?: string
+  email?: string
+  rating?: number
+  experience?: string
+  status?: string
+  languages?: string[]
+  bio?: string
+  practiceAreas?: string[]
+  activity?: {
+    totalChats?: number
+    reportsFiled?: number
+    lastActive?: string
+    joined?: string
+  }
+  documents?: Array<{
+    title?: string
+    type?: string
+    size?: string
+    status?: string
+    icon?: string
+    color?: string
+    isMissing?: boolean
+  }>
+  reviews?: Array<{
+    name?: string
+    rating?: number
+    date?: string
+    comment?: string
+  }>
+  workExperience?: Array<{
+    role?: string
+    company?: string
+    period?: string
+    description?: string
+  }>
+}
+
+const lawyer = ref<Lawyer>({})
+const isLoading = ref(true)
+
+const isResetConfirmOpen = ref(false)
+const isSuspendDialogOpen = ref(false)
+const isReinstateConfirmOpen = ref(false)
+
+const isResetSuccessOpen = ref(false)
+const isSuspendSuccessOpen = ref(false)
+const isReinstateSuccessOpen = ref(false)
+
+const isDeleteConfirmOpen = ref(false)
+const isDeleteSuccessOpen = ref(false)
+
+const suspendReason = ref('Abuse / misconduct')
+const deleteReason = ref('Abuse / misconduct')
+const deleteConfirmed = ref(false)
+const suspendReasons = [
+  'Abuse / misconduct',
+  'Spam or fraudulent activity',
+  'Violation of terms of service',
+  'Multiple complaints',
+  'Other'
+]
+const deleteReasons = [
+  'Abuse / misconduct',
+  'Spam or fraudulent activity',
+  'Violation of terms of service',
+  'Multiple complaints',
+  'Other'
+]
+const isMutating = ref(false)
+
+const { showLawyers, resetLawyerPassword, suspendLawyer, reinstateLawyer, deleteLawyer } = useLawyers()
+
+const isSuspended = ref(false)
+
+watch(
+  () => lawyer.value.status,
+  (v) => {
+    if (!isMutating.value) {
+      isSuspended.value = (v || '').toLowerCase().includes('suspend')
+    }
   },
-  documents: [
-    { title: 'Bar Certificate', type: 'PDF', size: '1.2 MB', status: 'Uploaded', icon: 'i-lucide-file-text', color: 'blue' },
-    { title: 'Government ID', type: 'Image', size: '640 KB', status: 'Uploaded', icon: 'i-lucide-file-image', color: 'purple' },
-    { title: 'Profile Photo', type: 'Image', size: '-', status: 'Missing', icon: 'i-lucide-file', color: 'gray', isMissing: true }
-  ],
-  reviews: [
-    { name: 'Chioma Adeyemi', rating: 5, date: '2 months ago', comment: 'Adebayo helped our startup finalize shareholder agreements quickly and professionally. His attention to detail and business acumen made the process smooth.' },
-    { name: 'Tunde Olaseni', rating: 5, date: '4 months ago', comment: 'Excellent legal advice on our company restructuring. Professional, responsive, and incredibly knowledgeable. Highly recommended.' },
-    { name: 'Blessing Okoro', rating: 4, date: '5 months ago', comment: 'Great contract review and negotiation services. Would definitely work with Adebayo again for future matters.' }
-  ],
-  workExperience: [
-    { role: 'Senior Associate', company: 'Ade & Co Law Firm', period: '2018 - Present', description: 'Leading corporate and startup advisory practice. Managing client relationships, advising on complex business structures, contract negotiations, and regulatory matters.' },
-    { role: 'Corporate Lawyer', company: 'Lagos Legal Partners', period: '2014 - 2018', description: 'Handled corporate transactions, business formation, contract law, and commercial disputes for SMEs and corporate clients.' },
-    { role: 'Legal Associate', company: 'Justice & Associates', period: '2012 - 2014', description: 'General practice attorney handling corporate, commercial, and civil litigation matters.' }
-  ]
+  { immediate: true }
+)
+
+const loadLawyer = async () => {
+  isLoading.value = true
+  try {
+    const result = (await showLawyers(id)) as unknown
+
+    if (typeof result === 'object'
+      && result !== null
+      && 'data' in result
+    ) {
+      const data = (result as { data: unknown }).data
+
+      if (!data || typeof data !== 'object') return
+
+      const lawyersData = (data as { lawyers?: { data?: unknown } }).lawyers?.data
+      if (!lawyersData || typeof lawyersData !== 'object') return
+
+      const success = (lawyersData as { success?: boolean }).success
+      if (!success) return
+
+      const rawLawyer = (lawyersData as { data?: unknown }).data
+      if (!rawLawyer || typeof rawLawyer !== 'object') return
+
+      const d = rawLawyer as {
+        id?: string | number
+        full_name?: string
+        location?: string
+        phone?: string
+        email?: string
+        average_rating?: number
+        years_of_experience?: string
+        status?: string
+        practice_areas?: { name?: string } | null
+        bio?: string
+        activity?: Lawyer['activity']
+        documents?: Lawyer['documents']
+        reviews?: Lawyer['reviews']
+        banner_photo_url?: string
+        profile_photo_url?: string
+        work_experiences?: Lawyer['workExperience']
+      }
+
+      if (!d.full_name) return
+
+      lawyer.value = {
+        id: d.id?.toString(),
+        name: d.full_name,
+        location: d.location || 'N/A',
+        phone: d.phone,
+        email: d.email,
+        rating: d.average_rating,
+        experience: d.years_of_experience,
+        status: d.status,
+        languages: d.practice_areas?.name ? [d.practice_areas.name] : ['N/A'],
+        bio: d.bio,
+        practiceAreas: ['N/A'],
+        activity: d.activity,
+        documents: d.documents,
+        reviews: d.reviews,
+        banner: d.banner_photo_url,
+        profilePicture: d.profile_photo_url,
+        workExperience: d.work_experiences
+      }
+    }
+  } catch (e) {
+    console.log('[Lawyers Details] loadLawyer error:', e)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadLawyer()
+})
+
+watch(
+  () => route.params.id,
+  () => {
+    loadLawyer()
+  }
+)
+
+const handleResetPassword = async () => {
+  isMutating.value = true
+  try {
+    await resetLawyerPassword(id)
+    isResetConfirmOpen.value = false
+    isResetSuccessOpen.value = true
+  } finally {
+    isMutating.value = false
+  }
+}
+
+const handleSuspend = async () => {
+  if (!suspendReason.value.trim()) return
+
+  isMutating.value = true
+  try {
+    const res = await suspendLawyer(id, suspendReason.value.trim())
+    if (res?.success) {
+      isSuspendDialogOpen.value = false
+      suspendReason.value = ''
+      isSuspended.value = true
+      lawyer.value.status = 'Suspended'
+      isSuspendSuccessOpen.value = true
+    }
+  } finally {
+    isMutating.value = false
+  }
+}
+
+const handleReinstate = async () => {
+  isMutating.value = true
+  try {
+    const res = await reinstateLawyer(id)
+    if (res?.success) {
+      isReinstateConfirmOpen.value = false
+      isSuspended.value = false
+      isReinstateSuccessOpen.value = true
+    }
+  } finally {
+    isMutating.value = false
+  }
+}
+
+const handleDelete = async () => {
+  isMutating.value = true
+  try {
+    const res = await deleteLawyer(id)
+    if (res?.success) {
+      isDeleteConfirmOpen.value = false
+      isDeleteSuccessOpen.value = true
+      await new Promise(resolve => setTimeout(resolve, 800))
+      router.push('/lawyers')
+    }
+  } finally {
+    isMutating.value = false
+  }
 }
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto space-y-6 pb-12">
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Left Column (Main Info) -->
+    <!-- Loading Skeleton -->
+    <div
+      v-if="isLoading"
+      class="grid grid-cols-1 lg:grid-cols-12 gap-6"
+    >
       <div class="lg:col-span-8 space-y-6">
-        <!-- Profile Header Card -->
         <UCard
           class="overflow-hidden rounded-[24px] border-0 ring-0 shadow-sm"
           :ui="{ body: 'p-0' }"
         >
-          <!-- Banner -->
+          <div class="h-48 w-full relative">
+            <div class="absolute inset-0 bg-gray-100 animate-pulse" />
+          </div>
+
+          <div class="px-8 pb-8 -mt-12 relative">
+            <div class="flex items-end gap-6 mb-6">
+              <div class="size-32 rounded-full bg-gray-100 animate-pulse border-4 border-white shadow-md" />
+              <div class="pb-2 w-full">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="h-7 w-44 rounded bg-gray-100 animate-pulse" />
+                  <div class="h-5 w-5 rounded bg-gray-100 animate-pulse" />
+                </div>
+                <div class="h-8 w-36 rounded-full bg-gray-100 animate-pulse" />
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div class="space-y-3">
+                <div class="h-4 w-40 rounded bg-gray-100 animate-pulse" />
+                <div class="h-5 w-full rounded bg-gray-100 animate-pulse" />
+                <div class="h-5 w-10/12 rounded bg-gray-100 animate-pulse" />
+              </div>
+
+              <div class="space-y-3">
+                <div class="h-4 w-52 rounded bg-gray-100 animate-pulse" />
+                <div class="flex flex-wrap gap-2">
+                  <div class="h-9 w-28 rounded-full bg-gray-100 animate-pulse" />
+                  <div class="h-9 w-28 rounded-full bg-gray-100 animate-pulse" />
+                  <div class="h-9 w-32 rounded-full bg-gray-100 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div class="h-4 w-40 rounded bg-gray-100 animate-pulse" />
+              <div class="h-4 w-36 rounded bg-gray-100 animate-pulse" />
+            </div>
+          </template>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              v-for="n in 3"
+              :key="n"
+              class="border border-gray-100 rounded-2xl p-4 flex flex-col gap-4"
+            >
+              <div class="h-24 w-full rounded-xl bg-gray-100 animate-pulse" />
+              <div class="space-y-3">
+                <div class="h-4 w-3/4 rounded bg-gray-100 animate-pulse" />
+                <div class="h-3 w-1/2 rounded bg-gray-100 animate-pulse" />
+                <div class="h-3 w-1/3 rounded bg-gray-100 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+          <template #header>
+            <div class="h-4 w-32 rounded bg-gray-100 animate-pulse" />
+          </template>
+          <div class="divide-y divide-gray-50">
+            <div
+              v-for="n in 2"
+              :key="n"
+              class="py-6 first:pt-0 last:pb-0"
+            >
+              <div class="flex items-center justify-between mb-3">
+                <div class="h-4 w-44 rounded bg-gray-100 animate-pulse" />
+                <div class="h-3 w-20 rounded bg-gray-100 animate-pulse" />
+              </div>
+              <div class="flex items-center gap-0.5 mb-3">
+                <div
+                  v-for="i in 5"
+                  :key="i"
+                  class="h-4 w-4 rounded bg-gray-100 animate-pulse"
+                />
+              </div>
+              <div class="space-y-2">
+                <div class="h-4 w-full rounded bg-gray-100 animate-pulse" />
+                <div class="h-4 w-11/12 rounded bg-gray-100 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+          <template #header>
+            <div class="h-4 w-32 rounded bg-gray-100 animate-pulse" />
+          </template>
+          <div class="space-y-8">
+            <div
+              v-for="n in 2"
+              :key="n"
+              class="relative pl-6 border-l-2 border-gray-100"
+            >
+              <div class="absolute left-[-9px] top-0 size-4 rounded-full border-2 border-gray-100 bg-white" />
+              <div class="flex items-center justify-between mb-2">
+                <div class="h-5 w-44 rounded bg-gray-100 animate-pulse" />
+                <div class="h-3 w-20 rounded bg-gray-100 animate-pulse" />
+              </div>
+              <div class="h-4 w-56 rounded bg-gray-100 animate-pulse" />
+              <div class="h-4 w-full rounded bg-gray-100 animate-pulse" />
+              <div class="h-4 w-10/12 rounded bg-gray-100 animate-pulse mt-2" />
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <div class="lg:col-span-4 space-y-6">
+        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm p-2">
+          <div class="space-y-6">
+            <section>
+              <div class="h-4 w-24 rounded bg-gray-100 animate-pulse mb-4" />
+              <div class="space-y-4">
+                <div
+                  v-for="n in 7"
+                  :key="n"
+                  class="flex items-center justify-between"
+                >
+                  <div class="h-4 w-28 rounded bg-gray-100 animate-pulse" />
+                  <div class="h-4 w-32 rounded bg-gray-100 animate-pulse" />
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="h-4 w-44 rounded bg-gray-100 animate-pulse" />
+                  <div class="flex gap-2">
+                    <div class="h-8 w-20 rounded-full bg-gray-100 animate-pulse" />
+                    <div class="h-8 w-20 rounded-full bg-gray-100 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="pt-6 space-y-3">
+              <div class="h-12 w-full rounded-xl bg-gray-100 animate-pulse" />
+              <div class="h-12 w-full rounded-xl bg-gray-100 animate-pulse" />
+              <div class="h-12 w-full rounded-xl bg-gray-100 animate-pulse" />
+            </section>
+          </div>
+        </UCard>
+      </div>
+    </div>
+
+    <!-- Real Content -->
+    <div
+      v-else
+      class="grid grid-cols-1 lg:grid-cols-12 gap-6"
+    >
+      <div class="lg:col-span-8 space-y-6">
+        <UCard
+          class="overflow-hidden rounded-[24px] border-0 ring-0 shadow-sm"
+          :ui="{ body: 'p-0' }"
+        >
           <div class="h-48 w-full relative">
             <img
-              src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=2070&auto=format&fit=crop"
+              :src="lawyer.banner || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=2070&auto=format&fit=crop'"
               class="w-full h-full object-cover"
               alt="Banner"
             >
@@ -68,7 +416,7 @@ const lawyer = {
           <div class="px-8 pb-8 -mt-12 relative">
             <div class="flex items-end gap-6 mb-6">
               <UAvatar
-                src="https://i.pravatar.cc/150?u=1"
+                :src="lawyer.profilePicture || 'https://i.pravatar.cc/150?u=1'"
                 size="3xl"
                 class="size-32 rounded-full border-4 border-white shadow-md"
               />
@@ -93,19 +441,16 @@ const lawyer = {
             </div>
 
             <div class="space-y-6">
-              <div>
+              <div v-if="lawyer.bio">
                 <h3 class="text-sm font-bold text-gray-900 mb-2 uppercase tracking-wider">
                   Lawyer Bio
                 </h3>
                 <p class="text-gray-600 text-[14px] leading-relaxed">
                   {{ lawyer.bio }}
-                  <button class="text-[#003357] font-bold hover:underline ml-1">
-                    See more
-                  </button>
                 </p>
               </div>
 
-              <div>
+              <div v-if="lawyer.practiceAreas?.length">
                 <h3 class="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">
                   Practice Areas
                 </h3>
@@ -123,8 +468,10 @@ const lawyer = {
           </div>
         </UCard>
 
-        <!-- Documents Section -->
-        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+        <UCard
+          v-if="lawyer.documents?.length"
+          class="rounded-[24px] border-0 ring-0 shadow-sm"
+        >
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -161,6 +508,7 @@ const lawyer = {
                   ]"
                 />
               </div>
+
               <div>
                 <h4 class="text-[13px] font-bold text-gray-900 mb-0.5">
                   {{ doc.title }}
@@ -169,6 +517,7 @@ const lawyer = {
                   <span>{{ doc.type }}</span>
                   <span v-if="doc.size !== '-'">• {{ doc.size }}</span>
                 </div>
+
                 <div class="flex items-center gap-1">
                   <UIcon
                     :name="doc.isMissing ? 'i-lucide-alert-circle' : 'i-lucide-check'"
@@ -187,8 +536,10 @@ const lawyer = {
           </div>
         </UCard>
 
-        <!-- Reviews Section -->
-        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+        <UCard
+          v-if="lawyer.reviews?.length"
+          class="rounded-[24px] border-0 ring-0 shadow-sm"
+        >
           <template #header>
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
               Reviews
@@ -207,15 +558,17 @@ const lawyer = {
                 </h4>
                 <span class="text-xs text-gray-400">{{ review.date }}</span>
               </div>
+
               <div class="flex items-center gap-0.5 mb-3">
                 <UIcon
                   v-for="i in 5"
                   :key="i"
                   name="i-lucide-star"
                   class="size-4"
-                  :class="i <= review.rating ? 'text-orange-400 fill-orange-400' : 'text-gray-200'"
+                  :class="i <= (review.rating ?? 0) ? 'text-orange-400 fill-orange-400' : 'text-gray-200'"
                 />
               </div>
+
               <p class="text-[13px] text-gray-600 leading-relaxed">
                 {{ review.comment }}
               </p>
@@ -223,8 +576,10 @@ const lawyer = {
           </div>
         </UCard>
 
-        <!-- Experience Section -->
-        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm">
+        <UCard
+          v-if="lawyer.workExperience?.length"
+          class="rounded-[24px] border-0 ring-0 shadow-sm"
+        >
           <template #header>
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
               Experience
@@ -255,33 +610,35 @@ const lawyer = {
         </UCard>
       </div>
 
-      <!-- Right Column (Sidebar) -->
       <div class="lg:col-span-4 space-y-6">
-        <!-- About Sidebar Card -->
         <UCard class="rounded-[24px] border-0 ring-0 shadow-sm p-2">
           <div class="space-y-6">
-            <!-- About Info -->
             <section>
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
                 About
               </h3>
+
               <div class="space-y-4">
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">User ID</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.id }}</span>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Location</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.location }}</span>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Phone number</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.phone }}</span>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Email</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.email }}</span>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Rating</span>
                   <div class="flex items-center gap-1">
@@ -292,10 +649,12 @@ const lawyer = {
                     <span class="text-[13px] font-bold text-gray-900">{{ lawyer.rating }}</span>
                   </div>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Experience</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.experience }}</span>
                 </div>
+
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Languages spoken</span>
                   <div class="flex gap-2">
@@ -311,53 +670,48 @@ const lawyer = {
               </div>
             </section>
 
-            <!-- Activity Info -->
-            <section class="pt-6 border-t border-gray-50">
-              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                Activity
-              </h3>
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <span class="text-[13px] text-gray-500">Total chats</span>
-                  <span class="text-[13px] font-bold text-gray-900">{{ lawyer.activity.totalChats }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[13px] text-gray-500">Reports filed</span>
-                  <span class="text-[13px] font-bold text-gray-900">{{ lawyer.activity.reportsFiled }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[13px] text-gray-500">Last active</span>
-                  <span class="text-[13px] font-bold text-gray-900">{{ lawyer.activity.lastActive }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[13px] text-gray-500">Joined</span>
-                  <span class="text-[13px] font-bold text-gray-900">{{ lawyer.activity.joined }}</span>
-                </div>
-              </div>
-            </section>
-
-            <!-- Actions -->
             <section class="pt-6 space-y-3">
               <UButton
                 block
                 color="neutral"
                 class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-xl py-3"
+                :disabled="isMutating"
+                @click="isResetConfirmOpen = true"
               >
                 Reset password
               </UButton>
+
               <UButton
+                v-if="!isSuspended"
                 block
                 variant="outline"
                 color="neutral"
                 class="bg-white text-gray-900 border-gray-200 font-bold rounded-xl py-3 hover:bg-gray-50"
+                :disabled="isMutating"
+                @click="() => { suspendReason = suspendReasons[0]!; isSuspendDialogOpen = true }"
               >
                 Suspend account
               </UButton>
+
+              <UButton
+                v-else
+                block
+                variant="outline"
+                color="neutral"
+                class="bg-white text-gray-900 border-gray-200 font-bold rounded-xl py-3 hover:bg-gray-50"
+                :disabled="isMutating"
+                @click="isReinstateConfirmOpen = true"
+              >
+                Reinstate account
+              </UButton>
+
               <UButton
                 block
                 variant="outline"
                 color="error"
                 class="border-red-200 text-red-500 font-bold rounded-xl py-3 hover:bg-red-50"
+                :disabled="isMutating"
+                @click="isDeleteConfirmOpen = true"
               >
                 Delete account
               </UButton>
@@ -366,5 +720,105 @@ const lawyer = {
         </UCard>
       </div>
     </div>
+
+    <!-- Modals -->
+    <SharedResetPasswordModal
+      v-model="isResetConfirmOpen"
+      :email="lawyer.email || ''"
+      @confirm="handleResetPassword"
+    />
+
+    <SharedConfirmationModal
+      v-model="isSuspendDialogOpen"
+      title="Suspend Account"
+      :description="`Temporarily disable ${lawyer.name}'s access to the platform. You can reinstate the account anytime.`"
+      icon="i-lucide-flag"
+      confirm-text="Suspend"
+      cancel-text="Cancel"
+      confirm-color="danger"
+      :loading="isMutating"
+      :confirm-disabled="!suspendReason.trim()"
+      @confirm="handleSuspend"
+    >
+      <label class="text-[13px] font-semibold text-gray-600 mb-2 block">State reason</label>
+      <USelect
+        v-model="suspendReason"
+        :items="suspendReasons"
+        class="w-full"
+      />
+    </SharedConfirmationModal>
+
+    <SharedConfirmationModal
+      v-model="isReinstateConfirmOpen"
+      title="Reinstate account"
+      :description="`Restore ${lawyer.name}'s access to the platform.`"
+      icon="i-lucide-user-check"
+      confirm-text="Reinstate"
+      cancel-text="Cancel"
+      :loading="isMutating"
+      @confirm="handleReinstate"
+    />
+
+    <SharedSuccessModal
+      v-model="isResetSuccessOpen"
+      title="Password reset link sent successfully"
+      :description="`Password reset link has been sent to ${lawyer.email || 'the user'}. The user must click the link to reset their password.`"
+      button-text="Complete"
+      :show-close="false"
+      @complete="isResetSuccessOpen = false"
+    />
+
+    <SharedSuccessModal
+      v-model="isSuspendSuccessOpen"
+      title="Account suspended successfully"
+      description="Suspended users cannot log in or interact with the platform. You can reinstate them later."
+      secondary-button-text="Reinstate"
+      button-text="Complete"
+      @secondary="() => { isSuspendSuccessOpen = false; isReinstateConfirmOpen = true }"
+      @complete="isSuspendSuccessOpen = false"
+    />
+
+    <SharedSuccessModal
+      v-model="isReinstateSuccessOpen"
+      title="Account reinstated successfully"
+      description="The lawyer account is now active again."
+      button-text="Complete"
+      :show-close="false"
+      @complete="isReinstateSuccessOpen = false"
+    />
+
+    <SharedConfirmationModal
+      v-model="isDeleteConfirmOpen"
+      title="Delete User Account"
+      description="This action is permanent and cannot be undone."
+      icon="i-lucide-trash-2"
+      icon-class="bg-red-50"
+      confirm-text="Delete Account"
+      cancel-text="Cancel"
+      confirm-color="danger"
+      :loading="isMutating"
+      :confirm-disabled="!deleteConfirmed"
+      @confirm="handleDelete"
+    >
+      <label class="text-[13px] font-semibold text-gray-600 mb-2 block">State reason</label>
+      <USelect
+        v-model="deleteReason"
+        :items="deleteReasons"
+        class="w-full mb-4"
+      />
+      <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
+        <UCheckbox v-model="deleteConfirmed" />
+        I understand this action cannot be reversed
+      </label>
+    </SharedConfirmationModal>
+
+    <SharedSuccessModal
+      v-model="isDeleteSuccessOpen"
+      title="User account deleted successfully"
+      description="Account permanently deleted, and cannot be restored"
+      button-text="Complete"
+      :show-close="false"
+      @complete="isDeleteSuccessOpen = false"
+    />
   </div>
 </template>

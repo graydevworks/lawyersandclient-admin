@@ -366,55 +366,14 @@ onMounted(() => start())
               <h3 class="font-bold text-gray-900">
                 User growth
               </h3>
-              <div class="flex items-center gap-2">
-                <UButton
-                  icon="i-lucide-calendar"
-                  color="primary"
-                  variant="outline"
-                  label="Select dates"
-                  @click="showDatePicker = !showDatePicker"
+              <div class="flex items-center gap-2 relative">
+                <SharedDateRangePicker
+                  v-model:from="selectedDateFrom"
+                  v-model:to="selectedDateTo"
+                  variant="inline"
+                  @apply="fetchAnalytics"
+                  @clear="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics() }"
                 />
-                <UCard
-                  v-if="showDatePicker"
-                  class="absolute mt-2 z-10 w-60"
-                >
-                  <div class="p-4 space-y-4">
-                    <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-700">From</label>
-                      <UInput
-                        v-model="selectedDateFrom"
-                        type="date"
-                        size="sm"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-700">To</label>
-                      <UInput
-                        v-model="selectedDateTo"
-                        type="date"
-                        size="sm"
-                      />
-                    </div>
-                    <div class="flex gap-2">
-                      <UButton
-                        size="sm"
-                        color="primary"
-                        @click="fetchAnalytics(); showDatePicker = false"
-                      >
-                        Apply
-                      </UButton>
-                      <UButton
-                        v-if="selectedDateFrom && selectedDateTo"
-                        size="sm"
-                        color="neutral"
-                        variant="outline"
-                        @click="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics(); showDatePicker = false; }"
-                      >
-                        Clear
-                      </UButton>
-                    </div>
-                  </div>
-                </UCard>
               </div>
             </div>
           </template>

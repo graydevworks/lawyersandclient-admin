@@ -1,37 +1,48 @@
 export const useTwoFactor = () => {
   const loading = ref(false)
 
-  const setupTwoFactor = async (body: Record<string, unknown> = {}) => {
+  const verifyTwoFactorLogin = async (email: string, otp: string) => {
     loading.value = true
     try {
-      const data = await $fetch('/api/2fa', { method: 'POST', body })
+      const formData = new FormData()
+      formData.append('email', email)
+      formData.append('otp', otp)
+      const data = await $fetch('/api/2fa', { method: 'POST', body: formData })
       return { success: true, data }
-    } catch (error) {
-      return { success: false, error }
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } }
+      return { success: false, error: err?.data?.message || 'Verification failed' }
     } finally {
       loading.value = false
     }
   }
 
-  const verifyTwoFactorEnable = async (body: Record<string, unknown>) => {
+  const enableTwoFactor = async (id: string | number) => {
     loading.value = true
     try {
-      const data = await $fetch('/api/2fa/verify/enable', { method: 'POST', body })
+      const formData = new FormData()
+      formData.append('id', String(id))
+      const data = await $fetch('/api/2fa/verify/enable', { method: 'POST', body: formData })
       return { success: true, data }
-    } catch (error) {
-      return { success: false, error }
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } }
+      return { success: false, error: err?.data?.message || 'Failed to enable 2FA' }
     } finally {
       loading.value = false
     }
   }
 
-  const verifyTwoFactorDisable = async (body: Record<string, unknown>) => {
+  const disableTwoFactor = async (id: string | number, password: string) => {
     loading.value = true
     try {
-      const data = await $fetch('/api/2fa/verify/disable', { method: 'POST', body })
+      const formData = new FormData()
+      formData.append('id', String(id))
+      formData.append('password', password)
+      const data = await $fetch('/api/2fa/verify/disable', { method: 'POST', body: formData })
       return { success: true, data }
-    } catch (error) {
-      return { success: false, error }
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } }
+      return { success: false, error: err?.data?.message || 'Failed to disable 2FA' }
     } finally {
       loading.value = false
     }
@@ -39,8 +50,11 @@ export const useTwoFactor = () => {
 
   return {
     loading,
-    setupTwoFactor,
-    verifyTwoFactorEnable,
-    verifyTwoFactorDisable
+    verifyTwoFactorLogin,
+    enableTwoFactor,
+    disableTwoFactor,
+    setupTwoFactor: verifyTwoFactorLogin,
+    verifyTwoFactorEnable: enableTwoFactor,
+    verifyTwoFactorDisable: disableTwoFactor
   }
 }

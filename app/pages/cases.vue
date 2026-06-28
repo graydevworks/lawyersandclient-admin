@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CaseDetailsModal from '~/components/cases/CaseDetailsModal.vue'
+import { formatRelativeDate } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -48,25 +49,14 @@ interface StatItem {
   trendSuffix?: string
 }
 
-const stats: StatItem[] = [
+const stats = ref<StatItem[]>([
   { title: 'Total active cases', value: '318', trend: '+24', trendType: 'positive', trendSuffix: 'this month' },
   { title: 'Completed this month', value: '91', trendType: 'neutral', trendSuffix: 'Avg. 14 days to close' },
   { title: 'Stalled cases', value: '16', trend: 'No activity 7+ days', trendType: 'negative' },
   { title: 'Avg. case duration', value: '14d', trend: '-2d', trendType: 'positive', trendSuffix: 'this month' }
-]
-
-const cases = ref<CaseRow[]>([
-  { id: '39635', date: 'Today', matter: 'Wrongful termination claim', category: 'Media Law', client: 'Adese Samson', location: 'Oyo', lawyer: 'Ebubechukwu Agnes', lawyerLoc: 'Cross River', status: 'Active', duration: '9 Days' },
-  { id: '43178', date: 'Today', matter: 'Child custody dispute', category: 'Entertainment', client: 'Folasayo Ogunnaike', location: 'Lagos', lawyer: 'Folasayo Ogunnaike', lawyerLoc: 'Imo', status: 'Active', duration: '3 Days' },
-  { id: '22739', date: 'Today', matter: 'Land title fraud recovery', category: 'Municipality/ panchayat etc', client: 'Ogunmodede Smart', location: 'Ogun', lawyer: 'Hameed Yusuf', lawyerLoc: 'Yobe', status: 'Stalled', duration: '7 Days' },
-  { id: '22739', date: 'Today', matter: 'Business contract breach', category: 'Medical Malpractice /negligence', client: '-', location: 'Kebbi', lawyer: 'Boluwatife Olusola', lawyerLoc: 'Bauchi', status: 'Active', duration: '5 Days' },
-  { id: '97174', date: 'Today', matter: 'Wrongful termination claim', category: 'Public Procurement', client: 'Ebubechukwu Agnes', location: 'Anambra', lawyer: 'Toluwani Bakare', lawyerLoc: 'Adamawa', status: 'Active', duration: '10 Days' },
-  { id: '43756', date: 'Today', matter: 'Child custody dispute', category: 'Data Protection and Privacy', client: 'Femi Babalola', location: 'Niger', lawyer: 'Hannah Pedro', lawyerLoc: 'Zamfara', status: 'Pending', duration: '8 Days' },
-  { id: '22739', date: 'Today', matter: 'Women\'s Rights', category: 'Technology Law', client: 'Hannah Pedro', location: 'Plateau', lawyer: 'Justina Ogbonnaya', lawyerLoc: 'Delta', status: 'Active', duration: '6 Days' },
-  { id: '97174', date: 'Today', matter: 'Land title fraud recovery', category: 'Trusts and Estates', client: 'Hameed Yusuf', location: 'Zamfara', lawyer: 'Esther Joel', lawyerLoc: 'Ekiti', status: 'Stalled', duration: '2 Days' },
-  { id: '70668', date: 'Today', matter: 'Business contract breach', category: 'Antitrust Law', client: 'Justina Ogbonnaya', location: 'Katsina', lawyer: 'Emmanuel Amuneke', lawyerLoc: 'Ondo', status: 'Pending', duration: '1 Day' },
-  { id: '22739', date: 'Today', matter: 'New user registered', category: 'Non- Litigation practice', client: 'Toluwani Bakare', location: 'Gombe', lawyer: 'Daniel Samuel', lawyerLoc: 'Sokoto', status: 'Completed', duration: '4 Days' }
 ])
+
+const cases = ref<CaseRow[]>([])
 
 const columns = [
   { accessorKey: 'id', header: 'Case ID' },
@@ -74,7 +64,7 @@ const columns = [
   { accessorKey: 'client', header: 'Client' },
   { accessorKey: 'lawyer', header: 'Lawyer' },
   { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'duration', header: 'Duration' },
+  // { accessorKey: 'duration', header: 'Duration' },
   { accessorKey: 'actions', header: 'Action' }
 ]
 
@@ -106,8 +96,8 @@ const viewCase = (row: CaseRow) => {
 const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
     case 'active': return 'success'
-    case 'stalled': return 'warning'
-    case 'pending': return 'warning'
+    case 'open': return 'warning'
+    case 'declined': return 'danger'
     case 'completed': return 'success'
     default: return 'secondary'
   }
@@ -116,15 +106,63 @@ const getStatusColor = (status: string): string => {
 const activeFilter = ref('All')
 const filters = ['All', 'Stalled', 'Completed']
 
+const fromDate = ref('')
+const toDate = ref('')
+
 const fetchCases = async () => {
-  await getCases()
+  const result = await getCases({
+    from: fromDate.value || undefined,
+    to: toDate.value || undefined
+  })
   // Map real API data when available
+
+  if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
+    console.log(result.data.user.data.meta, 'case')
+
+    const meta = result.data.user.data.meta
+    const statistics = result.data.user.data.data.stats
+    const data = result.data.user.data.data.cases
+
+    stats.value = [
+      { title: 'Total active cases', value: statistics.total_active, trendType: 'positive', trendSuffix: '' },
+      { title: 'Completed this month', value: statistics.completed_this_month, trendType: 'positive', trendSuffix: '' },
+      { title: 'Stalled cases', value: statistics.stalled, trend: '', trendType: 'negative' },
+      { title: 'Avg. case duration', value: statistics.avg_duration_days, trend: '', trendType: 'positive', trendSuffix: '' }
+    ]
+
+    cases.value = data.map((caseData: any) => ({
+      id: caseData.id,
+      date: caseData.opened_at ? formatRelativeDate(caseData.opened_at) : 'N/A',
+      matter: caseData.title,
+      category: caseData.practice_area,
+      client: caseData.client,
+      location: caseData.location,
+      lawyer: caseData.lawyer,
+      lawyerLoc: caseData.lawyer_loc,
+      status: caseData.status,
+      // duration: caseData.duration,
+      timeElapsed: caseData.days_elapsed,
+      lastActivity: caseData.updated_at
+    }))
+  }
 }
 
 onMounted(async () => {
+  skeleton.value = true
   await fetchCases()
   skeleton.value = false
 })
+
+const applyDateFilter = () => fetchCases()
+const clearDateFilter = () => {
+  fromDate.value = ''
+  toDate.value = ''
+  fetchCases()
+}
+
+const handleCaseStatusChanged = async () => {
+  await fetchCases()
+}
 
 // Silent background refresh every 60 seconds
 const { start } = useIntervalFetch(fetchCases, 60000)
@@ -143,20 +181,13 @@ onMounted(() => start())
           All active lawyer-client engagements
         </p>
       </div>
-      <UButton
-        icon="i-lucide-calendar"
-        color="neutral"
-        variant="solid"
-        class="shadow-sm bg-white hover:bg-gray-100 focus:bg-gray-100 text-[#222222] p-[12.5px] rounded-full"
-      >
-        April 10, 2026 - May 11, 2026
-        <template #trailing>
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="ml-2 w-4 h-4"
-          />
-        </template>
-      </UButton>
+      <SharedDateRangePicker
+        v-model:from="fromDate"
+        v-model:to="toDate"
+        variant="header"
+        @apply="applyDateFilter"
+        @clear="clearDateFilter"
+      />
     </div>
 
     <!-- Skeleton Loading -->
@@ -207,17 +238,17 @@ onMounted(() => start())
       <!-- Table Section -->
       <UCard class="overflow-hidden rounded-[18px] border-0 ring-0">
         <!-- Filter Bar -->
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div class="flex-1 max-w-lg">
+        <div class="flex flex-col xl:flex-row lg:items-center justify-between gap-4">
+          <div class="w-full xl:flex-1 xl:max-w-lg">
             <UInput
               icon="i-lucide-search"
               placeholder="Search by name or email..."
-              class="w-full md:w-[367px]"
-              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
+              class="w-full xl:w-[367px]"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[10px] w-full' }"
             />
           </div>
 
-          <div class="flex items-center gap-4">
+          <div class="flex flex-wrap items-center gap-4">
             <USelect
               placeholder="All statuses"
               color="neutral"
@@ -309,13 +340,13 @@ onMounted(() => start())
                   variant="subtle"
                   class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
                 >
-                  {{ row.original.status }}
+                  {{ row.original.status == 'open' ? 'Pending' : row.original.status == 'stalled' ? 'Stalled' : row.original.status == 'declined' ? 'Declined' : 'Completed' }}
                 </UBadge>
               </template>
 
-              <template #duration-cell="{ row }">
+              <!-- <template #duration-cell="{ row }">
                 <span class="text-sm font-medium text-gray-900">{{ row.original.duration }}</span>
-              </template>
+              </template> -->
 
               <template #actions-cell="{ row }">
                 <UButton
@@ -351,7 +382,7 @@ onMounted(() => start())
                   variant="subtle"
                   class="rounded-full px-2.5 h-[24px] text-[11px] font-medium shrink-0"
                 >
-                  {{ row.status }}
+                  {{ row.status == 'open' ? 'Pending' : row.status == 'accepted' ? 'Accepted' : row.status == 'declined' ? 'Declined' : 'Completed' }}
                 </UBadge>
               </div>
 
@@ -368,10 +399,10 @@ onMounted(() => start())
                   <span class="text-gray-400 text-[12px]">Category</span>
                   <span class="text-gray-700 font-medium truncate">{{ row.category }}</span>
                 </div>
-                <div class="flex flex-col">
+                <!-- <div class="flex flex-col">
                   <span class="text-gray-400 text-[12px]">Duration</span>
                   <span class="text-gray-700 font-medium">{{ row.duration }}</span>
-                </div>
+                </div> -->
               </div>
 
               <div class="pt-1">
@@ -425,6 +456,7 @@ onMounted(() => start())
     <CaseDetailsModal
       v-model="isModalOpen"
       :case-data="selectedCase"
+      @status-changed="handleCaseStatusChanged"
     />
   </div>
 </template>

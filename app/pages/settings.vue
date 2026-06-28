@@ -28,7 +28,163 @@ const {
   searchFeaturedLawyers
 } = useFeatured()
 
-const { getWebAds } = useWebAd()
+const { getWebAds, createWebAd, updateWebAd, deleteWebAd, loading: webAdsLoading, updating: webAdsUpdating } = useWebAd()
+
+type WebAdRecord = {
+  id?: number
+  title?: string
+  headline?: string
+  type?: string
+  ad_type?: string
+  image?: string
+  image_url?: string
+  banner_image?: string
+  destination_url?: string
+  url?: string
+  link?: string
+  placement?: string
+  target?: string
+  audience?: string
+  status?: string
+  start_date?: string
+  end_date?: string
+  created_at?: string
+  impressions?: number
+  clicks?: number
+  ctr?: number
+  active_days?: number
+}
+
+const webAd = ref<WebAdRecord | null>(null)
+const webAdImageFile = ref<File | null>(null)
+const webAdImagePreview = ref('')
+const webAdFileKey = ref(0)
+
+const webAdForm = reactive({
+  adType: 'banner' as 'banner' | 'text',
+  headline: '',
+  destinationUrl: '',
+  placement: 'Homepage - top banner',
+  target: 'all' as 'all' | 'clients' | 'lawyers',
+  startDate: '',
+  endDate: ''
+})
+
+const placementOptions = [
+  'Homepage - top banner',
+  'Homepage - sidebar',
+  'Cases page',
+  'Lawyers page'
+]
+
+const extractWebAd = (response: unknown): WebAdRecord | null => {
+  const payload = response as Record<string, unknown>
+  const inner = payload?.data as Record<string, unknown> | undefined
+  const data = inner?.data ?? inner ?? payload
+  const list = Array.isArray((data as Record<string, unknown>)?.ads)
+    ? (data as Record<string, unknown>).ads as WebAdRecord[]
+    : Array.isArray((data as Record<string, unknown>)?.data)
+      ? (data as Record<string, unknown>).data as WebAdRecord[]
+      : Array.isArray(data)
+        ? data as WebAdRecord[]
+        : [(data as WebAdRecord)].filter(Boolean)
+
+  return list[0] || null
+}
+
+const populateWebAdForm = (ad: WebAdRecord) => {
+  webAd.value = ad
+  webAdForm.adType = (ad.ad_type || ad.type || 'banner').toLowerCase().includes('text') ? 'text' : 'banner'
+  webAdForm.headline = ad.headline || ad.title || ''
+  webAdForm.destinationUrl = ad.destination_url || ad.url || ad.link || ''
+  webAdForm.placement = ad.placement || placementOptions[0]!
+  const target = (ad.target || ad.audience || 'all').toLowerCase()
+  webAdForm.target = target.includes('client') ? 'clients' : target.includes('lawyer') ? 'lawyers' : 'all'
+  webAdForm.startDate = ad.start_date ? String(ad.start_date).slice(0, 10) : ''
+  webAdForm.endDate = ad.end_date ? String(ad.end_date).slice(0, 10) : ''
+  webAdImagePreview.value = ad.image_url || ad.image || ad.banner_image || ''
+}
+
+const buildWebAdFormData = (status: string) => {
+  const formData = new FormData()
+  formData.append('ad_type', webAdForm.adType)
+  formData.append('headline', webAdForm.headline)
+  formData.append('destination_url', webAdForm.destinationUrl)
+  formData.append('placement', webAdForm.placement)
+  formData.append('target', webAdForm.target)
+  formData.append('status', status)
+  if (webAdForm.startDate) formData.append('start_date', webAdForm.startDate)
+  if (webAdForm.endDate) formData.append('end_date', webAdForm.endDate)
+  if (webAdImageFile.value) formData.append('image', webAdImageFile.value)
+  return formData
+}
+
+const loadWebsiteAds = async () => {
+  const result = await getWebAds()
+  if (!result?.success) return
+
+  const ad = extractWebAd(result.data)
+  if (ad) {
+    populateWebAdForm(ad)
+  } else {
+    webAd.value = null
+    webAdForm.headline = 'Get legal help from verified lawyers'
+    webAdForm.destinationUrl = 'https://lawtech.ng/promo'
+  }
+}
+
+const handleWebAdImage = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  webAdImageFile.value = file
+  webAdImagePreview.value = URL.createObjectURL(file)
+}
+
+const saveWebAd = async (status: string) => {
+  const formData = buildWebAdFormData(status)
+  const result = webAd.value?.id
+    ? await updateWebAd(webAd.value.id, formData)
+    : await createWebAd(formData)
+
+  if (result?.success) {
+    toast.add({ title: 'Saved', description: `Ad ${status === 'live' ? 'published' : 'saved'} successfully.`, color: 'success' })
+    webAdImageFile.value = null
+    webAdFileKey.value++
+    await loadWebsiteAds()
+  } else {
+    toast.add({ title: 'Error', description: 'Could not save website ad.', color: 'error' })
+  }
+}
+
+const pauseWebAd = () => saveWebAd('paused')
+const publishWebAd = () => saveWebAd('live')
+const draftWebAd = () => saveWebAd('draft')
+
+const removeWebAd = async () => {
+  if (!webAd.value?.id) return
+  const result = await deleteWebAd(webAd.value.id)
+  if (result?.success) {
+    toast.add({ title: 'Deleted', description: 'Website ad removed.', color: 'success' })
+    await loadWebsiteAds()
+  } else {
+    toast.add({ title: 'Error', description: 'Could not delete website ad.', color: 'error' })
+  }
+}
+
+const webAdStatusLabel = computed(() => {
+  const status = (webAd.value?.status || 'draft').toLowerCase()
+  if (status === 'live' || status === 'active') return 'Live'
+  if (status === 'paused') return 'Paused'
+  return 'Draft'
+})
+
+const webAdCtr = computed(() => {
+  const impressions = Number(webAd.value?.impressions || 0)
+  const clicks = Number(webAd.value?.clicks || 0)
+  if (webAd.value?.ctr) return `${Number(webAd.value.ctr).toFixed(1)}%`
+  if (!impressions) return '0%'
+  return `${((clicks / impressions) * 100).toFixed(1)}%`
+})
 
 const featuredSearchQ = ref('')
 let featuredSearchLimit = 6
@@ -133,7 +289,6 @@ const loadFeatured = async () => {
 }
 
 const loadFeaturedSearch = async () => {
-
   if (!featuredSearchQ.value?.trim()) {
     featuredSearchResults.value = []
     featuredDropdownOpen.value = false
@@ -226,8 +381,7 @@ const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) 
 }
 
 const loadWebsiteAdsAndLog = async () => {
-  const result = await getWebAds()
-  console.log('[Website Ads] API response:', result)
+  await loadWebsiteAds()
 }
 
 watch(
@@ -673,8 +827,16 @@ const sessionTimeout = ref('30 minutes')
                   v-if="featuredDropdownOpen"
                   class="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  <div class="px-3 py-2 text-xs font-bold text-gray-400 border-b border-gray-100">
-                    Select up to {{ maxFeatured }}
+                  <div class="flex items-center justify-between px-3 py-2 text-xs font-bold text-gray-400 border-b border-gray-100">
+                    <span>Select up to {{ maxFeatured }}</span>
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      icon="i-lucide-x"
+                      class="rounded-full"
+                      @click="featuredDropdownOpen = false"
+                    />
                   </div>
 
                   <div class="max-h-64 overflow-auto">
@@ -757,15 +919,17 @@ const sessionTimeout = ref('30 minutes')
               v-if="activeContentTab === 'Website Ads'"
               class="p-6 md:p-8 space-y-8"
             >
-              <div class="flex items-center justify-between border-b pb-6 border-gray-100">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b pb-6 border-gray-100">
                 <h2 class="text-lg font-bold text-gray-900">
-                  LawTech Nigeria - homepage banner
+                  {{ webAdForm.headline || 'LawTech Nigeria - homepage banner' }}
                 </h2>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <UButton
                     color="neutral"
                     variant="solid"
                     class="border border-gray-200 text-gray-600"
+                    :loading="webAdsUpdating"
+                    @click="draftWebAd"
                   >
                     Save draft
                   </UButton>
@@ -773,12 +937,16 @@ const sessionTimeout = ref('30 minutes')
                     color="neutral"
                     variant="solid"
                     class="border border-orange-200 text-orange-500"
+                    :loading="webAdsUpdating"
+                    @click="pauseWebAd"
                   >
                     Pause
                   </UButton>
                   <UButton
                     color="primary"
                     class="bg-blue-600"
+                    :loading="webAdsUpdating"
+                    @click="publishWebAd"
                   >
                     Publish
                   </UButton>
@@ -786,13 +954,25 @@ const sessionTimeout = ref('30 minutes')
                     color="error"
                     variant="subtle"
                     class="bg-red-50 text-red-500"
+                    :loading="webAdsUpdating"
+                    @click="removeWebAd"
                   >
                     Delete
                   </UButton>
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div
+                v-if="webAdsLoading"
+                class="space-y-4"
+              >
+                <USkeleton class="h-64 w-full rounded-2xl" />
+              </div>
+
+              <div
+                v-else
+                class="grid grid-cols-1 lg:grid-cols-12 gap-8"
+              >
                 <div class="lg:col-span-8 space-y-8">
                   <div class="space-y-4">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -801,21 +981,28 @@ const sessionTimeout = ref('30 minutes')
                     <div class="flex gap-2">
                       <UButton
                         size="sm"
-                        class="bg-blue-50 text-[#003357] border border-blue-100 rounded-full px-4"
+                        class="rounded-full px-4"
+                        :class="webAdForm.adType === 'banner' ? 'bg-blue-50 text-[#003357] border border-blue-100' : 'text-gray-400'"
+                        @click="webAdForm.adType = 'banner'"
                       >
                         Banner ad
                       </UButton>
                       <UButton
                         size="sm"
                         variant="ghost"
-                        class="text-gray-400 rounded-full px-4"
+                        class="rounded-full px-4"
+                        :class="webAdForm.adType === 'text' ? 'bg-blue-50 text-[#003357] border border-blue-100' : 'text-gray-400'"
+                        @click="webAdForm.adType = 'text'"
                       >
                         Text ad
                       </UButton>
                     </div>
                   </div>
 
-                  <div class="space-y-4">
+                  <div
+                    v-if="webAdForm.adType === 'banner'"
+                    class="space-y-4"
+                  >
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                       Banner Creative
                     </p>
@@ -823,9 +1010,27 @@ const sessionTimeout = ref('30 minutes')
                       <p class="text-xs text-gray-400 mb-3">
                         Image upload
                       </p>
-                      <div class="h-32 bg-[#1A8081] rounded-lg flex flex-col items-center justify-center text-white/70 border-4 border-white shadow-sm overflow-hidden mb-2">
-                        <span class="text-xs font-medium">banner_lawtech_march.jpg</span>
-                      </div>
+                      <label class="block cursor-pointer">
+                        <input
+                          :key="webAdFileKey"
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg"
+                          class="hidden"
+                          @change="handleWebAdImage"
+                        >
+                        <div class="h-32 rounded-lg flex flex-col items-center justify-center text-white/70 border-4 border-white shadow-sm overflow-hidden mb-2 bg-[#1A8081]">
+                          <img
+                            v-if="webAdImagePreview"
+                            :src="webAdImagePreview"
+                            alt="Banner preview"
+                            class="w-full h-full object-cover"
+                          >
+                          <span
+                            v-else
+                            class="text-xs font-medium text-white/80"
+                          >Click to upload banner</span>
+                        </div>
+                      </label>
                       <p class="text-[10px] text-gray-400">
                         Recommended: 1200x300px · JPG or PNG · max 2MB
                       </p>
@@ -833,26 +1038,75 @@ const sessionTimeout = ref('30 minutes')
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <UFormGroup
-                      label="Headline"
-                      class="col-span-1"
-                    >
+                    <UFormGroup label="Headline">
                       <UInput
-                        model-value="Get legal help from verified lawyers"
+                        v-model="webAdForm.headline"
                         size="lg"
                         class="rounded-lg"
                       />
                     </UFormGroup>
-                    <UFormGroup
-                      label="Destination URL"
-                      class="col-span-1"
-                    >
+                    <UFormGroup label="Destination URL">
                       <UInput
-                        model-value="https://lawtech.ng/promo"
+                        v-model="webAdForm.destinationUrl"
                         size="lg"
                         class="rounded-lg"
                       />
                     </UFormGroup>
+                  </div>
+
+                  <div class="space-y-4">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Placement
+                    </p>
+                    <UFormGroup label="Show on">
+                      <USelect
+                        v-model="webAdForm.placement"
+                        :items="placementOptions"
+                        size="lg"
+                        class="rounded-lg"
+                      />
+                    </UFormGroup>
+                    <div>
+                      <p class="text-xs text-gray-500 mb-2">
+                        Target
+                      </p>
+                      <div class="flex gap-2 flex-wrap">
+                        <UButton
+                          v-for="option in [{ label: 'All users', value: 'all' }, { label: 'Clients only', value: 'clients' }, { label: 'Lawyers only', value: 'lawyers' }]"
+                          :key="option.value"
+                          size="sm"
+                          class="rounded-full px-4"
+                          :class="webAdForm.target === option.value ? 'bg-blue-50 text-[#003357] border border-blue-100' : 'text-gray-400'"
+                          @click="webAdForm.target = option.value as 'all' | 'clients' | 'lawyers'"
+                        >
+                          {{ option.label }}
+                        </UButton>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Schedule
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <UFormGroup label="Start date">
+                        <UInput
+                          v-model="webAdForm.startDate"
+                          type="date"
+                          size="lg"
+                          class="rounded-lg"
+                        />
+                      </UFormGroup>
+                      <UFormGroup label="End date">
+                        <UInput
+                          v-model="webAdForm.endDate"
+                          type="date"
+                          size="lg"
+                          class="rounded-lg"
+                        />
+                      </UFormGroup>
+                    </div>
                   </div>
                 </div>
 
@@ -861,17 +1115,46 @@ const sessionTimeout = ref('30 minutes')
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-4">
                       Preview
                     </p>
-                    <div class="aspect-4/1 bg-[#1A8081] rounded mb-3" />
+                    <div
+                      v-if="webAdForm.adType === 'banner'"
+                      class="aspect-4/1 rounded mb-3 overflow-hidden bg-[#1A8081]"
+                    >
+                      <img
+                        v-if="webAdImagePreview"
+                        :src="webAdImagePreview"
+                        alt="Preview"
+                        class="w-full h-full object-cover"
+                      >
+                    </div>
                     <h4 class="font-bold text-sm text-gray-900 mb-1">
-                      Get legal help from verified lawyers
+                      {{ webAdForm.headline }}
                     </h4>
                     <a
-                      href="#"
+                      :href="webAdForm.destinationUrl"
+                      target="_blank"
                       class="text-xs font-bold text-blue-600 flex items-center gap-1"
                     >Learn more <UIcon
                       name="i-lucide-arrow-right"
                       class="w-3 h-3"
                     /></a>
+                  </div>
+
+                  <div class="bg-gray-50/50 rounded-xl p-6 border border-gray-100 space-y-3">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Ad Details
+                    </p>
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-500">Status</span>
+                      <span class="font-bold text-gray-900">{{ webAdStatusLabel }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-500">Type</span>
+                      <span class="font-bold text-gray-900 capitalize">{{ webAdForm.adType }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-500">Placement</span>
+                      <span class="font-bold text-gray-900">{{ webAdForm.placement.split(' - ')[0] }}</span>
+                    </div>
                   </div>
 
                   <div class="bg-gray-50/50 rounded-xl p-6 border border-gray-100 space-y-4">
@@ -880,15 +1163,19 @@ const sessionTimeout = ref('30 minutes')
                     </p>
                     <div class="flex justify-between items-center text-sm">
                       <span class="text-gray-500">Impressions</span>
-                      <span class="font-bold text-gray-900">14,280</span>
+                      <span class="font-bold text-gray-900">{{ (webAd?.impressions || 0).toLocaleString() }}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm">
                       <span class="text-gray-500">Clicks</span>
-                      <span class="font-bold text-gray-900">384</span>
+                      <span class="font-bold text-gray-900">{{ (webAd?.clicks || 0).toLocaleString() }}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm">
                       <span class="text-gray-500">CTR</span>
-                      <span class="font-bold text-green-500">2.6%</span>
+                      <span class="font-bold text-green-500">{{ webAdCtr }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                      <span class="text-gray-500">Active days</span>
+                      <span class="font-bold text-gray-900">{{ webAd?.active_days || 0 }}</span>
                     </div>
                   </div>
                 </div>
@@ -1094,16 +1381,20 @@ const sessionTimeout = ref('30 minutes')
             <div class="flex items-center justify-between py-4 border-b border-gray-100">
               <div>
                 <h3 class="font-medium text-gray-900">
-                  Enable 2FA
+                  Two-Factor Authentication
                 </h3>
                 <p class="text-sm text-gray-500">
                   Secure your account with 2FA
                 </p>
               </div>
-              <UToggle
-                v-model="enable2FA"
-                color="primary"
-              />
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                to="/two-factor"
+              >
+                Manage
+              </UButton>
             </div>
 
             <div class="flex items-center justify-between py-4 border-b border-gray-100">
@@ -1132,6 +1423,7 @@ const sessionTimeout = ref('30 minutes')
                 color="neutral"
                 variant="solid"
                 class="shadow-sm border border-gray-200"
+                to="/change-password"
               >
                 Change
               </UButton>

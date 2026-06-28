@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 definePageMeta({ middleware: 'auth' })
 
-// --- Fetch practice areas on mount ---
-const { getPracticeArea, createPracticeArea, deletePracticeArea, togglePracticeArea } = usePracticeArea()
+const {
+  getPracticeArea,
+  createPracticeArea,
+  deletePracticeArea,
+  togglePracticeArea,
+  searchPracticeArea
+} = usePracticeArea()
 
 const skeleton = ref(true)
 const currentPage = ref(1)
@@ -12,19 +17,32 @@ const perPage = ref(10)
 const totalItems = ref(0)
 const totalPages = ref(1)
 
+type PracticeAreaCard = {
+  id: number
+  name: string
+  lawyers: number
+  active: boolean
+}
+
+const practiceAreas = ref<PracticeAreaCard[]>([])
+
+// --- main list fetch ---
 const fetchPracticeAreas = async (page: number = 1) => {
   const result = await getPracticeArea({ page, per_page: perPage.value })
-  // Map real API data when available
+
   console.log(result, 'result')
   if (result && result.data && result.data.data && result.data.data.success) {
-    console.log(result.data.data.data, 'data')
-
     const meta = result.data.data.meta
     currentPage.value = meta.current_page || 1
     totalItems.value = meta.total || 0
     totalPages.value = meta.last_page || 1
 
-    practiceAreas.value = result.data.data.data.map((area: { id: number, name: string, lawyers_count: number, is_active: boolean }) => ({
+    practiceAreas.value = result.data.data.data.map((area: {
+      id: number
+      name: string
+      lawyers_count: number
+      is_active: boolean
+    }) => ({
       id: area.id,
       name: area.name,
       lawyers: area.lawyers_count,
@@ -42,9 +60,61 @@ onMounted(async () => {
 const { start } = useIntervalFetch(() => fetchPracticeAreas(currentPage.value), 60000)
 onMounted(() => start())
 
+// --- search dropdown only (does NOT affect main grid) ---
 const searchQuery = ref('')
+const isSearchDropdownOpen = ref(false)
+const isSearchingDropdown = ref(false)
 
-// --- Modal state ---
+const searchResults = ref<PracticeAreaCard[]>([])
+
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, (q) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+
+  isSearchDropdownOpen.value = String(q ?? '').trim().length > 0
+
+  searchDebounceTimer = setTimeout(async () => {
+    const query = String(q ?? '').trim()
+
+    // hide dropdown when empty
+    if (!query) {
+      isSearchDropdownOpen.value = false
+      searchResults.value = []
+      isSearchingDropdown.value = false
+      return
+    }
+
+    isSearchingDropdown.value = true
+    try {
+      // requested: use per_page instead of limit, and q= for query
+      const result = await searchPracticeArea({ q: query, per_page: 4, page: 1 })
+
+      console.log('[Practice Areas][Dropdown] searchPracticeArea result:', result)
+      console.log('[Practice Areas][Dropdown] search raw data:', result?.data.data.data.practice_areas)
+
+      if (result && result.data && result.data.data && result.data.data.success) {
+        searchResults.value = result.data.data.data.practice_areas.map((item: {
+          id: number
+          name: string
+          lawyers_count: number
+          is_active: boolean
+        }) => {
+          return {
+            id: item.id,
+            name: item.name,
+            lawyers: item.lawyers_count,
+            active: item.is_active
+          }
+        })
+      }
+    } finally {
+      isSearchingDropdown.value = false
+    }
+  }, 400)
+})
+
+// --- Modal state (unchanged) ---
 const isAddModalOpen = ref(false)
 const isSuccessModalOpen = ref(false)
 const lastAddedName = ref('')
@@ -68,31 +138,60 @@ const handleSavePracticeArea = async (name: string) => {
 const handleDeleteClick = (id: number) => {
   deleteItemId.value = id
   isDeleteConfirmOpen.value = true
+  console.log(id)
 }
 
 const confirmDelete = async () => {
   if (deleteItemId.value === null) return
   const result = await deletePracticeArea(deleteItemId.value)
+  console.log(result, 'result -> 2')
   if (result.success) {
+    searchQuery.value = ''
+    isSearchDropdownOpen.value = false
     isDeleteConfirmOpen.value = false
     deleteItemId.value = null
     await fetchPracticeAreas(currentPage.value)
   }
 }
 
-const handleToggleClick = (id: number, currentState: boolean) => {
+const handleToggleClick = (id: number, nextState: boolean) => {
   toggleItemId.value = id
-  toggleItemState.value = !currentState
+  toggleItemState.value = nextState
   isToggleConfirmOpen.value = true
 }
 
 const confirmToggle = async () => {
   if (toggleItemId.value === null) return
   const result = await togglePracticeArea(toggleItemId.value, { is_active: toggleItemState.value })
-  if (result.success) {
+
+  if (result && result.data && result.data.data && result.data.data.success) {
+    const searchFound = searchResults.value.findIndex(area => area.id === toggleItemId.value)
+    if (searchFound > -1) {
+      isToggleConfirmOpen.value = false
+      searchResults.value[searchFound].active = toggleItemState.value
+    }
+
     isToggleConfirmOpen.value = false
     toggleItemId.value = null
     await fetchPracticeAreas(currentPage.value)
+  }
+}
+
+const closeToggleConfirm = () => {
+  const found = practiceAreas.value.findIndex(area => area.id === toggleItemId.value)
+  if (found > -1) {
+    isToggleConfirmOpen.value = false
+    practiceAreas.value[found].active = !toggleItemState.value
+  }
+
+  const searchFound = searchResults.value.findIndex(area => area.id === toggleItemId.value)
+  if (searchFound > -1) {
+    isToggleConfirmOpen.value = false
+    searchResults.value[searchFound].active = !toggleItemState.value
+  }
+
+  if (found > -1 || searchFound > -1) {
+    toggleItemId.value = null
   }
 }
 
@@ -114,28 +213,96 @@ const goToPage = (page: number) => {
   currentPage.value = page
   fetchPracticeAreas(page)
 }
-
-const practiceAreas = ref<{
-  id: number
-  name: string
-  lawyers: number
-  active: boolean
-}[]>([])
 </script>
 
 <template>
   <div class="flex flex-col gap-8">
     <!-- Top Bar -->
     <div class="flex items-center justify-between">
-      <UInput
-        v-model="searchQuery"
-        icon="i-heroicons-magnifying-glass"
-        placeholder="Search practice areas"
-        class="w-[400px]"
-        size="md"
-        :ui="{ base: 'rounded-full' }"
-        color="neutral"
-      />
+      <div class="relative w-[400px]">
+        <UInput
+          v-model="searchQuery"
+          icon="i-heroicons-magnifying-glass"
+          placeholder="Search practice areas"
+          size="md"
+          :ui="{ base: 'rounded-full' }"
+          color="neutral"
+          @focus="isSearchDropdownOpen = String(searchQuery).trim().length > 0"
+          @keydown.esc="isSearchDropdownOpen = false"
+        />
+
+        <div
+          v-if="isSearchDropdownOpen"
+          class="absolute left-0 right-0 z-50 mt-2 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
+        >
+          <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+            <div class="text-xs font-bold text-gray-400">
+              Search results
+            </div>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              icon="i-lucide-x"
+              class="rounded-full"
+              @click="isSearchDropdownOpen = false"
+            />
+          </div>
+
+          <div
+            v-if="isSearchingDropdown"
+            class="p-3 text-sm text-gray-500"
+          >
+            Searching...
+          </div>
+
+          <template v-else>
+            <div
+              v-if="searchResults.length === 0"
+              class="p-4 text-sm text-gray-500"
+            >
+              No matching results
+            </div>
+
+            <div
+              v-else
+              class="max-h-60 overflow-auto"
+            >
+              <div
+                v-for="area in searchResults"
+                :key="area.id"
+                class="flex justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                @mousedown.prevent
+                @click="isSearchDropdownOpen = false"
+              >
+                <div>
+                  <div class="font-medium text-gray-900">
+                    {{ area.name }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ area.lawyers }} lawyers
+                  </div>
+                </div>
+                <div>
+                  <USwitch
+                    v-model:model-value="area.active"
+                    class="shrink-0"
+                    :ui="{ base: 'bg-[#013355]! w-[36px]', thumb: 'w-[16px] h-2' }"
+                    @update:model-value="(next) => handleToggleClick(area.id, Boolean(next))"
+                  />
+                  <button
+                    class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors"
+                    @click="handleDeleteClick(area.id)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
       <UButton
         color="primary"
         class="bg-[#003357] hover:bg-[#004474] text-white px-5 py-2.5 rounded-lg text-sm font-medium"
@@ -194,10 +361,10 @@ const practiceAreas = ref<{
               {{ area.name }}
             </h3>
             <USwitch
-              :model-value="area.active"
+              v-model:model-value="area.active"
               class="shrink-0"
               :ui="{ base: 'bg-[#013355]! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
-              @update:model-value="handleToggleClick(area.id, area.active)"
+              @update:model-value="(next) => handleToggleClick(area.id, Boolean(next))"
             />
           </div>
           <div class="flex items-center justify-between">
@@ -273,85 +440,95 @@ const practiceAreas = ref<{
     />
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model="isDeleteConfirmOpen">
-      <UCard class="rounded-xl">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">
-              Delete Practice Area
-            </h3>
-            <UButton
-              color="gray"
-              variant="ghost"
-              icon="i-heroicons-x-mark-20-solid"
-              class="-my-1"
-              @click="isDeleteConfirmOpen = false"
-            />
+    <UModal
+      :open="isDeleteConfirmOpen"
+      @update:open="() => isDeleteConfirmOpen = !isDeleteConfirmOpen"
+    >
+      <template #content>
+        <UCard class="rounded-xl">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">
+                Delete Practice Area
+              </h3>
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark-20-solid"
+                class="-my-1"
+                @click="isDeleteConfirmOpen = false"
+              />
+            </div>
+          </template>
+          <div class="space-y-4">
+            <p class="text-gray-600">
+              Are you sure you want to delete this practice area? This action cannot be undone.
+            </p>
           </div>
-        </template>
-        <div class="space-y-4">
-          <p class="text-gray-600">
-            Are you sure you want to delete this practice area? This action cannot be undone.
-          </p>
-        </div>
-        <template #footer>
-          <div class="flex gap-3">
-            <UButton
-              color="gray"
-              @click="isDeleteConfirmOpen = false"
-            >
-              Cancel
-            </UButton>
-            <UButton
-              color="red"
-              @click="confirmDelete"
-            >
-              Delete
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+          <template #footer>
+            <div class="flex gap-3">
+              <UButton
+                color="gray"
+                @click="isDeleteConfirmOpen = false"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                color="red"
+                @click="confirmDelete"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
     </UModal>
 
     <!-- Toggle Confirmation Modal -->
-    <UModal v-model="isToggleConfirmOpen">
-      <UCard class="rounded-xl">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">
-              {{ toggleItemState ? 'Activate' : 'Deactivate' }} Practice Area
-            </h3>
-            <UButton
-              color="gray"
-              variant="ghost"
-              icon="i-heroicons-x-mark-20-solid"
-              class="-my-1"
-              @click="isToggleConfirmOpen = false"
-            />
+    <UModal
+      :open="isToggleConfirmOpen"
+      @update:open="isToggleConfirmOpen = false"
+    >
+      <template #content>
+        <UCard class="rounded-xl">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">
+                {{ toggleItemState ? 'Activate' : 'Deactivate' }} Practice Area
+              </h3>
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark-20-solid"
+                class="-my-1"
+                @click="() => closeToggleConfirm()"
+              />
+            </div>
+          </template>
+          <div class="space-y-4">
+            <p class="text-gray-600">
+              Are you sure you want to {{ toggleItemState ? 'activate' : 'deactivate' }} this practice area?
+            </p>
           </div>
-        </template>
-        <div class="space-y-4">
-          <p class="text-gray-600">
-            Are you sure you want to {{ toggleItemState ? 'activate' : 'deactivate' }} this practice area?
-          </p>
-        </div>
-        <template #footer>
-          <div class="flex gap-3">
-            <UButton
-              color="gray"
-              @click="isToggleConfirmOpen = false"
-            >
-              Cancel
-            </UButton>
-            <UButton
-              :color="toggleItemState ? 'green' : 'orange'"
-              @click="confirmToggle"
-            >
-              {{ toggleItemState ? 'Activate' : 'Deactivate' }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+          <template #footer>
+            <div class="flex gap-3">
+              <UButton
+                color="gray"
+                @click="() => closeToggleConfirm()"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                :color="toggleItemState ? 'green' : 'orange'"
+                @click="confirmToggle"
+              >
+                {{ toggleItemState ? 'Activate' : 'Deactivate' }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
     </UModal>
   </div>
 </template>

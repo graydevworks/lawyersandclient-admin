@@ -43,6 +43,22 @@ export default defineEventHandler(async (event) => {
 
       console.log('Login response:', response)
 
+      const responseRecord = response as Record<string, unknown>
+      const requires2fa = Boolean(
+        responseRecord.requires_2fa
+        || responseRecord.two_factor_required
+        || responseRecord.requires_otp
+      )
+
+      if (requires2fa) {
+        return {
+          status: 200,
+          message: response.message || 'Two-factor authentication required',
+          data: response,
+          requires_2fa: true
+        }
+      }
+
       // Set the user session with the response data
       const userData = response.lawyer || response.client || response.admin || null
       await setUserSession(event, {
