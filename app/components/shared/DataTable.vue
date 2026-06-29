@@ -196,7 +196,7 @@ const getStatusColor = (status: string) => {
     </div>
 
     <!-- Footer -->
-    <div class="px-4 md:px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-0 items-start sm:items-center justify-between bg-gray-50/30">
+    <div class="px-4 md:px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3 sm:gap-0 items-start sm:items-center justify-between bg-gray-50/30" v-if="false">
       <div class="text-xs text-gray-500">
         Showing 1–{{ Math.min(data.length, 10) }} of {{ data.length }} users
       </div>

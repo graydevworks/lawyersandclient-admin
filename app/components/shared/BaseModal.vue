@@ -33,7 +33,7 @@ const contentClasses = [
   'overflow-hidden shadow-xl',
   // Mobile: bottom sheet
   'fixed bottom-0 left-0 right-0 translate-x-0 translate-y-0',
-  'w-full',
+  'w-full z-[9999]',
   'max-h-[85vh] overflow-y-auto',
   // Desktop: reset to centered
   'md:bottom-auto md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%]',

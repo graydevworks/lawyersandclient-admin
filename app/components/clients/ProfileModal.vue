@@ -274,7 +274,7 @@ const handleSuccessComplete = () => {
     <USelect
       v-model="suspendReason"
       :items="suspendReasons"
-      class="w-full"
+      class="w-full z-[999999]"
     />
   </SharedConfirmationModal>
 

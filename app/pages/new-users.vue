@@ -307,13 +307,6 @@ onMounted(() => start())
       <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
         New Users
       </h1>
-      <SharedDateRangePicker
-        v-model:from="fromDate"
-        v-model:to="toDate"
-        variant="header"
-        @apply="applyDateFilter"
-        @clear="clearDateFilter"
-      />
     </div>
 
     <!-- Skeleton Loading -->
@@ -369,14 +362,6 @@ onMounted(() => start())
           <h3 class="text-[16px] font-semibold text-gray-900">
             Sign ups
           </h3>
-          <div class="flex items-center gap-4">
-            <USelect
-              v-model="filterDate"
-              :items="['This week', 'Last week', 'Last month']"
-              variant="outline"
-              class="w-28 rounded-[36px] text-[16px] py-[7px]"
-            />
-          </div>
         </div>
         <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
           <ClientOnly>
@@ -412,7 +397,7 @@ onMounted(() => start())
                 class="w-full md:w-[367px]"
                 :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
               />
-              <USelect
+              <!-- <USelect
                 v-model="value"
                 color="neutral"
                 variant="outline"
@@ -420,7 +405,7 @@ onMounted(() => start())
                 class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
                 :items="sortBy"
                 placeholder="Sort By"
-              />
+              /> -->
             </div>
           </div>
         </template>

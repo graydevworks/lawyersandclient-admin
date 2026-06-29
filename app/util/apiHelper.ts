@@ -28,3 +28,34 @@ export function createAbortManager() {
     }
   }
 }
+
+/**
+ * Extract a user-friendly error message from a thrown error.
+ * Works with Nuxt's `createError()` / `$fetch` FetchError shape:
+ *   error.data?.data?.message  (server `createError({ data: { message } })`)
+ *   error.data?.message        (FetchError wrapper)
+ *   error.statusMessage        (H3 statusMessage)
+ *   fallback string
+ */
+export function extractErrorMessage(error: unknown, fallback = 'Something went wrong'): string {
+  if (!error || typeof error !== 'object') return fallback
+  const err = error as Record<string, unknown>
+
+  // Nuxt $fetch wraps the server response in error.data
+  const data = err.data as Record<string, unknown> | undefined
+
+  // Server createError({ data: { message } }) → error.data.data.message
+  const nestedData = data?.data as Record<string, unknown> | undefined
+  if (typeof nestedData?.message === 'string' && nestedData.message) return nestedData.message
+
+  // Direct data.message (some error shapes)
+  if (typeof data?.message === 'string' && data.message) return data.message
+
+  // H3 statusMessage
+  if (typeof err.statusMessage === 'string' && err.statusMessage) return err.statusMessage
+
+  // Generic Error.message
+  if (typeof err.message === 'string' && err.message) return err.message
+
+  return fallback
+}

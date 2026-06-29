@@ -1,4 +1,4 @@
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
 
 export const useCases = () => {
   const toast = useToast()
@@ -35,15 +35,16 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load cases.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load cases.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
       console.error('Get cases error:', error)
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -65,15 +66,16 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load case details.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load case details.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
       console.error('Get case error:', error)
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -95,14 +97,15 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to search cases.')
       toast.add({
         title: 'Error',
-        description: 'Failed to search cases.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -141,37 +144,27 @@ export const useCases = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Case updated successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Case updated successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to update case',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update case.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update case.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }

@@ -269,7 +269,6 @@ const submitNotification = async () => {
                   </button>
                 </div>
               </div>
-
             </div>
 
             <div class="flex items-center justify-between pt-4 mt-6 border-t border-gray-100">

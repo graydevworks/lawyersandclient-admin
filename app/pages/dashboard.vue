@@ -169,8 +169,8 @@ const viewQueueItem = (id: string) => {
 
 const fetchDashboardData = async () => {
   const query: DashboardQuery = {
-    from: fromDate.value || undefined,
-    to: toDate.value || undefined
+    date_from: fromDate.value || undefined,
+    date_to: toDate.value || undefined
   }
 
   // Backend accepts query params; keep typing loose to avoid casting errors in UI.

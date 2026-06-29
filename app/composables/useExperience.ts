@@ -1,4 +1,4 @@
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
 
 export const useExperience = () => {
   const toast = useToast()
@@ -24,14 +24,15 @@ export const useExperience = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load experiences.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load experiences.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -49,36 +50,26 @@ export const useExperience = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Experience saved successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to save experience',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Experience saved successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to save experience.')
       toast.add({
         title: 'Error',
-        description: 'Failed to save experience.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -96,36 +87,26 @@ export const useExperience = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Experience updated successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to update experience',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Experience updated successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update experience.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update experience.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -142,36 +123,26 @@ export const useExperience = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Experience deleted successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to delete experience',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Experience deleted successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to delete experience.')
       toast.add({
         title: 'Error',
-        description: 'Failed to delete experience.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }

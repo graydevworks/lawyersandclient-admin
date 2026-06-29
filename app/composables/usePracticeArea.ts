@@ -1,4 +1,4 @@
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
 import { useUser } from '#imports'
 
 export const usePracticeArea = () => {
@@ -27,14 +27,15 @@ export const usePracticeArea = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load practice areas.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load practice areas.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -54,14 +55,15 @@ export const usePracticeArea = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load practice areas.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load practice areas.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -86,38 +88,28 @@ export const usePracticeArea = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Practice areas saved successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Practice areas saved successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        await getUser()
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to save practice areas',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      await getUser()
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to save practice areas.')
       toast.add({
         title: 'Error',
-        description: 'Failed to save practice areas.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -136,7 +128,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error }
+        return { success: false, error: extractErrorMessage(error, 'Failed to search practice areas.') }
       } finally {
         loading.value = false
       }
@@ -157,7 +149,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error }
+        return { success: false, error: extractErrorMessage(error, 'Failed to create practice area.') }
       } finally {
         updating.value = false
       }
@@ -171,7 +163,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error }
+        return { success: false, error: extractErrorMessage(error, 'Failed to update practice area.') }
       } finally {
         updating.value = false
       }
@@ -184,7 +176,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error }
+        return { success: false, error: extractErrorMessage(error, 'Failed to delete practice area.') }
       } finally {
         updating.value = false
       }
@@ -205,7 +197,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error }
+        return { success: false, error: extractErrorMessage(error, 'Failed to toggle practice area.') }
       } finally {
         updating.value = false
       }

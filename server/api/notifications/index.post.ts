@@ -42,9 +42,10 @@ export default defineEventHandler(async (event) => {
       console.log(data)
     }
 
-    return {
-      status: statusCode,
-      message: message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

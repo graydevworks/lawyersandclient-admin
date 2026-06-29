@@ -1,3 +1,5 @@
+import { extractErrorMessage } from '~/util/apiHelper'
+
 export const useFeatured = () => {
   const loading = ref(false)
   const updating = ref(false)
@@ -8,7 +10,7 @@ export const useFeatured = () => {
       const data = await $fetch('/api/featured', { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to fetch featured lawyers') }
     } finally {
       loading.value = false
     }
@@ -30,7 +32,7 @@ export const useFeatured = () => {
       const data = await $fetch('/api/featured', { method: 'PUT', body: payload })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to update featured lawyers') }
     } finally {
       updating.value = false
     }
@@ -42,7 +44,7 @@ export const useFeatured = () => {
       const data = await $fetch('/api/featured/search', { method: 'GET', query })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to search featured lawyers') }
     } finally {
       loading.value = false
     }

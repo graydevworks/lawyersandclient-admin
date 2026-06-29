@@ -38,9 +38,10 @@ export default defineEventHandler(async (event) => {
       message = (data?.message as string) || 'Failed to fetch online users'
     }
 
-    return {
-      status: statusCode,
-      message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

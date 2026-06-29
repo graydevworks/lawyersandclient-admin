@@ -1,4 +1,4 @@
-import { isAbortError, createAbortManager } from '~/util/apiHelper'
+import { isAbortError, createAbortManager, extractErrorMessage } from '~/util/apiHelper'
 
 export const useSavedLawyers = () => {
   const toast = useToast()
@@ -15,14 +15,15 @@ export const useSavedLawyers = () => {
       const response = await $fetch(`/api/v1/${getRole()}/lawyers`, { method: 'GET' })
       return { success: true, data: response.data }
     } catch (error: any) {
+      const errMsg = extractErrorMessage(error, 'Failed to load saved lawyers.')
       toast.add({
         title: 'Error',
-        description: error.data?.message || 'Failed to load saved lawyers.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -45,14 +46,15 @@ export const useSavedLawyers = () => {
         return { success: false, aborted: true }
       }
 
+      const errMsg = extractErrorMessage(error, 'Search failed.')
       toast.add({
         title: 'Error',
-        description: error.data?.message || 'Search failed.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -73,14 +75,15 @@ export const useSavedLawyers = () => {
 
       return { success: true, data: response.data }
     } catch (error: any) {
+      const errMsg = extractErrorMessage(error, 'Failed to remove lawyer.')
       toast.add({
         title: 'Error',
-        description: error.data?.message || 'Failed to remove lawyer.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }

@@ -6,9 +6,9 @@ export default defineEventHandler(async (event) => {
   try {
     const session = await getUserSession(event)
 
-    console.log(session.user?.role)
+    console.log((session.user as any)?.role)
 
-    const role = session.user?.role || 'clients'
+    const role = (session.user as any)?.role || 'clients'
     const formData = await readFormData(event)
 
     const response = await $fetch(`${apiBase}/${role}/tickets`, {
@@ -45,9 +45,10 @@ export default defineEventHandler(async (event) => {
       console.log(data)
     }
 
-    return {
-      status: statusCode,
-      message: message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

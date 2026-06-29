@@ -68,9 +68,10 @@ export default defineEventHandler(async (event) => {
     //   console.error('Failed to write api error log:', e)
     // }
 
-    return {
-      status: statusCode,
-      message: message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

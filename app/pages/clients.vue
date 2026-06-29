@@ -93,8 +93,8 @@ const fetchClients = async (page: number = 1) => {
   const params: Record<string, string | number | undefined> = {
     page,
     per_page: perPage.value,
-    from: fromDate.value || undefined,
-    to: toDate.value || undefined
+    date_from: fromDate.value || undefined,
+    date_to: toDate.value || undefined
   }
 
   if (statusFilter.value) {
@@ -136,12 +136,14 @@ const fetchClients = async (page: number = 1) => {
       avatar: client.profile_photo_url || ''
     }))
 
-    stats.value = [
-      { title: 'Total Clients', value: statistics.total, trend: '', trendType: 'positive', trendSuffix: '' },
-      { title: 'Active', value: statistics.active, trend: '', trendType: 'positive', trendSuffix: '' },
-      { title: 'Suspended', value: statistics.suspended, trend: '', trendType: 'negative', trendSuffix: '' },
-      { title: 'New Users', value: statistics.new_this_week, trend: '', trendType: 'positive' }
-    ]
+    if (!searchQuery.value.trim()) {
+      stats.value = [
+        { title: 'Total Clients', value: statistics.total, trend: '', trendType: 'positive', trendSuffix: '' },
+        { title: 'Active', value: statistics.active, trend: '', trendType: 'positive', trendSuffix: '' },
+        { title: 'Suspended', value: statistics.suspended, trend: '', trendType: 'negative', trendSuffix: '' },
+        { title: 'New Users', value: statistics.new_this_week, trend: '', trendType: 'positive' }
+      ]
+    }
   }
 }
 
@@ -274,14 +276,6 @@ onMounted(() => {
               Users list
             </h3>
             <div class="flex items-center gap-4">
-              <USelect
-                v-model="statusFilter"
-                :items="statusOptions"
-                value-key="value"
-                label-key="label"
-                placeholder="Filter status"
-                class="w-[160px] rounded-[36px] text-[14px]"
-              />
               <UInput
                 v-model="searchQuery"
                 icon="i-lucide-search"
@@ -289,21 +283,14 @@ onMounted(() => {
                 class="w-full md:w-[367px]"
                 :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
               />
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-list-filter"
-                size="sm"
-                class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
-              >
-                Sort by
-                <template #trailing>
-                  <UIcon
-                    name="i-lucide-chevron-down"
-                    class="ml-2 w-4 h-4"
-                  />
-                </template>
-              </UButton>
+              <USelect
+                v-model="statusFilter"
+                :items="statusOptions"
+                value-key="value"
+                label-key="label"
+                placeholder="Filter status"
+                class="w-[160px] rounded-[36px] h-full text-[14px] py-[10px]"
+              />
             </div>
           </div>
         </template>
@@ -336,7 +323,7 @@ onMounted(() => {
             color="neutral"
             size="sm"
             icon="i-heroicons-arrow-left"
-            class="font-medium text-gray-500"
+            class="h-8 font-medium text-gray-500 bg-white shadow-sm"
             :disabled="currentPage === 1"
             @click="handlePrevPage"
           >
@@ -348,7 +335,7 @@ onMounted(() => {
             :variant="page === currentPage ? 'solid' : 'ghost'"
             :color="page === currentPage ? 'primary' : 'neutral'"
             size="sm"
-            class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white hover:bg-[#003357]/30"
             :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
             @click="goToPage(page)"
           >
@@ -359,7 +346,7 @@ onMounted(() => {
             color="neutral"
             size="sm"
             trailing-icon="i-heroicons-arrow-right"
-            class="font-medium text-gray-500"
+            class="h-8 font-medium text-gray-500 bg-white shadow-sm"
             :disabled="currentPage === totalPages"
             @click="handleNextPage"
           >

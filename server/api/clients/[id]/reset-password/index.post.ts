@@ -4,7 +4,8 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const formData = await readFormData(event)
+    const body = await readBody(event)
+    console.log(body, 'id')
 
     const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reset-password/`, {
       method: 'POST',
@@ -17,7 +18,7 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
-      body: formData
+      body: body
     })
 
     const responseData = response as Record<string, unknown>
@@ -40,9 +41,10 @@ export default defineEventHandler(async (event) => {
       console.log(data)
     }
 
-    return {
-      status: statusCode,
-      message: message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

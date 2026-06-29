@@ -65,9 +65,10 @@ export default defineEventHandler(async (event) => {
       message = (data?.message as string) || message
     }
 
-    return {
-      status: statusCode,
-      message
-    }
+    throw createError({
+      statusCode,
+      statusMessage: message,
+      data: { message }
+    })
   }
 })

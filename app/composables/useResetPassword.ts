@@ -11,6 +11,8 @@ export const useForgotPassword = async (credentials: { email: string, role: stri
   }
 
   let response: { status: number, message: string, errMsg?: Record<string, unknown> }
+
+  console.log('reset')
   try {
     response = await $fetch('/api/forgot-password', {
       method: 'POST',

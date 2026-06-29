@@ -93,15 +93,17 @@ export default defineEventHandler(async (event) => {
         message = (data?.message as string) || 'Invalid email or password. Please check your credentials and try again.'
       }
 
-      return {
-        status: statusCode,
-        message: message
-      }
+      throw createError({
+        statusCode,
+        statusMessage: message,
+        data: { message }
+      })
     }
   } else {
-    return {
-      status: 400,
-      message: 'Invalid role specified. Please try again with the correct role.'
-    }
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Invalid role specified. Please try again with the correct role.',
+      data: { message: 'Invalid role specified. Please try again with the correct role.' }
+    })
   }
 })

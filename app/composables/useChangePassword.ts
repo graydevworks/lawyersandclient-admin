@@ -1,3 +1,5 @@
+import { extractErrorMessage } from '~/util/apiHelper'
+
 export const useChangePassword = () => {
   const loading = ref(false)
 
@@ -16,8 +18,8 @@ export const useChangePassword = () => {
       const data = await $fetch('/api/change-password', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
-      const err = error as { data?: { message?: string } }
-      return { success: false, error: err?.data?.message || 'Failed to change password' }
+      const errMsg = extractErrorMessage(error, 'Failed to change password')
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }

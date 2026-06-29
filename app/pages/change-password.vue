@@ -7,6 +7,11 @@ const toast = useToast()
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
+
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+
 const showSuccess = ref(false)
 const showError = ref(false)
 const errorMessage = ref('')
@@ -37,6 +42,11 @@ const handleSubmit = async () => {
     newPassword.value = ''
     confirmPassword.value = ''
     showSuccess.value = true
+    toast.add({
+      title: 'Success',
+      description: 'Your password has been changed successfully.',
+      color: 'success'
+    })
   } else {
     errorMessage.value = String(result.error)
     showError.value = true
@@ -55,41 +65,98 @@ const handleSubmit = async () => {
       </p>
     </div>
 
-    <UCard class="rounded-2xl border-0 ring-0">
+    <UCard class="rounded-[24px] border-0 ring-0 shadow-sm p-2 sm:p-4">
       <form
-        class="space-y-5 p-2"
+        class="space-y-6"
         @submit.prevent="handleSubmit"
       >
-        <UFormGroup label="Current password">
-          <UInput
-            v-model="currentPassword"
-            type="password"
-            size="lg"
-            class="rounded-xl"
-          />
-        </UFormGroup>
-        <UFormGroup label="New password">
-          <UInput
-            v-model="newPassword"
-            type="password"
-            size="lg"
-            class="rounded-xl"
-          />
-        </UFormGroup>
-        <UFormGroup label="Confirm new password">
-          <UInput
-            v-model="confirmPassword"
-            type="password"
-            size="lg"
-            class="rounded-xl"
-          />
-        </UFormGroup>
+        <!-- Current Password -->
+        <div class="space-y-2">
+          <label class="text-[13px] font-semibold text-gray-600 block">Current password</label>
+          <div class="relative">
+            <UInput
+              v-model="currentPassword"
+              :type="showCurrentPassword ? 'text' : 'password'"
+              placeholder="Enter current password"
+              size="lg"
+              class="w-full"
+              :ui="{
+                base: 'rounded-[12px] bg-white border-gray-200 focus:ring-[#003357] h-[48px] px-4 text-[14px]'
+              }"
+            />
+            <button
+              type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showCurrentPassword = !showCurrentPassword"
+            >
+              <UIcon
+                :name="showCurrentPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- New Password -->
+        <div class="space-y-2">
+          <label class="text-[13px] font-semibold text-gray-600 block">New password</label>
+          <div class="relative">
+            <UInput
+              v-model="newPassword"
+              :type="showNewPassword ? 'text' : 'password'"
+              placeholder="Enter new password"
+              size="lg"
+              class="w-full"
+              :ui="{
+                base: 'rounded-[12px] bg-white border-gray-200 focus:ring-[#003357] h-[48px] px-4 text-[14px]'
+              }"
+            />
+            <button
+              type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showNewPassword = !showNewPassword"
+            >
+              <UIcon
+                :name="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm New Password -->
+        <div class="space-y-2">
+          <label class="text-[13px] font-semibold text-gray-600 block">Confirm new password</label>
+          <div class="relative">
+            <UInput
+              v-model="confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              placeholder="Confirm new password"
+              size="lg"
+              class="w-full"
+              :ui="{
+                base: 'rounded-[12px] bg-white border-gray-200 focus:ring-[#003357] h-[48px] px-4 text-[14px]'
+              }"
+            />
+            <button
+              type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <UIcon
+                :name="showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+        </div>
+
         <UButton
           type="submit"
           block
           size="lg"
           :loading="loading"
-          class="bg-[#003357] hover:bg-[#004474] text-white font-semibold rounded-xl"
+          class="bg-[#003357] hover:bg-[#002244] text-white font-semibold rounded-[12px] h-[48px] transition-all"
         >
           Update password
         </UButton>
@@ -110,3 +177,10 @@ const handleSubmit = async () => {
     />
   </div>
 </template>
+
+<style scoped>
+:deep(.u-input-wrapper input) {
+  font-weight: 500;
+  color: #111827;
+}
+</style>

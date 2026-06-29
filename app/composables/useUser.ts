@@ -1,5 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
 
 export const parseIsAvailable = (value: unknown): boolean => {
   if (value === false || value === 0 || value === '0') return false
@@ -52,14 +52,15 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load profile.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load profile.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -78,36 +79,28 @@ export const useUser = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Profile updated successfully.',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        await refreshSession()
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-      }
+      await refreshSession()
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update profile.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update profile.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -125,36 +118,28 @@ export const useUser = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Password updated successfully.',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        await refreshSession()
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-      }
+      await refreshSession()
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update password.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update password.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -174,14 +159,15 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to load profile.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load profile.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
@@ -199,38 +185,27 @@ export const useUser = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Bar certificate updated successfully.',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-
-        return { success: false, error: response }
-      }
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update bar certificate.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update password.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -248,38 +223,27 @@ export const useUser = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Government ID uploaded successfully.',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message,
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-
-        return { success: false, error: response }
-      }
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to upload government ID.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update password.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }
@@ -297,44 +261,34 @@ export const useUser = () => {
         signal: mutationController.value.signal
       })
 
-      if (response.status === 200) {
-        toast.add({
-          title: 'Success',
-          description: response.message || `You are now ${available ? 'available' : 'offline'}`,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
+      toast.add({
+        title: 'Success',
+        description: response.message || `You are now ${available ? 'available' : 'offline'}`,
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
 
-        if (user.value?.data && typeof user.value.data === 'object') {
-          user.value.data.is_available = parseIsAvailable(available)
-        }
-        await refreshSession()
-        if (user.value?.data && typeof user.value.data === 'object') {
-          user.value.data.is_available = parseIsAvailable(available)
-        }
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to update availability',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
+      if (user.value?.data && typeof user.value.data === 'object') {
+        user.value.data.is_available = parseIsAvailable(available)
       }
+      await refreshSession()
+      if (user.value?.data && typeof user.value.data === 'object') {
+        user.value.data.is_available = parseIsAvailable(available)
+      }
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to update availability.')
       toast.add({
         title: 'Error',
-        description: 'Failed to update availability.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       updating.value = false
     }

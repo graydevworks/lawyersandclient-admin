@@ -3,7 +3,7 @@ export const modalContentClasses = (maxWidth = 'max-w-[440px]') => [
   'rounded-t-[20px] md:rounded-[20px]',
   'overflow-hidden shadow-xl',
   'fixed bottom-0 left-0 right-0 translate-x-0 translate-y-0',
-  'w-full',
+  'w-full z-[9999]',
   'max-h-[90vh] overflow-y-auto',
   'md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2',
   'md:w-auto',

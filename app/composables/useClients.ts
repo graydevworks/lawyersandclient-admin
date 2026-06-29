@@ -1,3 +1,5 @@
+import { extractErrorMessage } from '~/util/apiHelper'
+
 type ClientQuery = Record<string, string | number | boolean | null | undefined>
 
 export const useClients = () => {
@@ -10,7 +12,7 @@ export const useClients = () => {
       const data = await $fetch('/api/clients', { method: 'GET', query: params })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to fetch clients') }
     } finally {
       loading.value = false
     }
@@ -22,7 +24,7 @@ export const useClients = () => {
       const data = await $fetch(`/api/clients/${id}`, { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to fetch client details') }
     } finally {
       loading.value = false
     }
@@ -36,7 +38,7 @@ export const useClients = () => {
       const data = await $fetch(`/api/clients/${id}/suspend`, { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to suspend client') }
     } finally {
       updating.value = false
     }
@@ -45,10 +47,10 @@ export const useClients = () => {
   const reinstateClient = async (id: string | number) => {
     updating.value = true
     try {
-      const data = await $fetch(`/api/clients/${id}/reinstate`, { method: 'POST' })
+      const data = await $fetch(`/api/clients/${id}/reinstate`, { method: 'POST', body: { id: id } })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to reinstate client') }
     } finally {
       updating.value = false
     }
@@ -57,10 +59,10 @@ export const useClients = () => {
   const resetClientPassword = async (id: string | number) => {
     updating.value = true
     try {
-      const data = await $fetch(`/api/clients/${id}/reset-password`, { method: 'POST' })
+      const data = await $fetch(`/api/clients/${id}/reset-password`, { method: 'POST', body: { id: id } })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, error: extractErrorMessage(error, 'Failed to reset client password') }
     } finally {
       updating.value = false
     }

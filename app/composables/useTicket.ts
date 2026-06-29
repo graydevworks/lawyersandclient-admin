@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
 
 export const useTicket = () => {
   const toast = useToast()
@@ -21,37 +21,26 @@ export const useTicket = () => {
         signal: mutationController.value.signal
       })
 
-      // Standard API check
-      if (response.status === 200 || response.success) {
-        toast.add({
-          title: 'Success',
-          description: response.message || 'Ticket submitted successfully',
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-          duration: 3000
-        })
-        return { success: true, data: response }
-      } else {
-        toast.add({
-          title: 'Error',
-          description: response.message || 'Failed to submit ticket',
-          icon: 'i-lucide-alert-circle',
-          color: 'error',
-          duration: 3000
-        })
-        return { success: false, error: response }
-      }
+      toast.add({
+        title: 'Success',
+        description: response.message || 'Ticket submitted successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+        duration: 3000
+      })
+      return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
+      const errMsg = extractErrorMessage(error, 'Failed to submit ticket.')
       toast.add({
         title: 'Error',
-        description: 'Failed to submit ticket.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg }
     } finally {
       loading.value = false
     }
