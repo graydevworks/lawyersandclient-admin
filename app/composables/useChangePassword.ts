@@ -12,8 +12,8 @@ export const useChangePassword = () => {
     try {
       const formData = new FormData()
       formData.append('current_password', body.current_password)
-      formData.append('password', body.password)
-      formData.append('password_confirmation', body.password_confirmation)
+      formData.append('new_password', body.password)
+      formData.append('new_password_confirmation', body.password_confirmation)
 
       const data = await $fetch('/api/change-password', { method: 'POST', body: formData })
       return { success: true, data }

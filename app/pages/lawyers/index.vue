@@ -23,12 +23,6 @@ const stats = ref<StatItem[]>([])
 const statusFilter = ref('')
 const statusOptions = [
   {
-    type: 'label',
-    label: 'Filter by status',
-    icon: 'i-lucide-list-filter'
-  },
-  '',
-  {
     label: 'Approved',
     value: 'approved'
   },
@@ -43,10 +37,6 @@ const statusOptions = [
   {
     label: 'Suspended',
     value: 'suspended'
-  },
-  {
-    label: 'New',
-    value: 'new'
   }
 ]
 

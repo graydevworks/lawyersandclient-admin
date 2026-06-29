@@ -17,6 +17,29 @@ const perPage = ref(10)
 const totalItems = ref(0)
 const totalPages = ref(1)
 
+// Practice Areas pagination numbering (always 5 page numbers, no ellipsis)
+const visiblePages = computed((): number[] => {
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1)
+
+  let start = current - 1
+  let end = current + 3
+
+  if (start < 1) {
+    start = 1
+    end = 5
+  }
+
+  if (end > total) {
+    end = total
+    start = total - 4
+  }
+
+  return Array.from({ length: 5 }, (_, i) => start + i)
+})
+
 type PracticeAreaCard = {
   id: number
   name: string
@@ -400,8 +423,9 @@ const goToPage = (page: number) => {
         >
           Prev
         </UButton>
+
         <UButton
-          v-for="page in Math.min(5, totalPages)"
+          v-for="page in visiblePages"
           :key="page"
           :variant="page === currentPage ? 'solid' : 'ghost'"
           :color="page === currentPage ? 'primary' : 'neutral'"
@@ -412,6 +436,7 @@ const goToPage = (page: number) => {
         >
           {{ page }}
         </UButton>
+
         <UButton
           variant="ghost"
           color="neutral"

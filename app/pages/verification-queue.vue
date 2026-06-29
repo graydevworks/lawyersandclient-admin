@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { formatRelativeDate } from '~/util/helper'
+import { formatRelativeDate, formatTimestamp } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -40,6 +40,7 @@ interface Submission {
   avatar: string
   documents: { name: string, type: string, status: string, uploaded: boolean, url: string }[]
   history: { action: string, date: string }[]
+  notes: { note: string, date: string, addedBy: string }[]
 }
 
 const submissions = ref<Submission[]>([])
@@ -119,8 +120,15 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
       docsUploaded: item.documents.uploaded || 0,
       docsTotal: item.documents.required || 0,
       priority: item.priority,
-      avatar: item.profile_photo_url
+      avatar: item.profile_photo_url,
+      notes: item.internal_notes.map((note: any) => ({
+        note: note.note,
+        date: note.added_at ? formatRelativeDate(note.added_at) : '-',
+        addedBy: note.added_by
+      }))
     }))
+
+    console.log('Mapped Submissions', mappedSubmissions)
 
     // Append or replace submissions
     if (append) {
@@ -175,7 +183,12 @@ const fetchDetail = async (id: string) => {
         })),
         history: item.activity_history.map((action: any) => ({
           action: action.label as string,
-          date: action.timestamp ? formatRelativeDate(action.timestamp) : '-' as string
+          date: action.timestamp ? formatTimestamp(action.timestamp) : '-' as string
+        })),
+        notes: item.internal_notes.map((note: any) => ({
+          note: note.note as string,
+          date: note.added_at ? formatRelativeDate(note.added_at) : '-' as string,
+          addedBy: note.added_by as string
         }))
       } as any
     }
@@ -752,11 +765,25 @@ onMounted(() => start())
                 variant="soft"
                 :loading="savingNote"
                 :disabled="!reviewNote.trim()"
-                class="px-5 py-[6.5px] bg-[#EBF3FC] text-[#185FA5] rounded-[7.5px] border border-[#B5D4F4]"
+                class="px-5 py-[6.5px] bg-[#EBF3FC] text-[#185FA5] rounded-[7.5px] border border-[#B5D4F4] text-[14px] disabled:opacity-20 disabled:cursor-not-allowed"
                 @click="saveNote"
               >
                 Save note
               </UButton>
+            </div>
+            <div class="mt-4">
+              <div
+                v-for="(note, index) in selectedSubmission.notes"
+                :key="index"
+                class="mb-4 bg-gray-50 p-5 py-3 rounded-sm"
+              >
+                <p class="text-sm text-gray-700 font-normal">
+                  {{ note.note }} <span class="text-gray-500 text-[12px]"> - by {{ note.addedBy }}</span>
+                </p>
+                <p class="text-xs font-light text-primary mt-1">
+                  {{ note.date }}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -767,19 +794,19 @@ onMounted(() => start())
             </h3>
             <div
               v-if="selectedSubmission.history && selectedSubmission.history.length > 0"
-              class="space-y-6"
+              class="space-y-2"
             >
               <div
                 v-for="(event, index) in selectedSubmission.history"
                 :key="index"
                 class="relative pl-6"
-                :class="{ 'border-b border-gray-100 pb-[12.24px]': index !== selectedSubmission.history.length - 1 }"
+                :class="{ 'border-b border-gray-100 pb-[10px]': index !== selectedSubmission.history.length - 1 }"
               >
                 <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full bg-[#185FA5] z-10" />
                 <p class="text-sm text-gray-900 font-medium">
                   {{ event.action }}
                 </p>
-                <p class="text-sm font-light text-gray-500 mt-1">
+                <p class="text-sm font-light text-gray-500">
                   {{ event.date }}
                 </p>
               </div>

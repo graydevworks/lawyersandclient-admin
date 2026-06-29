@@ -128,6 +128,31 @@ const currentPage = computed(() => activeTab.value === 'lawyers' ? lawyersCurren
 const totalPages = computed(() => activeTab.value === 'lawyers' ? lawyersTotalPages.value : clientsTotalPages.value)
 const totalItems = computed(() => activeTab.value === 'lawyers' ? lawyersTotalItems.value : clientsTotalItems.value)
 
+// Always render exactly 5 page numbers (no ellipsis).
+const visiblePages = computed((): number[] => {
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  let start = current - 1
+  let end = current + 3
+
+  if (start < 1) {
+    start = 1
+    end = 5
+  }
+
+  if (end > total) {
+    end = total
+    start = total - 4
+  }
+
+  return Array.from({ length: 5 }, (_, i) => start + i)
+})
+
 // Profile modal
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const selectedUser = ref<any>(null)
@@ -196,16 +221,42 @@ const fetchUsers = async (page: number = 1) => {
     const lawyersSignups: any[] = []
     const clientsSignups: any[] = []
 
-    userList.signups_chart.forEach((item: any) => {
-      lawyersSignups.push(item.lawyers)
-      clientsSignups.push(item.clients)
-    })
+    // userList.signups_chart.forEach((item: any) => {
+    //   lawyersSignups.push(item.lawyers)
+    //   clientsSignups.push(item.clients)
+    // })
 
-    // sunday is the first day of the week but the api brings it as 7th
-    lawyersSignups.unshift(lawyersSignups[lawyersSignups.length - 1])
-    lawyersSignups.pop()
-    clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
-    clientsSignups.pop()
+    // // sunday is the first day of the week but the api brings it as 7th
+    // lawyersSignups.unshift(lawyersSignups[lawyersSignups.length - 1])
+    // lawyersSignups.pop()
+    // clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
+    // clientsSignups.pop()
+
+    const getDaysOfWeek = (day: string) => {
+      const chartData = userList.signups_chart.find((item: { day: string }) => item.day === day)
+
+      return chartData
+    }
+
+    // making it orderly
+
+    // lawyers
+    lawyersSignups[0] = getDaysOfWeek('Sun')?.lawyers || 0
+    lawyersSignups[1] = getDaysOfWeek('Mon')?.lawyers || 0
+    lawyersSignups[2] = getDaysOfWeek('Tue')?.lawyers || 0
+    lawyersSignups[3] = getDaysOfWeek('Wed')?.lawyers || 0
+    lawyersSignups[4] = getDaysOfWeek('Thu')?.lawyers || 0
+    lawyersSignups[5] = getDaysOfWeek('Fri')?.lawyers || 0
+    lawyersSignups[6] = getDaysOfWeek('Sat')?.lawyers || 0
+
+    // clients
+    clientsSignups[0] = getDaysOfWeek('Sun')?.clients || 0
+    clientsSignups[1] = getDaysOfWeek('Mon')?.clients || 0
+    clientsSignups[2] = getDaysOfWeek('Tue')?.clients || 0
+    clientsSignups[3] = getDaysOfWeek('Wed')?.clients || 0
+    clientsSignups[4] = getDaysOfWeek('Thu')?.clients || 0
+    clientsSignups[5] = getDaysOfWeek('Fri')?.clients || 0
+    clientsSignups[6] = getDaysOfWeek('Sat')?.clients || 0
 
     signUpsSeries.value = [
       {
@@ -445,7 +496,7 @@ onMounted(() => start())
             Prev
           </UButton>
           <UButton
-            v-for="page in Math.min(5, totalPages)"
+            v-for="page in visiblePages"
             :key="page"
             :variant="page === currentPage ? 'solid' : 'ghost'"
             :color="page === currentPage ? 'primary' : 'neutral'"

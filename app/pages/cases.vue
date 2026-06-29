@@ -109,6 +109,33 @@ const filters = ['All', 'Stalled', 'Completed']
 const fromDate = ref('')
 const toDate = ref('')
 
+// Pagination numbering (design parity with Clients/New Users)
+const currentPage = ref(1)
+const perPage = ref(10)
+const totalPages = ref(8)
+
+const visiblePages = computed((): number[] => {
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1)
+
+  let start = current - 1
+  let end = current + 3
+
+  if (start < 1) {
+    start = 1
+    end = 5
+  }
+
+  if (end > total) {
+    end = total
+    start = total - 4
+  }
+
+  return Array.from({ length: 5 }, (_, i) => start + i)
+})
+
 const fetchCases = async () => {
   const result = await getCases({
     from: fromDate.value || undefined,
@@ -423,31 +450,44 @@ onMounted(() => start())
             <div class="text-xs text-gray-500">
               Showing 1–{{ cases.length }} of {{ cases.length }} cases
             </div>
-            <UPagination
-              :model-value="1"
-              :total="10"
-              :items-per-page="10"
-              :first-icon="false"
-              class="gap-1"
-            >
-              <template #first>
-                <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
-              </template>
-              <template #next>
-                <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
-                  Next <UIcon name="iconoir:arrow-right" />
-                </UButton>
-              </template>
-              <template #prev>
-                <UButton class="bg-white! text-neutral-700 border border-[#E8EAED]">
-                  <UIcon name="iconoir:arrow-left" />
-                  Prev
-                </UButton>
-              </template>
-              <template #last>
-                <UButton class="bg-white! hidden text-neutral-700 border border-[#E8EAED]" />
-              </template>
-            </UPagination>
+            <div class="flex items-center gap-1.5">
+              <UButton
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                icon="i-heroicons-arrow-left"
+                class="h-8 font-medium text-gray-500 bg-white shadow-sm"
+                :disabled="currentPage === 1"
+                @click="currentPage = Math.max(1, currentPage - 1)"
+              >
+                Prev
+              </UButton>
+
+              <UButton
+                v-for="page in visiblePages"
+                :key="page"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white"
+                :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
+                @click="currentPage = page"
+              >
+                {{ page }}
+              </UButton>
+
+              <UButton
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                trailing-icon="i-heroicons-arrow-right"
+                class="h-8 font-medium text-gray-500 bg-white shadow-sm"
+                :disabled="currentPage === totalPages"
+                @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              >
+                Next
+              </UButton>
+            </div>
           </div>
         </template>
       </UCard>

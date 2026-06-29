@@ -198,16 +198,45 @@ const fetchDashboardData = async () => {
     const lawyersSignups: number[] = []
     const clientsSignups: number[] = []
 
-    result.data.data.data.signups.forEach((item: { lawyers: number, clients: number }) => {
-      lawyersSignups.push(item.lawyers)
-      clientsSignups.push(item.clients)
-    })
+    // result.data.data.data.signups.forEach((item: { lawyers: number, clients: number }) => {
+    //   lawyersSignups.push(item.lawyers)
+    //   clientsSignups.push(item.clients)
+    // })
+
+    // days of the week
+    const getDaysOfWeek = (day: string) => {
+      const chartData = result.data.data.data.signups.find((item: { day: string }) => item.day === day)
+
+      return chartData
+    }
+
+    // making it orderly
+
+    // lawyers
+    lawyersSignups[0] = getDaysOfWeek('Sun')?.lawyers || 0
+    lawyersSignups[1] = getDaysOfWeek('Mon')?.lawyers || 0
+    lawyersSignups[2] = getDaysOfWeek('Tue')?.lawyers || 0
+    lawyersSignups[3] = getDaysOfWeek('Wed')?.lawyers || 0
+    lawyersSignups[4] = getDaysOfWeek('Thu')?.lawyers || 0
+    lawyersSignups[5] = getDaysOfWeek('Fri')?.lawyers || 0
+    lawyersSignups[6] = getDaysOfWeek('Sat')?.lawyers || 0
+
+    // clients
+    clientsSignups[0] = getDaysOfWeek('Sun')?.clients || 0
+    clientsSignups[1] = getDaysOfWeek('Mon')?.clients || 0
+    clientsSignups[2] = getDaysOfWeek('Tue')?.clients || 0
+    clientsSignups[3] = getDaysOfWeek('Wed')?.clients || 0
+    clientsSignups[4] = getDaysOfWeek('Thu')?.clients || 0
+    clientsSignups[5] = getDaysOfWeek('Fri')?.clients || 0
+    clientsSignups[6] = getDaysOfWeek('Sat')?.clients || 0
 
     // sunday is the first day of the week but the api brings it as 7th
-    lawyersSignups.unshift(lawyersSignups[lawyersSignups.length - 1])
-    lawyersSignups.pop()
-    clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
-    clientsSignups.pop()
+    // lawyersSignups.unshift(lawyersSignups[lawyersSignups.length - 1])
+    // lawyersSignups.pop()
+    // clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
+    // clientsSignups.pop()
+
+    console.log(lawyersSignups, clientsSignups, 'hd')
 
     signUpsSeries.value = [
       {

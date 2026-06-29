@@ -171,6 +171,18 @@ export function formatRelativeDate(dateString: string) {
   })
 }
 
+export function formatTimestamp(timestamp: string) {
+  const date = new Date(timestamp)
+  const day = date.getDate()
+  const month = date.toLocaleString('en-GB', { month: 'short' })
+  const year = date.getFullYear()
+  let hours = date.getHours()
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const period = hours >= 12 ? 'pm' : 'am'
+  hours = hours % 12 || 12
+  return `${day} ${month} ${year}, ${hours}:${minutes}${period}`
+}
+
 /**
  * Format a number into a compact human-readable string.
  * - < 1000: as-is (e.g. 42, 999)

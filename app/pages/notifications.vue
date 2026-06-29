@@ -285,105 +285,6 @@ const submitNotification = async () => {
             </div>
           </div>
         </UCard>
-
-        <!-- Recent Notifications -->
-        <UCard>
-          <div class="p-4 sm:p-6 pb-2">
-            <div class="flex items-center justify-between gap-4">
-              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Recent Notifications
-              </h3>
-
-              <UInput
-                v-model="searchQuery"
-                placeholder="Search notifications"
-                icon="i-heroicons-magnifying-glass"
-                class="w-[280px]"
-                @keyup.enter="applySearch"
-              />
-            </div>
-
-            <div class="mt-4">
-              <UTabs
-                :items="typeTabs"
-                :model-value="selectedTypeTab"
-                @update:model-value="onTypeTabChange"
-              />
-            </div>
-          </div>
-
-          <!-- Skeleton -->
-          <template v-if="isLoadingList">
-            <div class="space-y-0 pb-4">
-              <UCard v-for="i in 6" :key="i" class="mx-4 sm:mx-6 my-2 rounded-xl">
-                <div class="space-y-3">
-                  <USkeleton class="h-4 w-2/3" />
-                  <USkeleton class="h-3 w-full" />
-                  <USkeleton class="h-3 w-5/6" />
-                </div>
-              </UCard>
-            </div>
-          </template>
-
-          <template v-else>
-            <div
-              ref="listContainerRef"
-              class="space-y-0 pb-4"
-              @scroll.passive="onScroll"
-            >
-              <div
-                v-for="(notif, idx) in recentNotifications"
-                :key="notif.id ?? idx"
-                class="px-4 sm:px-6 py-4 border-t border-gray-100/60 first:border-t-0 hover:bg-gray-50 transition-colors"
-              >
-                <div class="flex justify-between items-start mb-1">
-                  <h4 class="font-bold text-sm text-gray-900">
-                    {{ notif.title }}
-                  </h4>
-                  <span class="text-xs text-gray-400 whitespace-nowrap ml-4">{{ notif.time }}</span>
-                </div>
-                <p class="text-xs text-gray-500 mb-3">
-                  {{ notif.sub }}
-                </p>
-
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <UBadge
-                      color="neutral"
-                      variant="solid"
-                      class="rounded-full bg-[#EFF6FF] text-[#003357] font-medium text-xs px-2.5 py-0.5"
-                    >
-                      {{ notif.target }}
-                    </UBadge>
-                    <UBadge
-                      color="neutral"
-                      variant="subtle"
-                      class="rounded-full text-xs px-2.5 py-0.5 text-gray-500 bg-gray-100 border-none"
-                    >
-                      {{ notif.type }}
-                    </UBadge>
-                  </div>
-
-                  <div class="flex items-center gap-1.5 text-gray-400">
-                    <UIcon
-                      name="i-lucide-eye"
-                      class="w-3.5 h-3.5"
-                    />
-                    <span class="text-xs font-medium">{{ notif.view }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="isLoadingMore" class="px-4 sm:px-6 py-4 text-sm text-gray-500">
-                Loading more...
-              </div>
-
-              <div v-if="!hasMore && recentNotifications.length > 0" class="px-4 sm:px-6 py-4 text-xs text-gray-400">
-                No more notifications.
-              </div>
-            </div>
-          </template>
-        </UCard>
       </div>
 
       <!-- Right Column: Performance Stats -->
@@ -474,5 +375,113 @@ const submitNotification = async () => {
         </UCard>
       </div>
     </div>
+    <!-- Recent Notifications -->
+    <UCard>
+      <div class="p-4 sm:p-6 pb-2">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Recent Notifications
+          </h3>
+
+          <UInput
+            v-model="searchQuery"
+            placeholder="Search notifications"
+            icon="i-heroicons-magnifying-glass"
+            class="w-[280px]"
+            @keyup.enter="applySearch"
+          />
+        </div>
+
+        <div class="mt-4">
+          <UTabs
+            :items="typeTabs"
+            :model-value="selectedTypeTab"
+            @update:model-value="onTypeTabChange"
+          />
+        </div>
+      </div>
+
+      <!-- Skeleton -->
+      <template v-if="isLoadingList">
+        <div class="space-y-0 pb-4">
+          <UCard
+            v-for="i in 6"
+            :key="i"
+            class="mx-4 sm:mx-6 my-2 rounded-xl"
+          >
+            <div class="space-y-3">
+              <USkeleton class="h-4 w-2/3" />
+              <USkeleton class="h-3 w-full" />
+              <USkeleton class="h-3 w-5/6" />
+            </div>
+          </UCard>
+        </div>
+      </template>
+
+      <template v-else>
+        <div
+          ref="listContainerRef"
+          class="space-y-0 pb-4"
+          @scroll.passive="onScroll"
+        >
+          <div
+            v-for="(notif, idx) in recentNotifications"
+            :key="notif.id ?? idx"
+            class="px-4 sm:px-6 py-4 border-t border-gray-100/60 first:border-t-0 hover:bg-gray-50 transition-colors"
+          >
+            <div class="flex justify-between items-start mb-1">
+              <h4 class="font-bold text-sm text-gray-900">
+                {{ notif.title }}
+              </h4>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-4">{{ notif.time }}</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-3">
+              {{ notif.sub }}
+            </p>
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <UBadge
+                  color="neutral"
+                  variant="solid"
+                  class="rounded-full bg-[#EFF6FF] text-[#003357] font-medium text-xs px-2.5 py-0.5"
+                >
+                  {{ notif.target }}
+                </UBadge>
+                <UBadge
+                  color="neutral"
+                  variant="subtle"
+                  class="rounded-full text-xs px-2.5 py-0.5 text-gray-500 bg-gray-100 border-none"
+                >
+                  {{ notif.type }}
+                </UBadge>
+              </div>
+
+              <div class="flex items-center gap-1.5 text-gray-400">
+                <UIcon
+                  name="i-lucide-eye"
+                  class="w-3.5 h-3.5"
+                />
+                <span class="text-xs font-medium">{{ notif.view }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="isLoadingMore"
+            class="px-4 sm:px-6 py-4 text-sm text-gray-500"
+          >
+            Loading more...
+          </div>
+
+          <div
+            v-if="!hasMore && recentNotifications.length > 0"
+            class="px-4 sm:px-6 py-4 text-xs text-gray-400"
+          >
+            No more notifications.
+          </div>
+        </div>
+      </template>
+    </UCard>
   </div>
 </template>

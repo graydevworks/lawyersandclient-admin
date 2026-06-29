@@ -166,6 +166,39 @@ const goToPage = (page: number) => {
   fetchClients(page)
 }
 
+/**
+ * Smart pagination numbering:
+ * - If total pages <= 5: show all numbers.
+ * - Otherwise: always show 1 and total.
+ * - Around current: show current ± 1.
+ * - Add an ellipsis when there is a gap.
+ */
+const visiblePages = computed((): number[] => {
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  // Always render exactly 5 page numbers.
+  // Slide the window as the user moves, and clamp to [1..total].
+  let start = current - 1
+  let end = current + 3
+
+  if (start < 1) {
+    start = 1
+    end = 5
+  }
+
+  if (end > total) {
+    end = total
+    start = total - 4
+  }
+
+  return Array.from({ length: 5 }, (_, i) => start + i)
+})
+
 onMounted(async () => {
   await fetchClients()
   skeleton.value = false
@@ -329,18 +362,25 @@ onMounted(() => {
           >
             Prev
           </UButton>
-          <UButton
-            v-for="page in Math.min(5, totalPages)"
-            :key="page"
-            :variant="page === currentPage ? 'solid' : 'ghost'"
-            :color="page === currentPage ? 'primary' : 'neutral'"
-            size="sm"
-            class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white hover:bg-[#003357]/30"
-            :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
-            @click="goToPage(page)"
-          >
-            {{ page }}
-          </UButton>
+          <template v-for="page in visiblePages" :key="page">
+            <span
+              v-if="page === '...'"
+              class="w-8 h-8 flex items-center justify-center text-gray-400 text-[13px]"
+            >
+              …
+            </span>
+            <UButton
+              v-else
+              :variant="page === currentPage ? 'solid' : 'ghost'"
+              :color="page === currentPage ? 'primary' : 'neutral'"
+              size="sm"
+              class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white hover:bg-[#003357]/30"
+              :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+              @click="goToPage(Number(page))"
+            >
+              {{ page }}
+            </UButton>
+          </template>
           <UButton
             variant="ghost"
             color="neutral"
