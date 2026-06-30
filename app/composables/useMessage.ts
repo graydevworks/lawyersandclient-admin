@@ -1,5 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useMessage = () => {
   const toast = useToast()
@@ -14,7 +14,7 @@ export const useMessage = () => {
       const response = await $fetch(`/api/v1/${getRole()}/messages`, { method: 'GET' })
       return { success: true, data: response }
     } catch (error) {
-      const errMsg = extractErrorMessage(error, 'Failed to load conversations.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load conversations.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -22,7 +22,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -44,7 +44,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to create conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to create conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -52,7 +52,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -77,7 +77,7 @@ export const useMessage = () => {
       await navigateTo({ path: '/messages', query: conversationId ? { id: conversationId } : {} })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to start conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to start conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -85,7 +85,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -97,7 +97,7 @@ export const useMessage = () => {
       const response = await $fetch(`/api/v1/${getRole()}/messages/conversations/${conversationId}`, { method: 'GET' })
       return { success: true, data: response }
     } catch (error) {
-      const errMsg = extractErrorMessage(error, 'Failed to load conversation messages.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load conversation messages.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -105,7 +105,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -120,7 +120,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to send message.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to send message.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -128,7 +128,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -150,7 +150,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to upload file.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to upload file.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -158,7 +158,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -172,7 +172,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to mark message as read.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to mark message as read.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -180,7 +180,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -201,7 +201,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to archive conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to archive conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -209,7 +209,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -230,7 +230,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to delete conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to delete conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -238,7 +238,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -259,7 +259,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to block conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to block conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -267,7 +267,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -288,7 +288,7 @@ export const useMessage = () => {
       })
       return { success: true, data: response }
     } catch (error: any) {
-      const errMsg = extractErrorMessage(error, 'Failed to unblock conversation.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to unblock conversation.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -296,7 +296,7 @@ export const useMessage = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

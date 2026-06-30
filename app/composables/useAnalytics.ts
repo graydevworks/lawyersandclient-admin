@@ -1,3 +1,5 @@
+import { resolveApiError } from '~/util/apiHelper'
+
 type AnalyticsParams = Record<string, string | number | boolean | null | undefined>
 
 export const useAnalytics = () => {
@@ -12,7 +14,7 @@ export const useAnalytics = () => {
       })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, ...resolveApiError(error, 'Failed to load analytics.') }
     } finally {
       loading.value = false
     }

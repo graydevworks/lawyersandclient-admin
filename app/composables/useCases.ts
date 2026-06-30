@@ -1,4 +1,4 @@
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, resolveApiError } from '~/util/apiHelper'
 
 export const useCases = () => {
   const toast = useToast()
@@ -35,16 +35,16 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load cases.')
-      toast.add({
-        title: 'Error',
-        description: errMsg,
-        icon: 'i-lucide-alert-circle',
-        color: 'error',
-        duration: 3000
-      })
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load cases.')
+      // toast.add({
+      //   title: 'Error',
+      //   description: errMsg,
+      //   icon: 'i-lucide-alert-circle',
+      //   color: 'error',
+      //   duration: 3000
+      // })
       console.error('Get cases error:', error)
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -66,7 +66,7 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load case details.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load case details.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -75,7 +75,7 @@ export const useCases = () => {
         duration: 3000
       })
       console.error('Get case error:', error)
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -97,7 +97,7 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to search cases.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to search cases.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -105,7 +105,7 @@ export const useCases = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -156,7 +156,7 @@ export const useCases = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update case.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update case.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -164,7 +164,7 @@ export const useCases = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }

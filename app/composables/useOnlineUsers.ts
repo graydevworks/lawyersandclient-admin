@@ -1,3 +1,5 @@
+import { resolveApiError } from '~/util/apiHelper'
+
 type OnlineQuery = Record<string, string | number | boolean | null | undefined>
 
 export const useOnlineUsers = () => {
@@ -9,7 +11,7 @@ export const useOnlineUsers = () => {
       const data = await $fetch('/api/online', { method: 'GET', query: params })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error }
+      return { success: false, ...resolveApiError(error, 'Failed to load online users.') }
     } finally {
       loading.value = false
     }

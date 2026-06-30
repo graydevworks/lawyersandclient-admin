@@ -1,4 +1,4 @@
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useExperience = () => {
   const toast = useToast()
@@ -24,7 +24,7 @@ export const useExperience = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load experiences.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load experiences.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -32,7 +32,7 @@ export const useExperience = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -61,7 +61,7 @@ export const useExperience = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to save experience.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to save experience.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -69,7 +69,7 @@ export const useExperience = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -98,7 +98,7 @@ export const useExperience = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update experience.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update experience.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -106,7 +106,7 @@ export const useExperience = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -134,7 +134,7 @@ export const useExperience = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to delete experience.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to delete experience.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -142,7 +142,7 @@ export const useExperience = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }

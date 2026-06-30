@@ -2,6 +2,7 @@
 /**
  * ClientProfileModal — User details modal with Reset Password, Suspend and Reinstate actions.
  */
+import { displayApiError } from '~/util/apiHelper'
 
 interface ClientInfo {
   id: string
@@ -81,7 +82,7 @@ const confirmResetPassword = async () => {
     successButtonText.value = 'Complete'
     showSuccessModal.value = true
   } else {
-    errorMessage.value = 'Failed to send password reset link.'
+    errorMessage.value = displayApiError(result, 'Failed to send password reset link.')
     showErrorModal.value = true
   }
 }
@@ -103,7 +104,7 @@ const confirmSuspend = async () => {
     showSuccessModal.value = true
     emit('action-complete')
   } else {
-    errorMessage.value = 'Failed to suspend account.'
+    errorMessage.value = displayApiError(result, 'Failed to suspend account.')
     showErrorModal.value = true
   }
 }
@@ -124,7 +125,7 @@ const confirmReinstate = async () => {
     showSuccessModal.value = true
     emit('action-complete')
   } else {
-    errorMessage.value = 'Failed to reinstate account.'
+    errorMessage.value = displayApiError(result, 'Failed to reinstate account.')
     showErrorModal.value = true
   }
 }

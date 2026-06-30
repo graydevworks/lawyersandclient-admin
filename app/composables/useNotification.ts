@@ -1,4 +1,4 @@
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 type NotificationQuery = Record<string, string | number | boolean | null | undefined>
 
@@ -29,7 +29,7 @@ export const useNotification = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load notifications.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load notifications.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -37,7 +37,7 @@ export const useNotification = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -57,7 +57,7 @@ export const useNotification = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load notification.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load notification.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -65,7 +65,7 @@ export const useNotification = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -86,7 +86,7 @@ export const useNotification = () => {
       return { success: true, data: response }
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
-      return { success: false, error: extractErrorMessage(error, 'Failed to mark notification as read.') }
+      return { success: false, ...resolveApiError(error, 'Failed to mark notification as read.') }
     } finally {
       updating.value = false
     }
@@ -104,7 +104,7 @@ export const useNotification = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to fetch notification stats.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to fetch notification stats.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -112,7 +112,7 @@ export const useNotification = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

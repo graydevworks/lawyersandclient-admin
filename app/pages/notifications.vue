@@ -239,7 +239,7 @@ const submitNotification = async () => {
                 <label class="text-sm font-medium text-gray-700">Type</label>
                 <USelect
                   v-model="notificationType"
-                  :options="['announcement', 'platform_update', 'promotion', 'security_alert']"
+                  :items="['announcement', 'platform_update', 'promotion', 'security_alert']"
                 />
               </div>
 

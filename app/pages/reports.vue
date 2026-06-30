@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -32,6 +33,7 @@ const tabs = [
 
 const searchQuery = ref('')
 const isFetching = ref(false)
+const listError = ref('')
 
 const resolutionStatus = ref<ReportStatus>('open')
 const resolutionNote = ref('')
@@ -69,7 +71,10 @@ const resetListState = () => {
 
 const fetchList = async ({ append }: { append: boolean }) => {
   if (isFetching.value) return
-  if (!append) isFetching.value = true
+  if (!append) {
+    isFetching.value = true
+    listError.value = ''
+  }
 
   try {
     const result = await getReports({
@@ -77,6 +82,12 @@ const fetchList = async ({ append }: { append: boolean }) => {
       ...(searchQuery.value.trim() ? { q: searchQuery.value.trim() } : {}),
       page: meta.value.current_page
     })
+
+    if (!result?.success) {
+      listError.value = displayApiError(result, 'Failed to fetch reports.')
+      if (!append) submissions.value = []
+      return
+    }
 
     const metaFromApi = result?.data?.data?.meta ?? result?.data?.meta
     const dataFromApi = result?.data?.data?.data ?? result?.data?.data?.reports ?? result?.data?.data
@@ -195,6 +206,13 @@ onUnmounted(() => {
             class="mb-6"
           />
 
+          <div
+            v-if="listError"
+            class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {{ listError }}
+          </div>
+
           <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
             <button
               v-for="t in tabs"
@@ -204,26 +222,6 @@ onUnmounted(() => {
               @click="activeTab = t.value"
             >
               {{ t.label }}
-            </button>
-          </div>
-
-          <div class="space-y-1 -mx-4">
-            <button
-              v-for="sub in submissions"
-              :key="sub.id"
-              class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-              @click="onSelectReport(sub.id)"
-            >
-              <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
-                {{ sub.title }}
-              </h3>
-              <p class="text-xs text-gray-500 mt-1 line-clamp-1">
-                Reported by {{ sub.reporter }}
-              </p>
-              <p class="text-xs text-gray-400 mt-2">
-                {{ sub.time }}
-              </p>
             </button>
           </div>
 
@@ -265,7 +263,7 @@ onUnmounted(() => {
           <div ref="sentinelEl" class="h-1" />
           <div v-if="isFetching && submissions.length > 0" class="py-3 flex justify-center">
             <div class="flex flex-col items-center gap-2 text-xs text-gray-500">
-              <div class="flex items-center gap-2">s
+              <div class="flex items-center gap-2">
                 <UIcon name="i-lucide-loader" class="animate-spin" />
                 <span>Loading…</span>
               </div>

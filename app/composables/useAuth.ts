@@ -1,4 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
+import { resolveApiError } from '~/util/apiHelper'
 
 interface LoginCredentials {
   email: string
@@ -67,9 +68,7 @@ export const useAuth = () => {
         return { success: false, error: errorMsg }
       }
     } catch (error) {
-      const message = error instanceof Error && error.message
-        ? error.message
-        : 'Unable to connect to the server. Please check your internet connection and try again.'
+      const { error: message } = resolveApiError(error, 'Unable to connect to the server. Please check your internet connection and try again.')
 
       toast.add({
         title: 'Login failed',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -253,7 +254,7 @@ const loadFeatured = async () => {
   if (!result?.success) {
     toast.add({
       title: 'Could not load featured lawyers',
-      description: (result as any)?.error?.data?.message || 'Please try again.',
+      description: displayApiError(result, 'Please try again.'),
       color: 'error'
     })
     return
@@ -306,7 +307,7 @@ const loadFeaturedSearch = async () => {
   if (!result?.success) {
     toast.add({
       title: 'Could not search featured lawyers',
-      description: (result as any)?.error?.data?.message || 'Please try again.',
+      description: displayApiError(result, 'Please try again.'),
       color: 'error'
     })
     featuredSearchResults.value = []
@@ -368,7 +369,7 @@ const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) 
   if (!result?.success) {
     toast.add({
       title: 'Update failed',
-      description: (result as any)?.error?.data?.message || 'Please try again.',
+      description: displayApiError(result, 'Please try again.'),
       color: 'error'
     })
     return
@@ -442,6 +443,7 @@ const responseSucceeded = (result: any) => {
 }
 
 const responseMessage = (result: any, fallback: string) => {
+  if (result?.success === false) return displayApiError(result, fallback)
   return (result?.data as { message?: string } | undefined)?.message || fallback
 }
 

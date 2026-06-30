@@ -1,3 +1,5 @@
+import { resolveApiError } from '~/util/apiHelper'
+
 type UsersQuery = Record<string, string | number | boolean | null | undefined>
 
 export const useUsers = () => {
@@ -17,15 +19,16 @@ export const useUsers = () => {
         }
       }
     } catch (error) {
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load users.')
       toast.add({
         title: 'Error',
-        description: 'Failed to load users.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
       console.error('Get users error:', error)
-      return { success: false, error }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

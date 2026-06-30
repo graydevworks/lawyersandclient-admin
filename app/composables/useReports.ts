@@ -1,4 +1,4 @@
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 type ReportQuery = Record<string, string | number | boolean | null | undefined>
 
@@ -12,7 +12,7 @@ export const useReports = () => {
       const data = await $fetch('/api/report', { method: 'GET', query: params })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to fetch reports') }
+      return { success: false, ...resolveApiError(error, 'Failed to fetch reports') }
     } finally {
       loading.value = false
     }
@@ -24,7 +24,7 @@ export const useReports = () => {
       const data = await $fetch(`/api/report/${id}`, { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to fetch report details') }
+      return { success: false, ...resolveApiError(error, 'Failed to fetch report details') }
     } finally {
       loading.value = false
     }
@@ -36,7 +36,7 @@ export const useReports = () => {
       const data = await $fetch(`/api/report/${id}`, { method: 'PUT', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to update report') }
+      return { success: false, ...resolveApiError(error, 'Failed to update report') }
     } finally {
       updating.value = false
     }
@@ -48,7 +48,7 @@ export const useReports = () => {
       const data = await $fetch(`/api/report/${id}/resolution`, { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to resolve report') }
+      return { success: false, ...resolveApiError(error, 'Failed to resolve report') }
     } finally {
       updating.value = false
     }
@@ -60,7 +60,7 @@ export const useReports = () => {
       const data = await $fetch('/api/report/stats', { method: 'GET', query: params })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to fetch report stats') }
+      return { success: false, ...resolveApiError(error, 'Failed to fetch report stats') }
     } finally {
       loading.value = false
     }

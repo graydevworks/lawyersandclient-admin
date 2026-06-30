@@ -1,4 +1,4 @@
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 import { useUser } from '#imports'
 
 export const usePracticeArea = () => {
@@ -27,7 +27,7 @@ export const usePracticeArea = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load practice areas.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load practice areas.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -35,7 +35,7 @@ export const usePracticeArea = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -55,7 +55,7 @@ export const usePracticeArea = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load practice areas.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load practice areas.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -63,7 +63,7 @@ export const usePracticeArea = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -101,7 +101,7 @@ export const usePracticeArea = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to save practice areas.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to save practice areas.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -109,7 +109,7 @@ export const usePracticeArea = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -128,7 +128,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error: extractErrorMessage(error, 'Failed to search practice areas.') }
+        return { success: false, ...resolveApiError(error, 'Failed to search practice areas.') }
       } finally {
         loading.value = false
       }
@@ -149,7 +149,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error: extractErrorMessage(error, 'Failed to create practice area.') }
+        return { success: false, ...resolveApiError(error, 'Failed to create practice area.') }
       } finally {
         updating.value = false
       }
@@ -163,7 +163,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error: extractErrorMessage(error, 'Failed to update practice area.') }
+        return { success: false, ...resolveApiError(error, 'Failed to update practice area.') }
       } finally {
         updating.value = false
       }
@@ -176,7 +176,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error: extractErrorMessage(error, 'Failed to delete practice area.') }
+        return { success: false, ...resolveApiError(error, 'Failed to delete practice area.') }
       } finally {
         updating.value = false
       }
@@ -197,7 +197,7 @@ export const usePracticeArea = () => {
         })
         return { success: true, data }
       } catch (error) {
-        return { success: false, error: extractErrorMessage(error, 'Failed to toggle practice area.') }
+        return { success: false, ...resolveApiError(error, 'Failed to toggle practice area.') }
       } finally {
         updating.value = false
       }

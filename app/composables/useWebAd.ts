@@ -1,4 +1,4 @@
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useWebAd = () => {
   const loading = ref(false)
@@ -10,7 +10,7 @@ export const useWebAd = () => {
       const data = await $fetch('/api/web-ad', { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to fetch web ads') }
+      return { success: false, ...resolveApiError(error, 'Failed to fetch web ads') }
     } finally {
       loading.value = false
     }
@@ -22,7 +22,7 @@ export const useWebAd = () => {
       const data = await $fetch('/api/web-ad', { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to create web ad') }
+      return { success: false, ...resolveApiError(error, 'Failed to create web ad') }
     } finally {
       updating.value = false
     }
@@ -34,7 +34,7 @@ export const useWebAd = () => {
       const data = await $fetch(`/api/web-ad/${id}`, { method: 'PUT', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to update web ad') }
+      return { success: false, ...resolveApiError(error, 'Failed to update web ad') }
     } finally {
       updating.value = false
     }
@@ -46,7 +46,7 @@ export const useWebAd = () => {
       const data = await $fetch(`/api/web-ad/${id}`, { method: 'DELETE' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to delete web ad') }
+      return { success: false, ...resolveApiError(error, 'Failed to delete web ad') }
     } finally {
       updating.value = false
     }

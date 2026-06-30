@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import CaseDetailsModal from '~/components/cases/CaseDetailsModal.vue'
 import { formatRelativeDate } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
 // --- Fetch cases data on mount ---
-const { getCases } = useCases()
+const { getCases, searchCases } = useCases()
+const { debounceSearch } = useSearch()
 
 const skeleton = ref(true)
+const listError = ref('')
+const searchQuery = ref('')
 
 interface CaseRow {
   id: string
@@ -104,7 +108,7 @@ const getStatusColor = (status: string): string => {
 }
 
 const activeFilter = ref('All')
-const filters = ['All', 'Stalled', 'Completed']
+const filters = ['All', 'Active', 'Stalled', 'Completed']
 
 const fromDate = ref('')
 const toDate = ref('')
@@ -112,7 +116,39 @@ const toDate = ref('')
 // Pagination numbering (design parity with Clients/New Users)
 const currentPage = ref(1)
 const perPage = ref(10)
-const totalPages = ref(8)
+const totalItems = ref(0)
+const totalPages = ref(1)
+
+const isSearching = computed(() => searchQuery.value.trim().length > 0)
+
+const mapCaseRow = (caseData: any): CaseRow => ({
+  id: caseData.id,
+  date: caseData.opened_at ? formatRelativeDate(caseData.opened_at) : 'N/A',
+  matter: caseData.title,
+  category: caseData.practice_area,
+  client: caseData.client,
+  location: caseData.location,
+  lawyer: caseData.lawyer,
+  lawyerLoc: caseData.lawyer_loc,
+  status: caseData.status,
+  duration: caseData.duration ?? caseData.days_elapsed ?? ''
+})
+
+const extractCasesPayload = (result: { success?: boolean, data?: any }, mode: 'list' | 'search') => {
+  if (!result?.success) return null
+
+  const root = mode === 'search'
+    ? result.data?.data ?? result.data
+    : result.data?.user?.data ?? result.data?.data ?? result.data
+
+  if (!root?.success) return null
+
+  return {
+    cases: (root.data?.cases ?? []) as any[],
+    stats: root.data?.stats as Record<string, string> | undefined,
+    meta: root.meta as Record<string, number> | undefined
+  }
+}
 
 const visiblePages = computed((): number[] => {
   const total = totalPages.value
@@ -136,42 +172,96 @@ const visiblePages = computed((): number[] => {
   return Array.from({ length: 5 }, (_, i) => start + i)
 })
 
-const fetchCases = async () => {
-  const result = await getCases({
+const fetchCases = async (page: number = currentPage.value) => {
+  listError.value = ''
+
+  const params: Record<string, string | number | undefined> = {
     from: fromDate.value || undefined,
-    to: toDate.value || undefined
-  })
-  // Map real API data when available
+    to: toDate.value || undefined,
+    page,
+    per_page: perPage.value
+  }
 
-  if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
-    console.log(result.data.user.data.meta, 'case')
+  const searching = searchQuery.value.trim().length > 0
+  let result
 
-    const meta = result.data.user.data.meta
-    const statistics = result.data.user.data.data.stats
-    const data = result.data.user.data.data.cases
+  if (searching) {
+    result = await searchCases({ q: searchQuery.value.trim(), ...params })
+  } else {
+    if (activeFilter.value !== 'All') {
+      params.status = activeFilter.value.toLowerCase()
+    }
+    result = await getCases(params)
+  }
 
+  if (result?.aborted) return
+
+  if (!result?.success) {
+    listError.value = displayApiError(result, 'Failed to load cases.')
+    cases.value = []
+    return
+  }
+
+  const payload = extractCasesPayload(result, searching ? 'search' : 'list')
+  if (!payload) {
+    listError.value = displayApiError(result, 'Failed to load cases.')
+    cases.value = []
+    return
+  }
+
+  const meta = payload.meta
+  if (meta) {
+    currentPage.value = meta.current_page || page
+    totalItems.value = meta.total || 0
+    totalPages.value = meta.last_page || 1
+  }
+
+  cases.value = payload.cases.map(mapCaseRow)
+
+  if (!searching && payload.stats) {
+    const statistics = payload.stats
     stats.value = [
       { title: 'Total active cases', value: statistics.total_active, trendType: 'positive', trendSuffix: '' },
       { title: 'Completed this month', value: statistics.completed_this_month, trendType: 'positive', trendSuffix: '' },
       { title: 'Stalled cases', value: statistics.stalled, trend: '', trendType: 'negative' },
       { title: 'Avg. case duration', value: statistics.avg_duration_days, trend: '', trendType: 'positive', trendSuffix: '' }
     ]
-
-    cases.value = data.map((caseData: any) => ({
-      id: caseData.id,
-      date: caseData.opened_at ? formatRelativeDate(caseData.opened_at) : 'N/A',
-      matter: caseData.title,
-      category: caseData.practice_area,
-      client: caseData.client,
-      location: caseData.location,
-      lawyer: caseData.lawyer,
-      lawyerLoc: caseData.lawyer_loc,
-      status: caseData.status,
-      // duration: caseData.duration,
-      timeElapsed: caseData.days_elapsed,
-      lastActivity: caseData.updated_at
-    }))
   }
+}
+
+const handleFilterClick = (filter: string) => {
+  searchQuery.value = ''
+  listError.value = ''
+  activeFilter.value = filter
+  currentPage.value = 1
+  fetchCases(1)
+}
+
+const resetSearch = () => {
+  searchQuery.value = ''
+  listError.value = ''
+  activeFilter.value = 'All'
+  currentPage.value = 1
+  fetchCases(1)
+}
+
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchCases(currentPage.value)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchCases(currentPage.value)
+  }
+}
+
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchCases(page)
 }
 
 onMounted(async () => {
@@ -180,19 +270,32 @@ onMounted(async () => {
   skeleton.value = false
 })
 
-const applyDateFilter = () => fetchCases()
+const applyDateFilter = () => {
+  currentPage.value = 1
+  fetchCases(1)
+}
+
 const clearDateFilter = () => {
   fromDate.value = ''
   toDate.value = ''
-  fetchCases()
+  currentPage.value = 1
+  fetchCases(1)
 }
 
 const handleCaseStatusChanged = async () => {
-  await fetchCases()
+  await fetchCases(currentPage.value)
 }
 
+watch(searchQuery, () => {
+  if (searchQuery.value.trim()) {
+    activeFilter.value = 'All'
+  }
+  currentPage.value = 1
+  debounceSearch(() => fetchCases(1))
+})
+
 // Silent background refresh every 60 seconds
-const { start } = useIntervalFetch(fetchCases, 60000)
+const { start } = useIntervalFetch(() => fetchCases(currentPage.value), 60000)
 onMounted(() => start())
 </script>
 
@@ -266,17 +369,27 @@ onMounted(() => start())
       <UCard class="overflow-hidden rounded-[18px] border-0 ring-0">
         <!-- Filter Bar -->
         <div class="flex flex-col xl:flex-row lg:items-center justify-between gap-4">
-          <div class="w-full xl:flex-1 xl:max-w-lg">
+          <div class="flex w-full flex-wrap items-center gap-2 xl:flex-1 xl:max-w-lg">
             <UInput
+              v-model="searchQuery"
               icon="i-lucide-search"
               placeholder="Search by name or email..."
               class="w-full xl:w-[367px]"
               :ui="{ base: 'rounded-[36px] text-[14px] py-[10px] w-full' }"
             />
+            <UButton
+              v-if="isSearching"
+              label="Reset"
+              variant="outline"
+              color="neutral"
+              size="sm"
+              class="rounded-[36px] text-[13px] font-semibold text-[#003357] border-[#E2E8F0]"
+              @click="resetSearch"
+            />
           </div>
 
           <div class="flex flex-wrap items-center gap-4">
-            <USelect
+            <!-- <USelect
               placeholder="All statuses"
               color="neutral"
               variant="outline"
@@ -291,15 +404,15 @@ onMounted(() => start())
               icon="i-lucide-list-filter"
               class="whitespace-nowrap rounded-[36px] text-[14px] py-[10px]"
               :items="['All categories']"
-            />
+            /> -->
 
             <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
               <button
                 v-for="filter in filters"
                 :key="filter"
                 class="px-5 py-1.5 text-sm font-medium rounded-md transition-all"
-                :class="activeFilter === filter ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
-                @click="activeFilter = filter"
+                :class="activeFilter === filter && !isSearching ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+                @click="handleFilterClick(filter)"
               >
                 {{ filter }}
               </button>
@@ -308,11 +421,11 @@ onMounted(() => start())
         </div>
 
         <!-- Empty State -->
-        <template v-if="cases.length === 0">
+        <template v-if="cases.length === 0 && !listError">
           <SharedEmptyState
             icon="i-lucide-file-text"
-            title="No cases found"
-            description="There are no cases to display right now."
+            :title="isSearching ? 'No matching cases' : 'No cases found'"
+            :description="isSearching ? `No cases match &quot;${searchQuery}&quot;.` : 'There are no cases to display right now.'"
           />
         </template>
 
@@ -448,7 +561,7 @@ onMounted(() => start())
           <!-- Pagination Footer -->
           <div class="px-6 py-5 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-4">
             <div class="text-xs text-gray-500">
-              Showing 1–{{ cases.length }} of {{ cases.length }} cases
+              Showing {{ totalItems ? (currentPage - 1) * perPage + 1 : 0 }}–{{ Math.min(currentPage * perPage, totalItems || cases.length) }} of {{ totalItems || cases.length }} cases
             </div>
             <div class="flex items-center gap-1.5">
               <UButton
@@ -458,7 +571,7 @@ onMounted(() => start())
                 icon="i-heroicons-arrow-left"
                 class="h-8 font-medium text-gray-500 bg-white shadow-sm"
                 :disabled="currentPage === 1"
-                @click="currentPage = Math.max(1, currentPage - 1)"
+                @click="handlePrevPage"
               >
                 Prev
               </UButton>
@@ -471,7 +584,7 @@ onMounted(() => start())
                 size="sm"
                 class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white"
                 :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
-                @click="currentPage = page"
+                @click="goToPage(page)"
               >
                 {{ page }}
               </UButton>
@@ -483,7 +596,7 @@ onMounted(() => start())
                 trailing-icon="i-heroicons-arrow-right"
                 class="h-8 font-medium text-gray-500 bg-white shadow-sm"
                 :disabled="currentPage === totalPages"
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                @click="handleNextPage"
               >
                 Next
               </UButton>

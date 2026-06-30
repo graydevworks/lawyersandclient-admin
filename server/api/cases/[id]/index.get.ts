@@ -38,40 +38,6 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
-    let statusCode = 401
-    let message = 'Failed to fetch case details'
-
-    if (error && typeof error === 'object') {
-      const err = error as Record<string, unknown>
-      statusCode = (err.statusCode as number) || (err.status as number) || 401
-      const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to fetch case details'
-
-      console.log(data)
-    }
-
-    // // Debug log to inspect error structure
-    // try {
-    //   const fs = await import('fs')
-    //   fs.writeFileSync('/Users/ranger/jobs/www/Grey/lawyersandclient-web/api_response_log.json', JSON.stringify({
-    //     timestamp: new Date().toISOString(),
-    //     success: false,
-    //     statusCode,
-    //     message,
-    //     error: error && typeof error === 'object' ? {
-    //       message: (error as any).message,
-    //       stack: (error as any).stack,
-    //       data: (error as any).data
-    //     } : error
-    //   }, null, 2))
-    // } catch (e) {
-    //   console.error('Failed to write api error log:', e)
-    // }
-
-    throw createError({
-      statusCode,
-      statusMessage: message,
-      data: { message }
-    })
+    throwApiError(error, 'Failed to fetch case details')
   }
 })

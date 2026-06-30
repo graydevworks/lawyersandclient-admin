@@ -1,5 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 // export const showLawyer = () => {
 //   return useState('lawyer', () => null)
@@ -28,7 +28,7 @@ export const useLawyers = () => {
       const lawyers = await $fetch('/api/lawyer', { method: 'GET', query: params })
       return { success: true, data: { lawyers } }
     } catch (error) {
-      const errMsg = extractErrorMessage(error, 'Failed to load lawyers.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load lawyers.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -36,7 +36,7 @@ export const useLawyers = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -48,7 +48,7 @@ export const useLawyers = () => {
       const lawyers = await $fetch('/api/lawyer/' + id, { method: 'GET' })
       return { success: true, data: { lawyers } }
     } catch (error) {
-      const errMsg = extractErrorMessage(error, 'Failed to load lawyer details.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load lawyer details.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -56,7 +56,7 @@ export const useLawyers = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -75,7 +75,7 @@ export const useLawyers = () => {
       })
       return { success: true, data: response }
     } catch (error: unknown) {
-      const errMsg = extractErrorMessage(error, 'Failed to save lawyer.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to save lawyer.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -83,7 +83,7 @@ export const useLawyers = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -95,7 +95,7 @@ export const useLawyers = () => {
       const lawyers = await $fetch('/api/lawyer/search', { method: 'GET', query })
       return { success: true, data: { lawyers } }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to search lawyers.') }
+      return { success: false, ...resolveApiError(error, 'Failed to search lawyers.') }
     } finally {
       loading.value = false
     }
@@ -109,7 +109,7 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}/suspend`, { method: 'POST', body })
       return { success: true, data: response }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to suspend lawyer.') }
+      return { success: false, ...resolveApiError(error, 'Failed to suspend lawyer.') }
     } finally {
       updating.value = false
     }
@@ -121,7 +121,7 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}/reinstate`, { method: 'POST' })
       return { success: true, data: response }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to reinstate lawyer.') }
+      return { success: false, ...resolveApiError(error, 'Failed to reinstate lawyer.') }
     } finally {
       updating.value = false
     }
@@ -133,7 +133,7 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}/reset-password`, { method: 'POST' })
       return { success: true, data: response }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to reset lawyer password.') }
+      return { success: false, ...resolveApiError(error, 'Failed to reset lawyer password.') }
     } finally {
       updating.value = false
     }
@@ -145,7 +145,7 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}`, { method: 'DELETE' })
       return { success: true, data: response }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to delete lawyer.') }
+      return { success: false, ...resolveApiError(error, 'Failed to delete lawyer.') }
     } finally {
       updating.value = false
     }
@@ -157,7 +157,7 @@ export const useLawyers = () => {
       const response = await $fetch(`/api/lawyer/${id}/document`, { method: 'GET' })
       return { success: true, data: response }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to get lawyer document.') }
+      return { success: false, ...resolveApiError(error, 'Failed to get lawyer document.') }
     } finally {
       loading.value = false
     }

@@ -29,22 +29,6 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
-    let statusCode = 401
-    let message = 'Failed to disable 2FA'
-
-    if (error && typeof error === 'object') {
-      const err = error as Record<string, unknown>
-      statusCode = (err.statusCode as number) || (err.status as number) || 401
-      const data = err.data as Record<string, unknown> | undefined
-      message = (data?.message as string) || 'Failed to disable 2FA'
-
-      console.log(data)
-    }
-
-    throw createError({
-      statusCode,
-      statusMessage: message,
-      data: { message }
-    })
+    throwApiError(error, 'Failed to disable 2FA')
   }
 })

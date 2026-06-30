@@ -1,4 +1,4 @@
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useTwoFactor = () => {
   const loading = ref(false)
@@ -12,7 +12,7 @@ export const useTwoFactor = () => {
       const data = await $fetch('/api/2fa', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
-      return { success: false, error: extractErrorMessage(error, 'Verification failed') }
+      return { success: false, ...resolveApiError(error, 'Verification failed') }
     } finally {
       loading.value = false
     }
@@ -26,7 +26,7 @@ export const useTwoFactor = () => {
       const data = await $fetch('/api/2fa/verify/enable', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to enable 2FA') }
+      return { success: false, ...resolveApiError(error, 'Failed to enable 2FA') }
     } finally {
       loading.value = false
     }
@@ -41,7 +41,7 @@ export const useTwoFactor = () => {
       const data = await $fetch('/api/2fa/verify/disable', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to disable 2FA') }
+      return { success: false, ...resolveApiError(error, 'Failed to disable 2FA') }
     } finally {
       loading.value = false
     }

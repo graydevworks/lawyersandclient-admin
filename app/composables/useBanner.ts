@@ -1,4 +1,4 @@
-import { extractErrorMessage } from '~/util/apiHelper'
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useBanner = () => {
   const loading = ref(false)
@@ -10,7 +10,7 @@ export const useBanner = () => {
       const data = await $fetch('/api/banner', { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to fetch banners') }
+      return { success: false, ...resolveApiError(error, 'Failed to fetch banners') }
     } finally {
       loading.value = false
     }
@@ -22,7 +22,7 @@ export const useBanner = () => {
       const data = await $fetch('/api/banner', { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to create banner') }
+      return { success: false, ...resolveApiError(error, 'Failed to create banner') }
     } finally {
       updating.value = false
     }
@@ -34,7 +34,7 @@ export const useBanner = () => {
       const data = await $fetch(`/api/banner/${id}`, { method: 'PUT', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to update banner') }
+      return { success: false, ...resolveApiError(error, 'Failed to update banner') }
     } finally {
       updating.value = false
     }
@@ -46,7 +46,7 @@ export const useBanner = () => {
       const data = await $fetch(`/api/banner/${id}`, { method: 'DELETE' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to delete banner') }
+      return { success: false, ...resolveApiError(error, 'Failed to delete banner') }
     } finally {
       updating.value = false
     }
@@ -58,7 +58,7 @@ export const useBanner = () => {
       const data = await $fetch('/api/banner/reorder', { method: 'POST', body })
       return { success: true, data }
     } catch (error) {
-      return { success: false, error: extractErrorMessage(error, 'Failed to reorder banners') }
+      return { success: false, ...resolveApiError(error, 'Failed to reorder banners') }
     } finally {
       updating.value = false
     }

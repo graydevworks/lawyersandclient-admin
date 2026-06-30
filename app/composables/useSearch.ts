@@ -1,3 +1,5 @@
+import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
+
 type SearchParams = Record<string, string | number | boolean | null | undefined>
 
 export const useSearch = () => {
@@ -15,15 +17,16 @@ export const useSearch = () => {
       })
 
       return { success: true, data: response }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to fetch search results.')
       toast.add({
         title: 'Error',
-        description: error?.data?.message || 'Failed to fetch search results.',
+        description: errMsg,
         icon: 'i-lucide-alert-circle',
         color: 'error',
         duration: 3000
       })
-      return { success: false, error }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

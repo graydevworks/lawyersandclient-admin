@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const useTicket = () => {
   const toast = useToast()
@@ -32,7 +32,7 @@ export const useTicket = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to submit ticket.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to submit ticket.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -40,7 +40,7 @@ export const useTicket = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

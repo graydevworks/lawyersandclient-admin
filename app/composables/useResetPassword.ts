@@ -1,5 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
-import { isAbortError } from '~/util/apiHelper'
+import { isAbortError, resolveApiError } from '~/util/apiHelper'
 
 export const useForgotPassword = async (credentials: { email: string, role: string }) => {
   const toast = useToast()
@@ -40,10 +40,11 @@ export const useForgotPassword = async (credentials: { email: string, role: stri
   } catch (error) {
     if (isAbortError(error)) return { status: 0, message: 'aborted' }
 
-    response = { status: 500, message: 'An error occurred.' }
+    const { error: errMsg } = resolveApiError(error, 'Failed to send reset email. Please try again.')
+    response = { status: 500, message: errMsg }
     toast.add({
       title: 'Error',
-      description: 'Failed to send reset email. Please try again.',
+      description: errMsg,
       icon: 'i-lucide-alert-circle',
       color: 'error',
       duration: 3000
@@ -93,10 +94,11 @@ export const useResetPassword = async (credentials: { email: string, otp: string
   } catch (error) {
     if (isAbortError(error)) return { status: 0, message: 'aborted' }
 
-    response = { status: 500, message: 'An error occurred.' }
+    const { error: errMsg } = resolveApiError(error, 'Failed to reset password. Please try again.')
+    response = { status: 500, message: errMsg }
     toast.add({
       title: 'Error',
-      description: 'Failed to reset password. Please try again.',
+      description: errMsg,
       icon: 'i-lucide-alert-circle',
       color: 'error',
       duration: 3000

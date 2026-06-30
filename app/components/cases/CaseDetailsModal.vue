@@ -2,6 +2,8 @@
 /**
  * CaseDetailsModal — case detail view with Suspend / Reinstate actions.
  */
+import { displayApiError } from '~/util/apiHelper'
+
 interface CaseDetails {
   id: string
   matter: string
@@ -38,6 +40,7 @@ const { updateCaseStatus, updating } = useCases()
 const showSuspendConfirm = ref(false)
 const showSuccessModal = ref(false)
 const suspendReason = ref('')
+const suspendErrors = ref<string[]>([])
 const successTitle = ref('')
 const successDescription = ref('')
 
@@ -62,6 +65,7 @@ const handleActionClick = () => {
     confirmReinstate()
   } else {
     suspendReason.value = ''
+    suspendErrors.value = []
     showSuspendConfirm.value = true
   }
 }
@@ -69,14 +73,20 @@ const handleActionClick = () => {
 const confirmSuspend = async () => {
   if (!props.caseData?.id || !suspendReason.value.trim()) return
 
+  suspendErrors.value = []
   const result = await updateCaseStatus(props.caseData.id, 'suspended', suspendReason.value.trim())
   if (result?.success) {
     showSuspendConfirm.value = false
     suspendReason.value = ''
+    suspendErrors.value = []
     successTitle.value = 'Case suspended successfully'
     successDescription.value = 'This case has been suspended. You can reinstate it later.'
     showSuccessModal.value = true
     emit('status-changed')
+  } else if (result) {
+    suspendErrors.value = result.validationMessages?.length
+      ? result.validationMessages
+      : [displayApiError(result, 'Failed to update case.')]
   }
 }
 
@@ -197,7 +207,20 @@ const handleSuccessComplete = () => {
       placeholder="Enter reason for suspension..."
       :rows="4"
       class="w-full"
+      @input="suspendErrors = []"
     />
+    <ul
+      v-if="suspendErrors.length"
+      class="mt-2 space-y-1"
+    >
+      <li
+        v-for="(message, index) in suspendErrors"
+        :key="index"
+        class="text-sm text-red-600"
+      >
+        {{ message }}
+      </li>
+    </ul>
   </SharedConfirmationModal>
 
   <SharedSuccessModal

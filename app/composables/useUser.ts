@@ -1,5 +1,5 @@
 import { useToast } from '@nuxt/ui/composables'
-import { isAbortError, extractErrorMessage } from '~/util/apiHelper'
+import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
 
 export const parseIsAvailable = (value: unknown): boolean => {
   if (value === false || value === 0 || value === '0') return false
@@ -52,7 +52,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load profile.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load profile.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -60,7 +60,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -92,7 +92,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update profile.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update profile.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -100,7 +100,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -131,7 +131,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update password.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update password.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -139,7 +139,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -159,7 +159,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to load profile.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load profile.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -167,7 +167,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }
@@ -197,7 +197,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update bar certificate.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update bar certificate.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -205,7 +205,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -235,7 +235,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to upload government ID.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to upload government ID.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -243,7 +243,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
@@ -280,7 +280,7 @@ export const useUser = () => {
     } catch (error) {
       if (isAbortError(error)) return { success: false, aborted: true }
 
-      const errMsg = extractErrorMessage(error, 'Failed to update availability.')
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to update availability.')
       toast.add({
         title: 'Error',
         description: errMsg,
@@ -288,7 +288,7 @@ export const useUser = () => {
         color: 'error',
         duration: 3000
       })
-      return { success: false, error: errMsg }
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       updating.value = false
     }
