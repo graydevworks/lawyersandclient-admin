@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     })
 
     const responseData = response as Record<string, unknown>
+    console.log(responseData)
 
     return {
       status: 200,

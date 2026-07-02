@@ -5,10 +5,26 @@ import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
-const activeTab = ref('Security')
+const route = useRoute()
+
+const activeTab = ref('general')
+
+// Set active tab from query parameter on mount
+onMounted(() => {
+  if (route.query.tab) {
+    activeTab.value = String(route.query.tab)
+  }
+})
 const activeContentTab = ref('Featured lawyers')
 const showContentMenu = ref(false)
 const toast = useToast()
+
+const {
+  getGeneralSettings,
+  getSecuritySettings,
+  getAdminAccounts,
+  getPermissions
+} = useAdmin()
 
 const {
   loading: bannersLoading,
@@ -209,6 +225,7 @@ const featuredWrapperRef = ref<HTMLElement | null>(null)
 
 type FeaturedLawyer = {
   id: number
+  avatarUrl?: string
   name: string
   practice: string
   location: string
@@ -223,7 +240,7 @@ const tabs = [
   { id: 'Content Management', label: 'Content Management', icon: 'i-lucide-layout' }
 ]
 
-const contentTabs = ['App banners', 'Featured lawyers', 'Website Ads']
+const contentTabs = ['App banners', 'Featured lawyers']
 
 const handleTabClick = (tabId: string) => {
   if (tabId === 'Content Management') {
@@ -242,6 +259,7 @@ const handleBackToSettings = () => {
 
 const normalizeFeaturedLawyer = (lawyer: any): FeaturedLawyer => ({
   id: Number(lawyer?.id),
+  avatarUrl: lawyer?.avatarUrl || lawyer?.avatar || lawyer?.profile_photo_url || lawyer?.photo_url || '',
   name: lawyer?.name || lawyer?.full_name || lawyer?.fullName || '',
   practice: lawyer?.practice || lawyer?.practice_area || lawyer?.practiceArea || '',
   location: lawyer?.location || lawyer?.city || lawyer?.state || ''
@@ -663,11 +681,8 @@ const removeBanner = async (banner: AppBanner) => {
   })
 }
 
-const adminAccounts = [
-  { name: 'Super Admin', email: 'admin@lawyersclient.ng', role: 'Super Admin', color: 'primary' as const },
-  { name: 'Ops Admin', email: 'ops@lawyersclients.ng', role: 'Operations', color: 'primary' as const },
-  { name: 'Support Admin', email: 'support@lawyersclient.ng', role: 'Support', color: 'success' as const }
-]
+const adminAccounts = ref<Array<{ name: string; email: string; role: string; color: 'primary' | 'success' | 'neutral' }>>([])
+const adminAccountsLoading = ref(false)
 
 const permissions = [
   { title: 'Operations Admin — suspend users', description: 'Allow Ops Admin to suspend and activate accounts' },
@@ -678,7 +693,40 @@ const permissions = [
 
 const enable2FA = ref(false)
 const sessionTimeout = ref('30 minutes')
-</script>
+
+// Load admin settings data
+const loadAdminSettings = async () => {
+  console.log('[Settings] Loading admin settings...')
+
+  const [generalSettings, securitySettings, adminAccountsResult, permissions] = await Promise.all([
+    getGeneralSettings(),
+    getSecuritySettings(),
+    getAdminAccounts(),
+    getPermissions()
+  ])
+
+  console.log('[Settings] General settings response:', generalSettings)
+  console.log('[Settings] Security settings response:', securitySettings)
+  console.log('[Settings] Admin accounts response:', adminAccountsResult)
+  console.log('[Settings] Permissions response:', permissions)
+
+  // Process admin accounts
+  if (adminAccountsResult?.success) {
+    const data = adminAccountsResult.data as any
+    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+
+    adminAccounts.value = accounts.map((acc: any) => ({
+      name: acc.name || acc.full_name || '',
+      email: acc.email || '',
+      role: acc.role || '',
+      color: acc.role === 'operations_admin' ? 'primary' as const : acc.role === 'support_admin' ? 'success' as const : 'neutral' as const
+    }))
+  }
+}
+
+onMounted(() => {
+  loadAdminSettings()
+})</script>
 
 <template>
   <div class="space-y-8 max-w-7xl">
@@ -809,7 +857,7 @@ const sessionTimeout = ref('30 minutes')
                   <UInput
                     v-model="featuredSearchQ"
                     icon="i-lucide-search"
-                    placeholder="Search lawyers by name or practice"
+                    placeholder="Search lawyers by name"
                     class="flex-1"
                     size="lg"
                     :ui="{ base: 'rounded-lg' }"
@@ -894,6 +942,7 @@ const sessionTimeout = ref('30 minutes')
                   <div class="flex items-center gap-3">
                     <UAvatar
                       size="md"
+                      :src="lawyer.avatarUrl + '?name=' + lawyer.name"
                       class="bg-gray-100"
                     />
                     <div>
@@ -1451,6 +1500,7 @@ const sessionTimeout = ref('30 minutes')
               icon="i-lucide-plus"
               color="primary"
               class="bg-[#003357] hover:bg-[#002244]"
+              @click="navigateTo('/account-details')"
             >
               Create admin
             </UButton>
@@ -1458,6 +1508,20 @@ const sessionTimeout = ref('30 minutes')
 
           <div class="space-y-4">
             <div
+              v-if="adminAccounts.length === 0"
+              class="border border-dashed border-gray-200 rounded-2xl py-12"
+            >
+              <SharedEmptyState
+                icon="i-lucide-users"
+                title="No admin accounts"
+                description="Create the first admin account to manage platform access."
+                action-label="Create admin"
+                @action="navigateTo('/account-details')"
+              />
+            </div>
+
+            <div
+              v-else
               v-for="admin in adminAccounts"
               :key="admin.email"
               class="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors"
@@ -1490,6 +1554,7 @@ const sessionTimeout = ref('30 minutes')
                   variant="solid"
                   size="sm"
                   class="shadow-sm border border-gray-200"
+                  @click="navigateTo(`/account-details?email=${admin.email}`)"
                 >
                   Edit
                 </UButton>

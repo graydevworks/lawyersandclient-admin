@@ -13,35 +13,30 @@ const showError = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const adminId = computed(() => {
-  const data = user.value?.data as { id?: string | number } | undefined
-  return data?.id
-})
-
 onMounted(() => {
   const data = user.value?.data as { two_factor_enabled?: boolean, is_2fa_enabled?: boolean } | undefined
   isEnabled.value = Boolean(data?.two_factor_enabled ?? data?.is_2fa_enabled)
 })
 
 const handleToggle = async (value: boolean) => {
-  if (!adminId.value) {
-    toast.add({ title: 'Error', description: 'User ID not found.', color: 'error' })
-    isEnabled.value = !value
-    return
-  }
-
   if (value) {
-    const result = await enableTwoFactor(adminId.value)
+    console.log('[two-factor] Enabling 2FA for user')
+    const result = await enableTwoFactor()
+    console.log('[two-factor] Enable 2FA result:', result)
+
     if (result.success) {
+      console.log('[two-factor] 2FA enabled successfully')
       successMessage.value = 'Two-factor authentication has been enabled.'
       showSuccess.value = true
       await refreshSession()
     } else {
+      console.log('[two-factor] Failed to enable 2FA:', result.error)
       isEnabled.value = false
       errorMessage.value = String(result.error)
       showError.value = true
     }
   } else {
+    console.log('[two-factor] User initiated 2FA disable')
     isEnabled.value = true
     disablePassword.value = ''
     showDisableModal.value = true
@@ -49,10 +44,14 @@ const handleToggle = async (value: boolean) => {
 }
 
 const confirmDisable = async () => {
-  if (!adminId.value || !disablePassword.value) return
+  if (!disablePassword.value) return
 
-  const result = await disableTwoFactor(adminId.value, disablePassword.value)
+  console.log('[two-factor] Disabling 2FA for user')
+  const result = await disableTwoFactor(disablePassword.value)
+  console.log('[two-factor] Disable 2FA result:', result)
+
   if (result.success) {
+    console.log('[two-factor] 2FA disabled successfully')
     isEnabled.value = false
     showDisableModal.value = false
     disablePassword.value = ''
@@ -60,15 +59,20 @@ const confirmDisable = async () => {
     showSuccess.value = true
     await refreshSession()
   } else {
+    console.log('[two-factor] Failed to disable 2FA:', result.error)
+    isEnabled.value = true
     errorMessage.value = String(result.error)
     showError.value = true
+    showDisableModal.value = false
+    disablePassword.value = ''
+    isEnabled.value = true
   }
 }
 
 const cancelDisable = () => {
+  isEnabled.value = true
   showDisableModal.value = false
   disablePassword.value = ''
-  isEnabled.value = true
 }
 </script>
 
@@ -93,8 +97,8 @@ const cancelDisable = () => {
             Secure your account with 2FA
           </p>
         </div>
-        <UToggle
-          :model-value="isEnabled"
+        <USwitch
+          v-model="isEnabled"
           color="primary"
           :disabled="loading"
           @update:model-value="handleToggle"

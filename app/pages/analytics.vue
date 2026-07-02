@@ -318,6 +318,15 @@ onMounted(() => start())
           Platform insights and trends
         </p>
       </div>
+      <div class="flex items-center gap-2 relative">
+        <SharedDateRangePicker
+          v-model:from="selectedDateFrom"
+          v-model:to="selectedDateTo"
+          variant="header"
+          @apply="fetchAnalytics"
+          @clear="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics() }"
+        />
+      </div>
     </div>
 
     <!-- Skeleton Loading -->
@@ -366,15 +375,6 @@ onMounted(() => start())
               <h3 class="font-bold text-gray-900">
                 User growth
               </h3>
-              <div class="flex items-center gap-2 relative">
-                <SharedDateRangePicker
-                  v-model:from="selectedDateFrom"
-                  v-model:to="selectedDateTo"
-                  variant="inline"
-                  @apply="fetchAnalytics"
-                  @clear="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics() }"
-                />
-              </div>
             </div>
           </template>
           <div class="w-full h-96 overflow-hidden rounded-md">

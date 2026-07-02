@@ -39,7 +39,7 @@ interface CaseDetails {
     location: string
   }
   practiceArea: string
-  status: 'Active' | 'Stalled' | 'Pending' | 'Completed'
+  status: 'Accepted' | 'Open' | 'Declined' | 'Pending' | 'Completed'
   openedDate: string
   timeElapsed: string
   lastActivity: string
@@ -56,8 +56,8 @@ interface StatItem {
 const stats = ref<StatItem[]>([
   { title: 'Total active cases', value: '318', trend: '+24', trendType: 'positive', trendSuffix: 'this month' },
   { title: 'Completed this month', value: '91', trendType: 'neutral', trendSuffix: 'Avg. 14 days to close' },
-  { title: 'Stalled cases', value: '16', trend: 'No activity 7+ days', trendType: 'negative' },
-  { title: 'Avg. case duration', value: '14d', trend: '-2d', trendType: 'positive', trendSuffix: 'this month' }
+  { title: 'Open cases', value: '16', trend: '', trendType: 'neutral' },
+  { title: 'Declined cases', value: '5', trend: '', trendType: 'negative' }
 ])
 
 const cases = ref<CaseRow[]>([])
@@ -89,7 +89,7 @@ const viewCase = (row: CaseRow) => {
       location: row.lawyerLoc
     },
     practiceArea: row.category,
-    status: row.status as 'Active' | 'Stalled' | 'Pending' | 'Completed',
+    status: row.status as 'Accepted' | 'Open' | 'Declined' | 'Pending' | 'Completed',
     openedDate: '22 Mar 2026',
     timeElapsed: row.duration,
     lastActivity: 'Yesterday'
@@ -99,16 +99,36 @@ const viewCase = (row: CaseRow) => {
 
 const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
-    case 'active': return 'success'
+    case 'accepted': return 'primary'
     case 'open': return 'warning'
-    case 'declined': return 'danger'
+    case 'declined': return 'error'
     case 'completed': return 'success'
-    default: return 'secondary'
+    default: return 'neutral'
   }
 }
 
 const activeFilter = ref('All')
-const filters = ['All', 'Active', 'Stalled', 'Completed']
+const filters = [
+  {
+    label: 'All',
+    value: 'All'
+  },
+  {
+    label: 'Pending',
+    value: 'Open'
+  },
+  {
+    label: 'Active',
+    value: 'Accepted'
+  },
+  {
+    label: 'Completed',
+    value: 'Completed'
+  },
+  {
+    label: 'Declined',
+    value: 'Declined'
+  }]
 
 const fromDate = ref('')
 const toDate = ref('')
@@ -221,10 +241,10 @@ const fetchCases = async (page: number = currentPage.value) => {
   if (!searching && payload.stats) {
     const statistics = payload.stats
     stats.value = [
-      { title: 'Total active cases', value: statistics.total_active, trendType: 'positive', trendSuffix: '' },
+      { title: 'Total Active cases', value: statistics.total_active, trendType: 'positive', trendSuffix: '' },
       { title: 'Completed this month', value: statistics.completed_this_month, trendType: 'positive', trendSuffix: '' },
-      { title: 'Stalled cases', value: statistics.stalled, trend: '', trendType: 'negative' },
-      { title: 'Avg. case duration', value: statistics.avg_duration_days, trend: '', trendType: 'positive', trendSuffix: '' }
+      { title: 'Open cases', value: statistics.open || '0', trend: '', trendType: 'neutral' },
+      { title: 'Declined cases', value: statistics.declined || '0', trend: '', trendType: 'negative' }
     ]
   }
 }
@@ -409,12 +429,12 @@ onMounted(() => start())
             <div class="flex bg-gray-100 p-0.5 rounded-lg ml-2">
               <button
                 v-for="filter in filters"
-                :key="filter"
+                :key="filter.value"
                 class="px-5 py-1.5 text-sm font-medium rounded-md transition-all"
-                :class="activeFilter === filter && !isSearching ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
-                @click="handleFilterClick(filter)"
+                :class="activeFilter === filter.value && !isSearching ? 'bg-white text-[#003357] shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+                @click="handleFilterClick(filter.value)"
               >
-                {{ filter }}
+                {{ filter.label }}
               </button>
             </div>
           </div>
@@ -480,7 +500,7 @@ onMounted(() => start())
                   variant="subtle"
                   class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
                 >
-                  {{ row.original.status == 'open' ? 'Pending' : row.original.status == 'stalled' ? 'Stalled' : row.original.status == 'declined' ? 'Declined' : 'Completed' }}
+                  {{ row.original.status == 'Accepted' ? 'Active' : row.original.status == 'Open' ? 'Pending' : row.original.status }}
                 </UBadge>
               </template>
 
@@ -522,7 +542,7 @@ onMounted(() => start())
                   variant="subtle"
                   class="rounded-full px-2.5 h-[24px] text-[11px] font-medium shrink-0"
                 >
-                  {{ row.status == 'open' ? 'Pending' : row.status == 'accepted' ? 'Accepted' : row.status == 'declined' ? 'Declined' : 'Completed' }}
+                  {{ row.status == 'accepted' ? 'Active' : row.status == 'open' ? 'Pending' : row.status }}
                 </UBadge>
               </div>
 

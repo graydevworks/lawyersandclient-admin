@@ -220,14 +220,14 @@ const handleSuccessComplete = () => {
       </div>
 
       <div class="flex flex-col gap-3">
-        <UButton
+        <!-- <UButton
           block
           :loading="updating"
           class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px] text-[14px]"
           @click="handleResetPassword"
         >
           Reset password
-        </UButton>
+        </UButton> -->
         <UButton
           v-if="!isSuspended"
           block

@@ -54,12 +54,14 @@ const loadDetail = async (id: number | string) => {
 
   const payload = (result as any)?.data?.data ?? (result as any)?.data
   if ((result as any)?.success && payload) {
-    selectedReport.value = payload as Record<string, any>
+    selectedReport.value = payload.data.report as Record<string, any>
 
     const s = selectedReport.value.status ?? selectedReport.value.resolution_status
     if (s === 'open' || s === 'in_progress' || s === 'resolved') resolutionStatus.value = s
 
     resolutionNote.value = selectedReport.value.resolution_note ?? selectedReport.value.note ?? ''
+
+    console.log('Selected Report:', selectedReport.value)
   }
 }
 
@@ -304,7 +306,7 @@ onUnmounted(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedReport.applicant?.name || selectedReport.against_name || '—' }}</span>
+                  <span class="font-medium text-gray-900">{{ selectedReport.reported?.name || '—' }}</span>
                 </div>
               </div>
             </div>
@@ -329,7 +331,7 @@ onUnmounted(() => {
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
                 <USelect
                   v-model="resolutionStatus"
-                  :options="[
+                  :items="[
                     { label: 'Open', value: 'open' },
                     { label: 'In Progress', value: 'in_progress' },
                     { label: 'Resolved', value: 'resolved' }
@@ -354,7 +356,7 @@ onUnmounted(() => {
                 :disabled="isSaving || !selectedReportId"
                 color="neutral"
                 variant="solid"
-                class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF]"
+                class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white"
                 @click="onSaveResolution"
               >
                 Save note

@@ -128,13 +128,15 @@ const loadLawyer = async () => {
         average_rating?: number
         years_of_experience?: string
         status?: string
-        practice_areas?: { name?: string } | null
+        practice_areas?: { name?: string }[] | null
         bio?: string
         activity?: Lawyer['activity']
         documents?: Lawyer['documents']
         reviews?: Lawyer['reviews']
+        is_available?: boolean
         banner_photo_url?: string
         profile_photo_url?: string
+        verification_status?: string
         work_experiences?: Lawyer['workExperience']
       }
 
@@ -149,14 +151,16 @@ const loadLawyer = async () => {
         rating: d.average_rating,
         experience: d.years_of_experience,
         status: d.status,
-        languages: d.practice_areas?.name ? [d.practice_areas.name] : ['N/A'],
+        languages: ['English'],
         bio: d.bio,
-        practiceAreas: ['N/A'],
+        practiceAreas: d.practice_areas && d.practice_areas.length ? d.practice_areas.map((pa: { name?: string }) => pa.name) : ['N/A'],
         activity: d.activity,
         documents: d.documents,
         reviews: d.reviews,
+        isAvailable: d.is_available,
         banner: d.banner_photo_url,
         profilePicture: d.profile_photo_url,
+        verificationStatus: d.verification_status,
         workExperience: d.work_experiences
       }
     }
@@ -435,7 +439,7 @@ const handleDelete = async () => {
                   variant="subtle"
                   class="rounded-full px-3 py-1 text-xs font-medium"
                 >
-                  {{ lawyer.status }}
+                  {{ lawyer.isAvailable ? 'Active' : 'Inactive' }}
                 </UBadge>
               </div>
             </div>
@@ -537,6 +541,39 @@ const handleDelete = async () => {
         </UCard>
 
         <UCard
+          v-if="lawyer.workExperience?.length"
+          class="rounded-[24px] border-0 ring-0 shadow-sm"
+        >
+          <template #header>
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
+              Experience
+            </h3>
+          </template>
+
+          <div class="space-y-8">
+            <div
+              v-for="(exp, index) in lawyer.workExperience"
+              :key="index"
+              class="relative pl-6 border-l-2 border-gray-100"
+            >
+              <div class="absolute left-[-9px] top-0 size-4 rounded-full border-2 border-gray-100 bg-white" />
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[15px] font-bold text-gray-900">
+                  {{ exp.role }}
+                </h4>
+                <span class="text-[12px] font-medium text-gray-400">{{ exp.period }}</span>
+              </div>
+              <p class="text-[13px] font-medium text-gray-400 mb-3">
+                {{ exp.company }}
+              </p>
+              <p class="text-[13px] text-gray-600 leading-relaxed">
+                {{ exp.description }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard
           v-if="lawyer.reviews?.length"
           class="rounded-[24px] border-0 ring-0 shadow-sm"
         >
@@ -571,39 +608,6 @@ const handleDelete = async () => {
 
               <p class="text-[13px] text-gray-600 leading-relaxed">
                 {{ review.comment }}
-              </p>
-            </div>
-          </div>
-        </UCard>
-
-        <UCard
-          v-if="lawyer.workExperience?.length"
-          class="rounded-[24px] border-0 ring-0 shadow-sm"
-        >
-          <template #header>
-            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
-              Experience
-            </h3>
-          </template>
-
-          <div class="space-y-8">
-            <div
-              v-for="(exp, index) in lawyer.workExperience"
-              :key="index"
-              class="relative pl-6 border-l-2 border-gray-100"
-            >
-              <div class="absolute left-[-9px] top-0 size-4 rounded-full border-2 border-gray-100 bg-white" />
-              <div class="flex items-center justify-between mb-1">
-                <h4 class="text-[15px] font-bold text-gray-900">
-                  {{ exp.role }}
-                </h4>
-                <span class="text-[12px] font-medium text-gray-400">{{ exp.period }}</span>
-              </div>
-              <p class="text-[13px] font-medium text-gray-400 mb-3">
-                {{ exp.company }}
-              </p>
-              <p class="text-[13px] text-gray-600 leading-relaxed">
-                {{ exp.description }}
               </p>
             </div>
           </div>
@@ -671,7 +675,7 @@ const handleDelete = async () => {
             </section>
 
             <section class="pt-6 space-y-3">
-              <UButton
+              <!-- <UButton
                 block
                 color="neutral"
                 class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-xl py-3"
@@ -679,7 +683,7 @@ const handleDelete = async () => {
                 @click="isResetConfirmOpen = true"
               >
                 Reset password
-              </UButton>
+              </UButton> -->
 
               <UButton
                 v-if="!isSuspended"

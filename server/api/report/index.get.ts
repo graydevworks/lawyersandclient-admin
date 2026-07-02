@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const query = getQuery(event)
+    console.log('Query:', query)
     const response = await $fetch(`${apiBase}/admin/reports`, {
       method: 'GET',
       query,

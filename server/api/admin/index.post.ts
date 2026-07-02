@@ -4,9 +4,9 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const body = await readBody(event)
+    const formData = await readFormData(event)
 
-    const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reinstate`, {
+    const response = await $fetch(`${apiBase}/admin/settings/admins`, {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -17,17 +17,17 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
-      body
+      body: formData
     })
 
     const responseData = response as Record<string, unknown>
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Lawyer reinstated successfully',
+      message: (responseData.message as string) || 'Admin account created successfully',
       data: response
     }
   } catch (error) {
-    throwApiError(error, 'Failed to reinstate lawyer')
+    throwApiError(error, 'Failed to create admin account')
   }
 })

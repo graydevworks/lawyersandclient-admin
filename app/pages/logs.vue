@@ -3,7 +3,7 @@ import { formatRelativeDate } from '~/util/helper'
 
 definePageMeta({ middleware: 'auth' })
 
-const { getLogs } = useLogs()
+const { getDashboard } = useDashboard()
 
 const skeleton = ref(true)
 const searchQuery = ref('')
@@ -26,28 +26,23 @@ const fetchLogs = async (page: number = 1) => {
     per_page: perPage.value
   }
 
-  const result = await getLogs(params)
-  if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
-    const data = (result.data as any).data.data
-    const meta = (result.data as any).data.meta
+  const result = await getDashboard(params)
+  if (result && result.data && result.data.data && result.data.data.success) {
+    const activityData = result.data.data.data.activity
+    const meta = result.data.data.meta
 
-    // Handle pagination meta if available
+    logs.value = activityData.map((item: { actor: string, label: string, timestamp?: string, avatar?: string }) => ({
+      name: item.actor,
+      action: item.label,
+      time: item.timestamp ? formatRelativeDate(item.timestamp) : '',
+      avatar: item.avatar || ''
+    }))
+
     if (meta) {
       currentPage.value = meta.current_page || page
       totalItems.value = meta.total || 0
       totalPages.value = meta.last_page || 1
-    }
-
-    const logList = Array.isArray(data) ? data : (data.logs || data.activity || [])
-    logs.value = logList.map((item: any) => ({
-      name: item.actor || item.name,
-      action: item.label || item.action,
-      time: (item.time_ago || item.created_at) ? formatRelativeDate(item.time_ago || item.created_at) : '',
-      avatar: item.avatar || item.profile_photo_url || ''
-    }))
-
-    // If no meta, use array length
-    if (!meta) {
+    } else {
       totalItems.value = logs.value.length
       totalPages.value = 1
     }
@@ -84,26 +79,21 @@ const goToPage = (page: number) => {
 
 const visiblePages = computed(() => {
   const total = totalPages.value
-  if (total <= 5) {
+  const current = currentPage.value
+  const windowSize = 5
+
+  // If total pages <= windowSize, show all
+  if (total <= windowSize) {
     return Array.from({ length: total }, (_, i) => i + 1)
   }
 
-  const pages: (number | '...')[] = []
-  const current = currentPage.value
+  // Calculate the starting point for the window
+  let start = current - Math.floor(windowSize / 2)
+  if (start < 1) start = 1
+  if (start + windowSize - 1 > total) start = total - windowSize + 1
 
-  pages.push(1)
-  if (current > 3) pages.push('...')
-
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-
-  if (current < total - 2) pages.push('...')
-  pages.push(total)
-
-  return pages
+  // Generate the window of pages
+  return Array.from({ length: windowSize }, (_, i) => start + i)
 })
 
 onMounted(async () => {
@@ -216,18 +206,13 @@ onMounted(() => start())
             Prev
           </UButton>
           <template v-for="(page, idx) in visiblePages" :key="idx">
-            <span
-              v-if="page === '...'"
-              class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm"
-            >…</span>
             <UButton
-              v-else
               :variant="page === currentPage ? 'solid' : 'ghost'"
               :color="page === currentPage ? 'primary' : 'neutral'"
               size="sm"
               class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
               :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
-              @click="goToPage(page as number)"
+              @click="goToPage(page)"
             >
               {{ page }}
             </UButton>

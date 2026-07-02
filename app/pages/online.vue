@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' })
 
-const { getOnlineUsers } = useOnlineUsers()
+const { getDashboard } = useDashboard()
 
 const skeleton = ref(true)
 const searchQuery = ref('')
@@ -15,22 +15,36 @@ const onlineUsers = ref<{
   lastActive?: string
 }[]>([])
 
-const totalCount = ref(0)
+const currentPage = ref(1)
+const perPage = ref(20)
+const totalItems = ref(0)
+const totalPages = ref(1)
 
-const fetchOnline = async () => {
-  const result = await getOnlineUsers()
-  if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
-    const data = (result.data as any).data.data
-    const list = Array.isArray(data) ? data : (data.users || data.online_users || [])
-    totalCount.value = list.length
-    onlineUsers.value = list.map((item: any) => ({
-      id: item.id,
-      name: item.name || item.full_name,
-      role: item.role || 'User',
-      avatar: item.profile_photo_url || item.avatar || '',
-      email: item.email || '',
-      lastActive: item.last_active || ''
+const fetchOnline = async (page: number = 1) => {
+  const params: Record<string, any> = {
+    page,
+    per_page: perPage.value
+  }
+
+  const result = await getDashboard(params)
+  if (result && result.data && result.data.data && result.data.data.success) {
+    const onlineUsersData = result.data.data.data.online_users
+    const meta = result.data.data.meta
+
+    onlineUsers.value = onlineUsersData.map((item: { name: string, role: string, profile_photo_url: string }) => ({
+      name: item.name,
+      role: item.role,
+      avatar: item.profile_photo_url
     }))
+
+    if (meta) {
+      currentPage.value = meta.current_page || page
+      totalItems.value = meta.total || 0
+      totalPages.value = meta.last_page || 1
+    } else {
+      totalItems.value = onlineUsers.value.length
+      totalPages.value = 1
+    }
   }
 }
 
@@ -44,13 +58,51 @@ const filteredUsers = computed(() => {
   )
 })
 
+const handlePrevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchOnline(currentPage.value)
+  }
+}
+
+const handleNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchOnline(currentPage.value)
+  }
+}
+
+const goToPage = (page: number) => {
+  currentPage.value = page
+  fetchOnline(page)
+}
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const windowSize = 5
+
+  // If total pages <= windowSize, show all
+  if (total <= windowSize) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  // Calculate the starting point for the window
+  let start = current - Math.floor(windowSize / 2)
+  if (start < 1) start = 1
+  if (start + windowSize - 1 > total) start = total - windowSize + 1
+
+  // Generate the window of pages
+  return Array.from({ length: windowSize }, (_, i) => start + i)
+})
+
 onMounted(async () => {
   await fetchOnline()
   skeleton.value = false
 })
 
 // Real-time: poll every 15 seconds
-const { start } = useIntervalFetch(fetchOnline, 15000)
+const { start } = useIntervalFetch(() => fetchOnline(currentPage.value), 15000)
 onMounted(() => start())
 </script>
 
@@ -65,7 +117,7 @@ onMounted(() => start())
         <p class="text-sm text-gray-400 mt-1">
           <span class="inline-flex items-center gap-1.5">
             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            {{ totalCount }} users currently online
+            {{ totalItems }} users currently online
           </span>
         </p>
       </div>
@@ -140,6 +192,50 @@ onMounted(() => start())
             <span class="text-[12px] font-medium text-green-500 shrink-0">online</span>
           </div>
         </UCard>
+      </div>
+
+      <!-- Pagination -->
+      <div
+        v-if="totalPages > 1"
+        class="flex items-center justify-between text-sm text-gray-500 pt-2"
+      >
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <div class="flex items-center gap-1.5">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-heroicons-arrow-left"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === 1"
+            @click="handlePrevPage"
+          >
+            Prev
+          </UButton>
+          <template v-for="(page, idx) in visiblePages" :key="idx">
+            <UButton
+              :variant="page === currentPage ? 'solid' : 'ghost'"
+              :color="page === currentPage ? 'primary' : 'neutral'"
+              size="sm"
+              class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+              :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+              @click="goToPage(page)"
+            >
+              {{ page }}
+            </UButton>
+          </template>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-heroicons-arrow-right"
+            class="font-medium text-gray-500"
+            :disabled="currentPage === totalPages"
+            @click="handleNextPage"
+          >
+            Next
+          </UButton>
+        </div>
       </div>
     </template>
   </div>

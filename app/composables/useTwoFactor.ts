@@ -18,11 +18,10 @@ export const useTwoFactor = () => {
     }
   }
 
-  const enableTwoFactor = async (id: string | number) => {
+  const enableTwoFactor = async () => {
     loading.value = true
     try {
       const formData = new FormData()
-      formData.append('id', String(id))
       const data = await $fetch('/api/2fa/verify/enable', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
@@ -32,11 +31,10 @@ export const useTwoFactor = () => {
     }
   }
 
-  const disableTwoFactor = async (id: string | number, password: string) => {
+  const disableTwoFactor = async (password: string) => {
     loading.value = true
     try {
       const formData = new FormData()
-      formData.append('id', String(id))
       formData.append('password', password)
       const data = await $fetch('/api/2fa/verify/disable', { method: 'POST', body: formData })
       return { success: true, data }

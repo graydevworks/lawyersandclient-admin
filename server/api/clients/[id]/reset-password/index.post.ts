@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     console.log(body, 'id')
 
-    const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reset-password/`, {
+    const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reset-password`, {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',

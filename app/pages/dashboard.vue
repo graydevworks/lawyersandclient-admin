@@ -186,11 +186,10 @@ const fetchDashboardData = async () => {
     ]
 
     // Recent Activity
-    recentActivity.value = result.data.data.data.activity.map((item: { actor: string, label: string, time_ago?: string, avatar?: string }) => ({
-
+    recentActivity.value = result.data.data.data.activity.map((item: { actor: string, label: string, timestamp?: string, avatar?: string }) => ({
       name: item.actor,
       action: item.label,
-      timestamp: item.time_ago ? formatRelativeDate(item.time_ago) : '',
+      time: item.timestamp ? formatRelativeDate(item.timestamp) : '',
       avatar: item.avatar
     })).splice(0, 6)
 
@@ -379,15 +378,6 @@ onMounted(() => start())
             <h3 class="text-[16px] font-semibold text-gray-900">
               Sign ups
             </h3>
-            <div class="flex items-center gap-4">
-              <SharedDateRangePicker
-                v-model:from="signupsDateFrom"
-                v-model:to="signupsDateTo"
-                variant="inline"
-                @apply="applySignupsFilter"
-                @clear="clearSignupsFilter"
-              />
-            </div>
           </div>
           <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
             <ClientOnly>

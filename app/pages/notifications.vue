@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -11,6 +11,19 @@ const { getLawyers } = useLawyers()
 const notifications = ref<any[]>([])
 const recentNotifications = ref<any[]>([])
 const isSubmitting = ref(false)
+const clientCount = ref(0)
+const lawyerCount = ref(0)
+const allCount = ref(0)
+const stats = ref({
+  announcement: 0,
+  platform_update: 0,
+  promotion: 0,
+  security_alert: 0,
+  open_rate: 0,
+  opened: 0,
+  delivered: 0,
+  recipient_count: 0
+})
 
 // ---- Schema + form state (matching your requested enums) ----
 const notificationSchema = z.object({
@@ -36,7 +49,7 @@ const typeTabs = [
   { label: 'Announcement', value: 'announcement' },
   { label: 'Platform update', value: 'platform_update' },
   { label: 'Promotion', value: 'promotion' },
-  { label: 'Security alert', value: 'security_alert' }
+  { label: 'Security alert', value: 'security_alert' },
 ]
 
 const activeQuery = computed(() => {
@@ -54,7 +67,7 @@ const page = ref(1)
 const listContainerRef = ref<HTMLElement | null>(null)
 
 const normalizeNotificationsList = (res: any): any[] => {
-  const list = res?.data?.data?.data ?? res?.data?.data ?? res?.data
+  const list = res?.data?.data?.data.notifications ?? res?.data?.data ?? res?.data
   return Array.isArray(list) ? list : []
 }
 
@@ -81,23 +94,48 @@ const fetchList = async (opts: { reset: boolean }) => {
   const nextPage = page.value
   const query = { ...activeQuery.value, page: nextPage }
 
-  if (!opts.reset) isLoadingMore.value = true
+  if (!opts.reset) {
+    isLoadingMore.value = true
+  }
 
   try {
     const res = await getNotifications(query)
-    const list = normalizeNotificationsList(res)
 
-    const mapped = mapForTemplate(list)
+    if (res && res.data && res.data.data && res.data.data.success) {
+      const list = normalizeNotificationsList(res)
+      const meta = res?.data?.meta ?? res?.data?.data?.meta
+      stats.value = {
+        announcement: res.data.data.data.analytics.sent_by_type.announcement,
+        platform_update: res.data.data.data.analytics.sent_by_type.platform_update,
+        promotion: res.data.data.data.analytics.sent_by_type.promotion,
+        security_alert: res.data.data.data.analytics.sent_by_type.security_alert,
+        open_rate: res.data.data.data.analytics.last_broadcast_performance.open_rate,
+        opened: res.data.data.data.analytics.last_broadcast_performance.opened,
+        delivered: res.data.data.data.analytics.last_broadcast_performance.delivered,
+        recipient_count: res.data.data.data.analytics.last_broadcast_performance.recipient_count
+      }
+      console.log(stats.value, '=>')
 
-    if (opts.reset) {
-      recentNotifications.value = mapped
-    } else {
-      recentNotifications.value = [...recentNotifications.value, ...mapped]
+      const mapped = mapForTemplate(list)
+
+      if (opts.reset) {
+        recentNotifications.value = mapped
+      } else {
+        recentNotifications.value = [...recentNotifications.value, ...mapped]
+      }
+
+      // Use meta to determine if there are more pages
+      if (meta) {
+        hasMore.value = meta.current_page < meta.last_page
+        if (hasMore.value) {
+          page.value = meta.current_page + 1
+        }
+      } else {
+        // Fallback: Stop when API returns an empty list
+        if (list.length === 0) hasMore.value = false
+        else page.value += 1
+      }
     }
-
-    // Stop when API returns an empty list
-    if (list.length === 0) hasMore.value = false
-    else page.value += 1
   } finally {
     isLoadingList.value = false
     isLoadingMore.value = false
@@ -129,22 +167,17 @@ const onScroll = async () => {
 
 // ---- Mount: Promise.all for clients + lawyers + notifications ----
 onMounted(async () => {
-  const [notificationsRes, clientsRes, lawyersRes] = await Promise.all([
-    getNotifications(activeQuery.value),
+  const [clientsRes, lawyersRes] = await Promise.all([
     getClients(),
     getLawyers()
   ])
 
-  console.log('[Notifications] API response:', notificationsRes)
-  console.log('[Clients] API response:', clientsRes)
-  console.log('[Lawyers] API response:', lawyersRes)
+  clientCount.value = clientsRes.data.data.meta.total || 0
+  lawyerCount.value = lawyersRes.data.lawyers.data.meta.total || 0
+  allCount.value = clientCount.value + lawyerCount.value
 
-  notifications.value = normalizeNotificationsList(notificationsRes)
-  recentNotifications.value = mapForTemplate(notifications.value)
-  isLoadingList.value = false
-
-  // Reset pagination so infinite scroll starts at page 2
-  page.value = 2
+  // Use fetchList for initial load to properly set up pagination
+  await fetchList({ reset: true })
 })
 
 watch([searchQuery, selectedTypeTab], async () => {
@@ -245,7 +278,7 @@ const submitNotification = async () => {
 
               <div class="space-y-3 pt-2">
                 <label class="text-sm font-medium text-gray-700">Target</label>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 mt-2 pb-6">
                   <button
                     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border"
                     :class="notificationTarget === 'all' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-50'"
@@ -272,7 +305,7 @@ const submitNotification = async () => {
             </div>
 
             <div class="flex items-center justify-between pt-4 mt-6 border-t border-gray-100">
-              <span class="text-sm text-gray-500 font-medium">4,821 recipients</span>
+              <span class="text-sm text-gray-500 font-medium">{{ notificationTarget === 'all' ? allCount : (notificationTarget === 'clients' ? clientCount : lawyerCount) }} recipients</span>
               <UButton
                 color="primary"
                 class="bg-[#003357] hover:bg-[#002244]"
@@ -309,10 +342,11 @@ const submitNotification = async () => {
                 <div class="space-y-2">
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-gray-600 font-medium">Delivered</span>
-                    <span class="font-bold text-gray-900">4,677</span>
+                    <span class="font-bold text-gray-900">{{ stats.delivered }}</span>
                   </div>
                   <UProgress
-                    :value="85"
+                    v-model="stats.delivered"
+                    :max="stats.recipient_count"
                     color="primary"
                     class="h-2"
                   />
@@ -321,10 +355,11 @@ const submitNotification = async () => {
                 <div class="space-y-2">
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-gray-600 font-medium">Opened</span>
-                    <span class="font-bold text-gray-900">2,522</span>
+                    <span class="font-bold text-gray-900">{{ stats.opened }}</span>
                   </div>
                   <UProgress
-                    :value="50"
+                    v-model="stats.opened"
+                    :max="stats.recipient_count"
                     color="primary"
                     class="h-2"
                   />
@@ -333,10 +368,10 @@ const submitNotification = async () => {
                 <div class="space-y-2">
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-gray-600 font-medium">Open Rate</span>
-                    <span class="font-bold text-gray-900">50.4%</span>
+                    <span class="font-bold text-gray-900">{{ stats.open_rate }}%</span>
                   </div>
                   <UProgress
-                    :value="50"
+                    v-model="stats.open_rate"
                     color="primary"
                     class="h-2"
                   />
@@ -352,23 +387,28 @@ const submitNotification = async () => {
               <div class="space-y-4">
                 <div class="flex justify-between items-center text-sm py-1 border-b border-gray-50 pb-3">
                   <span class="text-gray-900 font-medium">Announcements</span>
-                  <span class="text-gray-500">8 sent</span>
+                  <span class="text-gray-500">{{ stats.announcement }} sent</span>
                 </div>
 
                 <div class="flex justify-between items-center text-sm py-1 border-b border-gray-50 pb-3">
                   <span class="text-gray-900 font-medium">Platform updates</span>
-                  <span class="text-gray-500">5 sent</span>
+                  <span class="text-gray-500">{{ stats.platform_update }} sent</span>
                 </div>
 
                 <div class="flex justify-between items-center text-sm py-1 border-b border-gray-50 pb-3">
                   <span class="text-gray-900 font-medium">Promotions</span>
-                  <span class="text-gray-500">4 sent</span>
+                  <span class="text-gray-500">{{ stats.promotion }} sent</span>
                 </div>
 
                 <div class="flex justify-between items-center text-sm py-1">
                   <span class="text-gray-900 font-medium">Security alerts</span>
-                  <span class="text-gray-500">10 sent</span>
+                  <span class="text-gray-500">{{ stats.security_alert }} sent</span>
                 </div>
+
+                <!-- <div class="flex justify-between items-center text-sm py-1">
+                  <span class="text-gray-900 font-medium">Others</span>
+                  <span class="text-gray-500">10 sent</span>
+                </div> -->
               </div>
             </div>
           </div>
@@ -469,17 +509,24 @@ const submitNotification = async () => {
 
           <div
             v-if="isLoadingMore"
-            class="px-4 sm:px-6 py-4 text-sm text-gray-500"
+            class="px-4 sm:px-6 py-4 text-sm text-gray-500 text-center"
           >
             Loading more...
           </div>
 
           <div
             v-if="!hasMore && recentNotifications.length > 0"
-            class="px-4 sm:px-6 py-4 text-xs text-gray-400"
+            class="px-4 sm:px-6 py-4 text-xs text-gray-400 text-center"
           >
             No more notifications.
           </div>
+
+          <SharedEmptyState
+            v-if="recentNotifications.length === 0 && !isLoadingList"
+            icon="i-lucide-bell"
+            title="No notifications"
+            description="You have no recent notifications."
+          />
         </div>
       </template>
     </UCard>

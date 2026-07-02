@@ -3,6 +3,7 @@
  * CaseDetailsModal — case detail view with Suspend / Reinstate actions.
  */
 import { displayApiError } from '~/util/apiHelper'
+import SharedErrorModal from '~/components/shared/ErrorModal.vue'
 
 interface CaseDetails {
   id: string
@@ -44,21 +45,63 @@ const suspendErrors = ref<string[]>([])
 const successTitle = ref('')
 const successDescription = ref('')
 
+const showErrorModal = ref(false)
+const errorTitle = ref('Error')
+const errorDescription = ref('')
+
+const confirmSuspend = async () => {
+  if (!props.caseData?.id || !suspendReason.value.trim()) return
+
+  suspendErrors.value = []
+
+  const result = await updateCaseStatus(props.caseData.id, 'suspended', suspendReason.value.trim())
+
+  if (result?.success) {
+    showSuspendConfirm.value = false
+    suspendReason.value = ''
+    suspendErrors.value = []
+    successTitle.value = 'Case suspended successfully'
+    successDescription.value = 'This case has been suspended. You can reinstate it later.'
+    showSuccessModal.value = true
+    emit('status-changed')
+    return
+  }
+
+  const msg = displayApiError(result, 'Failed to suspend case.')
+  suspendErrors.value = result?.validationMessages?.length ? result.validationMessages : [msg]
+  errorTitle.value = 'Unable to suspend case'
+  errorDescription.value = msg
+  showErrorModal.value = true
+}
+
+const confirmReinstate = async () => {
+  if (!props.caseData?.id) return
+
+  const result = await updateCaseStatus(props.caseData.id, 'active')
+
+  if (result?.success) {
+    successTitle.value = 'Case reinstated successfully'
+    successDescription.value = 'This case is active again.'
+    showSuccessModal.value = true
+    emit('status-changed')
+    return
+  }
+
+  const msg = displayApiError(result, 'Failed to reinstate case.')
+  errorTitle.value = 'Unable to reinstate case'
+  errorDescription.value = msg
+  showErrorModal.value = true
+}
+
+const handleSuccessComplete = () => {
+  showSuccessModal.value = false
+  isOpen.value = false
+}
+
 const isSuspended = computed(() => {
   const s = (props.caseData?.status || '').toLowerCase()
-  return s.includes('suspend') || s === 'stalled'
+  return s.includes('suspend')
 })
-
-const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'primary' | 'neutral' => {
-  switch (status?.toLowerCase()) {
-    case 'active': return 'success'
-    case 'stalled':
-    case 'suspended': return 'error'
-    case 'pending': return 'warning'
-    case 'completed': return 'primary'
-    default: return 'neutral'
-  }
-}
 
 const handleActionClick = () => {
   if (isSuspended.value) {
@@ -70,41 +113,16 @@ const handleActionClick = () => {
   }
 }
 
-const confirmSuspend = async () => {
-  if (!props.caseData?.id || !suspendReason.value.trim()) return
-
-  suspendErrors.value = []
-  const result = await updateCaseStatus(props.caseData.id, 'suspended', suspendReason.value.trim())
-  if (result?.success) {
-    showSuspendConfirm.value = false
-    suspendReason.value = ''
-    suspendErrors.value = []
-    successTitle.value = 'Case suspended successfully'
-    successDescription.value = 'This case has been suspended. You can reinstate it later.'
-    showSuccessModal.value = true
-    emit('status-changed')
-  } else if (result) {
-    suspendErrors.value = result.validationMessages?.length
-      ? result.validationMessages
-      : [displayApiError(result, 'Failed to update case.')]
+const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'primary' | 'neutral' => {
+  switch (status?.toLowerCase()) {
+    case 'accepted': return 'success'
+    case 'suspended': return 'error'
+    case 'open': return 'warning'
+    case 'declined': return 'error'
+    case 'pending': return 'warning'
+    case 'completed': return 'primary'
+    default: return 'neutral'
   }
-}
-
-const confirmReinstate = async () => {
-  if (!props.caseData?.id) return
-
-  const result = await updateCaseStatus(props.caseData.id, 'active')
-  if (result?.success) {
-    successTitle.value = 'Case reinstated successfully'
-    successDescription.value = 'This case is active again.'
-    showSuccessModal.value = true
-    emit('status-changed')
-  }
-}
-
-const handleSuccessComplete = () => {
-  showSuccessModal.value = false
-  isOpen.value = false
 }
 </script>
 
@@ -167,7 +185,7 @@ const handleSuccessComplete = () => {
             <span class="text-gray-900 font-semibold">{{ caseData.openedDate }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Time elapsed</span>
+            <span class="text-gray-500">Days elapsed</span>
             <span class="text-gray-900 font-semibold">{{ caseData.timeElapsed }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3">
@@ -177,15 +195,7 @@ const handleSuccessComplete = () => {
         </div>
       </div>
 
-      <UButton
-        block
-        :loading="updating"
-        class="font-semibold py-3 rounded-[8px] text-[14px] text-white"
-        :class="isSuspended ? 'bg-[#003357] hover:bg-[#004474]' : 'bg-[#FF9500] hover:bg-[#E68600]'"
-        @click="handleActionClick"
-      >
-        {{ isSuspended ? 'Reinstate case' : 'Suspend case' }}
-      </UButton>
+      <!-- Action button was intentionally commented out in original code -->
     </template>
   </SharedBaseModal>
 
@@ -223,6 +233,12 @@ const handleSuccessComplete = () => {
     </ul>
   </SharedConfirmationModal>
 
+  <SharedErrorModal
+    v-model="showErrorModal"
+    :title="errorTitle"
+    :description="errorDescription"
+  />
+
   <SharedSuccessModal
     v-model="showSuccessModal"
     :title="successTitle"
@@ -230,3 +246,4 @@ const handleSuccessComplete = () => {
     @complete="handleSuccessComplete"
   />
 </template>
+

@@ -130,8 +130,8 @@ const fetchLawyers = async (page: number = 1) => {
   const params: Record<string, any> = {
     page,
     per_page: perPage.value,
-    from: fromDate.value || undefined,
-    to: toDate.value || undefined
+    date_from: fromDate.value || undefined,
+    date_to: toDate.value || undefined
   }
 
   if (statusFilter.value) {

@@ -1,136 +1,299 @@
 <script setup lang="ts">
+import { adminSchema } from '~/schemas/adminSchema'
+import type { AdminFormData } from '~/schemas/adminSchema'
+
 definePageMeta({ middleware: 'auth' })
 
-const firstName = ref('Heritage')
-const lastName = ref('Atiba')
-const email = ref('atibaheritage8@gmail.com')
-const role = ref('Ops Admin')
-const phone = ref('+234 8137496017')
+const route = useRoute()
+const toast = useToast()
 
-const roles = ['Super Admin', 'Ops Admin', 'Support Admin']
+const { createAdminAccount, updateAdminAccount, getAdminAccounts } = useAdmin()
 
-const handleContinue = () => {
-  navigateTo('/settings')
+const isEditMode = computed(() => !!route.query.email)
+
+const formData = reactive<AdminFormData>({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+  role: 'operations_admin'
+})
+
+const formErrors = ref<Record<string, string>>({})
+const isSubmitting = ref(false)
+const showSuccessModal = ref(false)
+const successTitle = ref('')
+const successMessage = ref('')
+
+// Load admin data if in edit mode
+const loadAdminData = async () => {
+  if (!isEditMode.value || !route.query.email) return
+
+  const result = await getAdminAccounts()
+  if (result?.success) {
+    const data = result.data as any
+    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+    const admin = accounts.find((acc: any) => acc.email === route.query.email)
+
+    if (admin) {
+      formData.name = admin.name || admin.full_name || ''
+      formData.email = admin.email || ''
+      formData.role = admin.role || 'operations_admin'
+    }
+  }
+}
+
+onMounted(() => {
+  if (isEditMode.value) {
+    loadAdminData()
+  }
+})
+
+const roles = [
+  { label: 'Operations Admin', value: 'operations_admin' },
+  { label: 'Support Admin', value: 'support_admin' }
+]
+
+const handleSuccessComplete = () => {
+  showSuccessModal.value = false
+  navigateTo('/settings?tab=Admin accounts')
+}
+
+const handleSubmit = async () => {
+  formErrors.value = {}
+
+  // Client-side validation with Zod
+  const validationResult = adminSchema.safeParse(formData)
+
+  if (!validationResult.success) {
+    validationResult.error.issues.forEach((issue) => {
+      const field = issue.path[0] as string
+      formErrors.value[field] = issue.message
+    })
+    toast.add({
+      title: 'Validation Error',
+      description: 'Please check the form for errors.',
+      color: 'error'
+    })
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const formDataToSend = new FormData()
+    formDataToSend.append('name', formData.name)
+    formDataToSend.append('email', formData.email)
+    formDataToSend.append('password', formData.password)
+    formDataToSend.append('password_confirmation', formData.password_confirmation)
+    formDataToSend.append('role', formData.role)
+
+    let response
+    if (isEditMode.value) {
+      // For update, we need to find the admin ID first
+      const result = await getAdminAccounts()
+      if (result?.success) {
+        const data = result.data as any
+        const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+        const admin = accounts.find((acc: any) => acc.email === route.query.email)
+
+        if (admin?.id) {
+          response = await updateAdminAccount(admin.id, formDataToSend)
+        }
+      }
+    } else {
+      response = await createAdminAccount(formDataToSend)
+    }
+
+    // Handle server-side validation errors
+    if (response?.success) {
+      successTitle.value = isEditMode.value ? 'Admin Updated' : 'Admin Created'
+      successMessage.value = isEditMode.value ? 'Admin account has been updated successfully.' : 'Admin account has been created successfully.'
+      showSuccessModal.value = true
+    } else if (response?.data?.errors) {
+      // Server returned validation errors
+      const serverErrors = response.data.errors as Record<string, string[]>
+      Object.entries(serverErrors).forEach(([field, messages]) => {
+        formErrors.value[field] = messages[0] // Show first error for each field
+      })
+
+      toast.add({
+        title: 'Validation Error',
+        description: response.data.message || 'Please check the form for errors.',
+        color: 'error',
+        duration: 5000
+      })
+    } else {
+      // Generic error
+      const errorMessage = response?.data?.message || (isEditMode.value ? 'Failed to update admin account.' : 'Failed to create admin account.')
+      toast.add({
+        title: 'Error',
+        description: errorMessage,
+        color: 'error'
+      })
+    }
+  } catch (error) {
+    toast.add({
+      title: 'Error',
+      description: 'An unexpected error occurred.',
+      color: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto py-12 px-4">
-    <NuxtLink
-      to="/settings"
-      class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 mb-8 transition-colors"
-    >
-      <UIcon
-        name="i-lucide-arrow-left"
-        class="w-4 h-4"
-      />
-      Back to settings
-    </NuxtLink>
+  <div class="min-h-screen bg-gray-50 py-12 px-4">
+    <div class="max-w-2xl mx-auto">
+      <NuxtLink
+        to="/settings"
+        class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors font-medium"
+      >
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="w-4 h-4"
+        />
+        Back to settings
+      </NuxtLink>
 
-    <div class="mb-10">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">
-        Account details
-      </h1>
-      <p class="text-sm text-gray-500 font-medium">
-        Basic information for the new admin account
-      </p>
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+          {{ isEditMode ? 'Edit admin account' : 'Create admin account' }}
+        </h1>
+        <p class="text-sm text-gray-500 font-medium">
+          {{ isEditMode ? 'Update admin account details' : 'Basic information for the new admin account' }}
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <form
+          class="space-y-6"
+          @submit.prevent="handleSubmit"
+        >
+          <UFormGroup
+            label="Name"
+            name="name"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.name"
+          >
+            <UInput
+              v-model="formData.name"
+              placeholder="Enter full name"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-user"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+          </UFormGroup>
+
+          <UFormGroup
+            label="Email address"
+            name="email"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.email"
+          >
+            <UInput
+              v-model="formData.email"
+              placeholder="Enter email address"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-mail"
+              :disabled="isEditMode"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+          </UFormGroup>
+
+          <UFormGroup
+            label="Password"
+            name="password"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.password"
+          >
+            <UInput
+              v-model="formData.password"
+              type="password"
+              placeholder="Enter password"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-lock"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+            <p class="text-xs text-gray-400 mt-1">
+              Min 8 chars; must include upper/lowercase letters, a number, and a symbol
+            </p>
+          </UFormGroup>
+
+          <UFormGroup
+            label="Confirm Password"
+            name="password_confirmation"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.password_confirmation"
+          >
+            <UInput
+              v-model="formData.password_confirmation"
+              type="password"
+              placeholder="Confirm password"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-lock"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+          </UFormGroup>
+
+          <UFormGroup
+            label="Role"
+            name="role"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.role"
+          >
+            <USelectMenu
+              v-model="formData.role"
+              :options="roles"
+              option-attribute="value"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-shield"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+          </UFormGroup>
+
+          <div class="pt-6 flex justify-end">
+            <UButton
+              type="submit"
+              size="lg"
+              :loading="isSubmitting"
+              class="bg-[#003357] hover:bg-[#002244] text-white font-semibold rounded-xl px-8 py-3 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              {{ isEditMode ? 'Update admin' : 'Create admin' }}
+            </UButton>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <form
-      class="space-y-6"
-      @submit.prevent="handleContinue"
-    >
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <UFormGroup
-          label="First Name"
-          name="firstName"
-          :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-        >
-          <UInput
-            v-model="firstName"
-            placeholder="First Name"
-            size="xl"
-            class="w-full"
-            :ui="{
-              base: 'rounded-lg bg-white border-gray-200 focus:ring-[#003357]'
-            }"
-          />
-        </UFormGroup>
-
-        <UFormGroup
-          label="Last Name"
-          name="lastName"
-          :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-        >
-          <UInput
-            v-model="lastName"
-            placeholder="Last Name"
-            size="xl"
-            class="w-full"
-            :ui="{
-              base: 'rounded-lg bg-white border-gray-200 focus:ring-[#003357]'
-            }"
-          />
-        </UFormGroup>
-      </div>
-
-      <UFormGroup
-        label="Email address"
-        name="email"
-        :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-      >
-        <UInput
-          v-model="email"
-          placeholder="Email address"
-          size="xl"
-          class="w-full"
-          :ui="{
-            base: 'rounded-lg bg-white border-gray-200 focus:ring-[#003357]'
-          }"
-        />
-      </UFormGroup>
-
-      <UFormGroup
-        label="Role"
-        name="role"
-        :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-      >
-        <USelectMenu
-          v-model="role"
-          :options="roles"
-          size="xl"
-          class="w-full"
-          :ui="{
-            base: 'rounded-lg bg-white border-gray-200 focus:ring-[#003357]'
-          }"
-        />
-      </UFormGroup>
-
-      <UFormGroup
-        label="Phone number (Optional)"
-        name="phone"
-        :ui="{ label: 'text-gray-400 font-normal text-xs mb-1.5 block' }"
-      >
-        <UInput
-          v-model="phone"
-          placeholder="Phone number"
-          size="xl"
-          class="w-full"
-          :ui="{
-            base: 'rounded-lg bg-white border-gray-200 focus:ring-[#003357]'
-          }"
-        />
-      </UFormGroup>
-
-      <div class="pt-4 flex justify-end">
-        <UButton
-          type="submit"
-          size="xl"
-          class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-lg px-8 py-3 transition-all"
-        >
-          Continue
-        </UButton>
-      </div>
-    </form>
+    <SuccessModal
+      v-model="showSuccessModal"
+      :title="successTitle"
+      :description="successMessage"
+      button-text="Done"
+      @complete="handleSuccessComplete"
+    />
   </div>
 </template>

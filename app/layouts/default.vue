@@ -7,6 +7,7 @@ const isTabletSheetOpen = ref(false)
 
 <template>
   <div class="min-h-screen bg-[#F8F9FB] flex relative overflow-x-hidden">
+    <NetworkStatusModal />
     <!-- Sidebar for desktop (lg and above) -->
     <div class="hidden lg:block px-[24px]! pt-[16px]">
       <PartialsSidebar />
