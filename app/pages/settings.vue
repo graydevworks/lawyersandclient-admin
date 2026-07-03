@@ -7,7 +7,7 @@ definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
 
-const activeTab = ref('general')
+const activeTab = ref('General')
 
 // Set active tab from query parameter on mount
 onMounted(() => {
@@ -20,10 +20,10 @@ const showContentMenu = ref(false)
 const toast = useToast()
 
 const {
-  getGeneralSettings,
-  getSecuritySettings,
-  getAdminAccounts,
-  getPermissions
+  getGeneralSettings
+  // getSecuritySettings,
+  // getAdminAccounts
+  // getPermissions
 } = useAdmin()
 
 const {
@@ -681,8 +681,7 @@ const removeBanner = async (banner: AppBanner) => {
   })
 }
 
-const adminAccounts = ref<Array<{ name: string; email: string; role: string; color: 'primary' | 'success' | 'neutral' }>>([])
-const adminAccountsLoading = ref(false)
+const adminAccounts = ref<Array<{ id: number; name: string; email: string; role: string; color: 'primary' | 'success' | 'neutral' }>>([])
 
 const permissions = [
   { title: 'Operations Admin — suspend users', description: 'Allow Ops Admin to suspend and activate accounts' },
@@ -690,32 +689,22 @@ const permissions = [
   { title: 'Support Admin — view chat logs', description: 'Limited to flagged conversations only' },
   { title: 'Support Admin — send notifications', description: 'Allow Support Admin to broadcast messages' }
 ]
-
-const enable2FA = ref(false)
-const sessionTimeout = ref('30 minutes')
-
 // Load admin settings data
 const loadAdminSettings = async () => {
   console.log('[Settings] Loading admin settings...')
 
-  const [generalSettings, securitySettings, adminAccountsResult, permissions] = await Promise.all([
-    getGeneralSettings(),
-    getSecuritySettings(),
-    getAdminAccounts(),
-    getPermissions()
+  const [generalSettings] = await Promise.all([
+    getGeneralSettings()
   ])
 
-  console.log('[Settings] General settings response:', generalSettings)
-  console.log('[Settings] Security settings response:', securitySettings)
-  console.log('[Settings] Admin accounts response:', adminAccountsResult)
-  console.log('[Settings] Permissions response:', permissions)
 
   // Process admin accounts
-  if (adminAccountsResult?.success) {
-    const data = adminAccountsResult.data as any
+  if (generalSettings.success) {
+    const data = generalSettings.data as any
     const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
 
-    adminAccounts.value = accounts.map((acc: any) => ({
+    adminAccounts.value = accounts.admins.map((acc: any) => ({
+      id: acc.id,
       name: acc.name || acc.full_name || '',
       email: acc.email || '',
       role: acc.role || '',
@@ -726,7 +715,8 @@ const loadAdminSettings = async () => {
 
 onMounted(() => {
   loadAdminSettings()
-})</script>
+})
+</script>
 
 <template>
   <div class="space-y-8 max-w-7xl">
@@ -1448,22 +1438,6 @@ onMounted(() => {
               </UButton>
             </div>
 
-            <div class="flex items-center justify-between py-4 border-b border-gray-100">
-              <div>
-                <h3 class="font-medium text-gray-900">
-                  Session timeout
-                </h3>
-                <p class="text-sm text-gray-500">
-                  Edit your session timeout
-                </p>
-              </div>
-              <USelect
-                v-model="sessionTimeout"
-                :options="['15 minutes', '30 minutes', '1 hour', 'Never']"
-                class="w-40"
-              />
-            </div>
-
             <div class="flex items-center justify-between py-4">
               <div>
                 <h3 class="font-medium text-gray-900">
@@ -1554,7 +1528,7 @@ onMounted(() => {
                   variant="solid"
                   size="sm"
                   class="shadow-sm border border-gray-200"
-                  @click="navigateTo(`/account-details?email=${admin.email}`)"
+                  @click="navigateTo(`/account-details?id=${admin.id}`)"
                 >
                   Edit
                 </UButton>

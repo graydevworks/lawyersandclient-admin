@@ -49,7 +49,7 @@ const confirmClass = computed(() =>
 <template>
   <UModal
     v-model:open="isOpen"
-    :ui="{ content: modalContentClasses(maxWidth), overlay: 'bg-black/40 z-[9998]' }"
+    :ui="{ content: modalContentClasses(maxWidth), overlay: 'bg-black/40 z-[4000]' }"
   >
     <template #content>
       <div class="bg-white px-6 pt-6 pb-6">
@@ -87,7 +87,7 @@ const confirmClass = computed(() =>
           </slot>
         </p>
 
-        <div class="mb-6">
+        <div class="mb-6 z-[9999999]">
           <slot />
         </div>
 

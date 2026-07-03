@@ -7,7 +7,7 @@ definePageMeta({ middleware: 'auth' })
 
 const { getReports, getReport, updateReport } = useReports()
 
-type ReportStatus = 'open' | 'in_progress' | 'resolved'
+type ReportStatus = 'pending' | 'reviewed' | 'resolved'
 
 type ReportListItem = {
   id: number | string
@@ -26,8 +26,8 @@ const activeTab = ref<'all' | ReportStatus>('all')
 
 const tabs = [
   { label: 'All', value: 'all' as const },
-  { label: 'Open', value: 'open' as const },
-  { label: 'In Progress', value: 'in_progress' as const },
+  { label: 'Pending', value: 'pending' as const },
+  { label: 'Reviewed', value: 'reviewed' as const },
   { label: 'Resolved', value: 'resolved' as const }
 ] as const
 
@@ -35,7 +35,7 @@ const searchQuery = ref('')
 const isFetching = ref(false)
 const listError = ref('')
 
-const resolutionStatus = ref<ReportStatus>('open')
+const resolutionStatus = ref<ReportStatus>('pending')
 const resolutionNote = ref('')
 
 const meta = ref({
@@ -57,7 +57,7 @@ const loadDetail = async (id: number | string) => {
     selectedReport.value = payload.data.report as Record<string, any>
 
     const s = selectedReport.value.status ?? selectedReport.value.resolution_status
-    if (s === 'open' || s === 'in_progress' || s === 'resolved') resolutionStatus.value = s
+    if (s === 'pending' || s === 'reviewed' || s === 'resolved') resolutionStatus.value = s
 
     resolutionNote.value = selectedReport.value.resolution_note ?? selectedReport.value.note ?? ''
 
@@ -326,14 +326,20 @@ onUnmounted(() => {
               Resolution notes
             </h3>
 
+            <div class="flex flex-col gap-2" v-if="resolutionNote">
+              <div class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-2">
+                <h2>{{ resolutionNote }}</h2>
+              </div>
+            </div>
+
             <div v-if="selectedReport" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
                 <USelect
                   v-model="resolutionStatus"
                   :items="[
-                    { label: 'Open', value: 'open' },
-                    { label: 'In Progress', value: 'in_progress' },
+                    { label: 'Pending', value: 'pending' },
+                    { label: 'Reviewed', value: 'reviewed' },
                     { label: 'Resolved', value: 'resolved' }
                   ]"
                   class="mt-2 w-full"

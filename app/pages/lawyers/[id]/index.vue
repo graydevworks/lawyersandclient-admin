@@ -749,6 +749,7 @@ const handleDelete = async () => {
         v-model="suspendReason"
         :items="suspendReasons"
         class="w-full"
+        :ui="{ base: 'w-full' }"
       />
     </SharedConfirmationModal>
 
@@ -809,6 +810,7 @@ const handleDelete = async () => {
         v-model="deleteReason"
         :items="deleteReasons"
         class="w-full mb-4"
+        :ui="{ base: 'w-full z-[999999999]!' }"
       />
       <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
         <UCheckbox v-model="deleteConfirmed" />

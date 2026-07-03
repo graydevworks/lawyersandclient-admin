@@ -1,16 +1,26 @@
 <script setup lang="ts">
-import { adminSchema } from '~/schemas/adminSchema'
+import { adminSchema, adminUpdateSchema } from '~/schemas/adminSchema'
 import type { AdminFormData } from '~/schemas/adminSchema'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
+// Skeleton loading while fetching admin data (edit mode)
+const isLoadingAdmin = ref(false)
+
 const route = useRoute()
 const toast = useToast()
 
-const { createAdminAccount, updateAdminAccount, getAdminAccounts } = useAdmin()
+const { createAdminAccount, updateAdminAccount, getGeneralSettings } = useAdmin()
 
-const isEditMode = computed(() => !!route.query.email)
+const editAdminId = computed(() => {
+  const raw = route.query.id
+  if (raw === undefined) return null
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
+const isEditMode = computed(() => editAdminId.value !== null)
 
 const formData = reactive<AdminFormData>({
   name: '',
@@ -28,19 +38,30 @@ const successMessage = ref('')
 
 // Load admin data if in edit mode
 const loadAdminData = async () => {
-  if (!isEditMode.value || !route.query.email) return
+  if (!isEditMode.value || editAdminId.value === null) return
 
-  const result = await getAdminAccounts()
-  if (result?.success) {
+  isLoadingAdmin.value = true
+  try {
+    const result = await getGeneralSettings()
+    if (!result?.success) return
+
     const data = result.data as any
-    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
-    const admin = accounts.find((acc: any) => acc.email === route.query.email)
+  const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+  console.log(accounts, '=>')
+  const admin = accounts.admins.find((acc: any) => Number(acc?.id) === editAdminId.value)
 
-    if (admin) {
-      formData.name = admin.name || admin.full_name || ''
-      formData.email = admin.email || ''
-      formData.role = admin.role || 'operations_admin'
-    }
+  // As requested: console.log the matched admin
+  if (admin) {
+    console.log('[account-details] admin matched by id:', admin)
+    formData.name = admin.name || admin.full_name || ''
+    formData.email = admin.email || ''
+    formData.role = admin.role || 'operations_admin'
+  }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[account-details] failed to load admin by id', e)
+  } finally {
+    isLoadingAdmin.value = false
   }
 }
 
@@ -68,7 +89,9 @@ const handleSubmit = async () => {
   formErrors.value = {}
 
   // Client-side validation with Zod
-  const validationResult = adminSchema.safeParse(formData)
+  const validationResult = isEditMode.value
+    ? (adminUpdateSchema as typeof adminSchema).safeParse(formData)
+    : adminSchema.safeParse(formData)
 
   if (!validationResult.success) {
     // Match API-like shape: { success:false, message:'Validation error.', errors:{ field:[...]} }
@@ -93,28 +116,33 @@ const handleSubmit = async () => {
     return
   }
 
-
   isSubmitting.value = true
 
   try {
     const formDataToSend = new FormData()
+
+    // If we’re editing an admin, ensure the id-based lookup is used.
+    // (no dummy data; we only use getAdminAccounts() output)
+
     formDataToSend.append('name', formData.name)
     formDataToSend.append('email', formData.email)
-    formDataToSend.append('password', formData.password)
-    formDataToSend.append('password_confirmation', formData.password_confirmation)
+    if (formData.password) {
+      formDataToSend.append('password', formData.password)
+      formDataToSend.append('password_confirmation', formData.password_confirmation)
+    }
     formDataToSend.append('role', formData.role)
 
     let response
     if (isEditMode.value) {
       // For update, we need to find the admin ID first
-      const result = await getAdminAccounts()
+      const result = await getGeneralSettings()
       if (result?.success) {
         const data = result.data as any
         const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
-        const admin = accounts.find((acc: any) => acc.email === route.query.email)
+        const admin = accounts.admins.find((acc: any) => acc.id == route.query.id)
 
         if (admin?.id) {
-          response = await updateAdminAccount(admin.id, formDataToSend)
+          response = await updateAdminAccount(Number(admin.id), formDataToSend)
         }
       }
     } else {
@@ -190,7 +218,17 @@ const handleSubmit = async () => {
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <form
+        <div v-if="isEditMode && isLoadingAdmin" class="space-y-6">
+          <USkeleton class="h-10 w-full rounded-xl" />
+          <USkeleton class="h-10 w-full rounded-xl" />
+          <USkeleton class="h-10 w-full rounded-xl" />
+          <USkeleton class="h-10 w-full rounded-xl" />
+          <USkeleton class="h-10 w-full rounded-xl" />
+          <USkeleton class="h-12 w-32 rounded-xl ml-auto" />
+        </div>
+
+        <form v-else
+
           class="space-y-6"
           @submit.prevent="handleSubmit"
         >
@@ -226,6 +264,26 @@ const handleSubmit = async () => {
               class="w-full"
               icon="i-lucide-mail"
               :disabled="isEditMode"
+              :ui="{
+                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                placeholder: 'text-gray-400'
+              }"
+            />
+          </UFormField>
+
+
+          <UFormField
+            label="Role"
+            name="role"
+            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :error="formErrors.role"
+          >
+            <USelect
+              v-model="formData.role"
+              :items="roles"
+              size="lg"
+              class="w-full"
+              icon="i-lucide-shield"
               :ui="{
                 base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
                 placeholder: 'text-gray-400'
@@ -269,26 +327,6 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-lock"
-              :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
-                placeholder: 'text-gray-400'
-              }"
-            />
-          </UFormField>
-
-          <UFormField
-            label="Role"
-            name="role"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
-            :error="formErrors.role"
-          >
-            <USelectMenu
-              v-model="formData.role"
-              :options="roles"
-              option-attribute="value"
-              size="lg"
-              class="w-full"
-              icon="i-lucide-shield"
               :ui="{
                 base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
                 placeholder: 'text-gray-400'
