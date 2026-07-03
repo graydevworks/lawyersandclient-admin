@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { adminSchema } from '~/schemas/adminSchema'
 import type { AdminFormData } from '~/schemas/adminSchema'
+import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -59,6 +60,10 @@ const handleSuccessComplete = () => {
   navigateTo('/settings?tab=Admin accounts')
 }
 
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Validation error.')
+const errorModalDescription = ref('Please check the form for errors.')
+
 const handleSubmit = async () => {
   formErrors.value = {}
 
@@ -66,17 +71,28 @@ const handleSubmit = async () => {
   const validationResult = adminSchema.safeParse(formData)
 
   if (!validationResult.success) {
+    // Match API-like shape: { success:false, message:'Validation error.', errors:{ field:[...]} }
+    const apiLikeErrors: Record<string, string[]> = {}
+
     validationResult.error.issues.forEach((issue) => {
-      const field = issue.path[0] as string
-      formErrors.value[field] = issue.message
+      const field = (issue.path?.[0] as string) || 'form'
+      if (!apiLikeErrors[field]) apiLikeErrors[field] = []
+      apiLikeErrors[field].push(issue.message)
     })
-    toast.add({
-      title: 'Validation Error',
-      description: 'Please check the form for errors.',
-      color: 'error'
+
+    // Keep current field UI working (show first error per field)
+    Object.entries(apiLikeErrors).forEach(([field, messages]) => {
+      formErrors.value[field] = messages[0]
     })
+
+    // Use the same error modal component/style
+    errorModalTitle.value = 'Validation error.'
+    errorModalDescription.value = 'Please fix the highlighted fields and try again.'
+    showErrorModal.value = true
+
     return
   }
+
 
   isSubmitting.value = true
 
@@ -146,6 +162,12 @@ const handleSubmit = async () => {
 
 <template>
   <div class="min-h-screen bg-gray-50 py-12 px-4">
+    <ErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+    />
     <div class="max-w-2xl mx-auto">
       <NuxtLink
         to="/settings"
@@ -172,7 +194,7 @@ const handleSubmit = async () => {
           class="space-y-6"
           @submit.prevent="handleSubmit"
         >
-          <UFormGroup
+          <UFormField
             label="Name"
             name="name"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
@@ -189,9 +211,9 @@ const handleSubmit = async () => {
                 placeholder: 'text-gray-400'
               }"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Email address"
             name="email"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
@@ -209,9 +231,9 @@ const handleSubmit = async () => {
                 placeholder: 'text-gray-400'
               }"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Password"
             name="password"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
@@ -232,9 +254,9 @@ const handleSubmit = async () => {
             <p class="text-xs text-gray-400 mt-1">
               Min 8 chars; must include upper/lowercase letters, a number, and a symbol
             </p>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Confirm Password"
             name="password_confirmation"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
@@ -252,9 +274,9 @@ const handleSubmit = async () => {
                 placeholder: 'text-gray-400'
               }"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Role"
             name="role"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
@@ -272,7 +294,7 @@ const handleSubmit = async () => {
                 placeholder: 'text-gray-400'
               }"
             />
-          </UFormGroup>
+          </UFormField>
 
           <div class="pt-6 flex justify-end">
             <UButton
