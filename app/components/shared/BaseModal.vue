@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
   maxWidth?: string
   showClose?: boolean
 }>(), {
-  maxWidth: 'max-w-[500px]',
+  maxWidth: 'max-w-[600px]',
   showClose: true
 })
 
@@ -50,7 +50,7 @@ const contentClasses = [
       <div class="bg-white">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 pt-6 pb-2">
-          <h2 class="text-[20px] font-bold text-gray-900">
+          <h2 class="text-[20px] font-semibold text-gray-900">
             {{ title }}
           </h2>
           <UButton

@@ -30,6 +30,13 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
+    // Backend errors come in shapes like:
+    // { success:false, message:'Validation error.', errors:{ field:[msg] } }
+    // or { success:false, message:'Super admin accounts cannot be modified through this endpoint.' }
+    // throwApiError preserves data so the client can show the correct message.
     throwApiError(error, 'Failed to update admin account')
   }
 })
+
+
+

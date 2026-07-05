@@ -1,19 +1,18 @@
 <script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
 import { adminSchema, adminUpdateSchema } from '~/schemas/adminSchema'
 import type { AdminFormData } from '~/schemas/adminSchema'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
-// Skeleton loading while fetching admin data (edit mode)
-const isLoadingAdmin = ref(false)
-
 const route = useRoute()
 const toast = useToast()
 
-const { createAdminAccount, updateAdminAccount, getGeneralSettings } = useAdmin()
+const { createAdminAccount, updateAdminAccount, getAdminAccounts } = useAdmin()
 
-const editAdminId = computed(() => {
+// --- Route-driven mode ---
+const editAdminId = computed<number | null>(() => {
   const raw = route.query.id
   if (raw === undefined) return null
   const n = Number(raw)
@@ -21,6 +20,8 @@ const editAdminId = computed(() => {
 })
 
 const isEditMode = computed(() => editAdminId.value !== null)
+
+const isLoadingAdmin = ref(false)
 
 const formData = reactive<AdminFormData>({
   name: '',
@@ -36,45 +37,40 @@ const showSuccessModal = ref(false)
 const successTitle = ref('')
 const successMessage = ref('')
 
-// Load admin data if in edit mode
+const roles = [
+  { label: 'Operations Admin', value: 'operations_admin' },
+  { label: 'Support Admin', value: 'support_admin' }
+]
+
 const loadAdminData = async () => {
   if (!isEditMode.value || editAdminId.value === null) return
 
   isLoadingAdmin.value = true
   try {
-    const result = await getGeneralSettings()
+    const result = await getAdminAccounts()
     if (!result?.success) return
 
     const data = result.data as any
-  const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
-  console.log(accounts, '=>')
-  const admin = accounts.admins.find((acc: any) => Number(acc?.id) === editAdminId.value)
+    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
 
-  // As requested: console.log the matched admin
-  if (admin) {
-    console.log('[account-details] admin matched by id:', admin)
-    formData.name = admin.name || admin.full_name || ''
-    formData.email = admin.email || ''
-    formData.role = admin.role || 'operations_admin'
-  }
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('[account-details] failed to load admin by id', e)
+    const admin = accounts.admins?.find((acc: any) => Number(acc?.id) === editAdminId.value)
+
+    // As requested: console.log the matched admin
+    if (admin) {
+      console.log('[account-details] admin matched by id:', admin)
+
+      formData.name = admin.name || admin.full_name || ''
+      formData.email = admin.email || ''
+      formData.role = admin.role || 'operations_admin'
+    }
   } finally {
     isLoadingAdmin.value = false
   }
 }
 
 onMounted(() => {
-  if (isEditMode.value) {
-    loadAdminData()
-  }
+  if (isEditMode.value) loadAdminData()
 })
-
-const roles = [
-  { label: 'Operations Admin', value: 'operations_admin' },
-  { label: 'Support Admin', value: 'support_admin' }
-]
 
 const handleSuccessComplete = () => {
   showSuccessModal.value = false
@@ -88,13 +84,11 @@ const errorModalDescription = ref('Please check the form for errors.')
 const handleSubmit = async () => {
   formErrors.value = {}
 
-  // Client-side validation with Zod
   const validationResult = isEditMode.value
-    ? (adminUpdateSchema as typeof adminSchema).safeParse(formData)
+    ? adminUpdateSchema.safeParse(formData)
     : adminSchema.safeParse(formData)
 
   if (!validationResult.success) {
-    // Match API-like shape: { success:false, message:'Validation error.', errors:{ field:[...]} }
     const apiLikeErrors: Record<string, string[]> = {}
 
     validationResult.error.issues.forEach((issue) => {
@@ -103,16 +97,13 @@ const handleSubmit = async () => {
       apiLikeErrors[field].push(issue.message)
     })
 
-    // Keep current field UI working (show first error per field)
     Object.entries(apiLikeErrors).forEach(([field, messages]) => {
       formErrors.value[field] = messages[0]
     })
 
-    // Use the same error modal component/style
     errorModalTitle.value = 'Validation error.'
     errorModalDescription.value = 'Please fix the highlighted fields and try again.'
     showErrorModal.value = true
-
     return
   }
 
@@ -120,9 +111,6 @@ const handleSubmit = async () => {
 
   try {
     const formDataToSend = new FormData()
-
-    // If we’re editing an admin, ensure the id-based lookup is used.
-    // (no dummy data; we only use getAdminAccounts() output)
 
     formDataToSend.append('name', formData.name)
     formDataToSend.append('email', formData.email)
@@ -132,51 +120,70 @@ const handleSubmit = async () => {
     }
     formDataToSend.append('role', formData.role)
 
-    let response
-    if (isEditMode.value) {
-      // For update, we need to find the admin ID first
-      const result = await getGeneralSettings()
-      if (result?.success) {
-        const data = result.data as any
-        const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
-        const admin = accounts.admins.find((acc: any) => acc.id == route.query.id)
+    let response: any
 
-        if (admin?.id) {
-          response = await updateAdminAccount(Number(admin.id), formDataToSend)
-        }
-      }
+    if (isEditMode.value && editAdminId.value !== null) {
+      // Update via PUT (useAdmin composable)
+      response = await updateAdminAccount(editAdminId.value, formDataToSend)
     } else {
       response = await createAdminAccount(formDataToSend)
     }
 
-    // Handle server-side validation errors
     if (response?.success) {
       successTitle.value = isEditMode.value ? 'Admin Updated' : 'Admin Created'
-      successMessage.value = isEditMode.value ? 'Admin account has been updated successfully.' : 'Admin account has been created successfully.'
+      successMessage.value = isEditMode.value
+        ? 'Admin account has been updated successfully.'
+        : 'Admin account has been created successfully.'
       showSuccessModal.value = true
-    } else if (response?.data?.errors) {
-      // Server returned validation errors
+      return
+    }
+
+    if (response?.data?.errors) {
       const serverErrors = response.data.errors as Record<string, string[]>
+
+      // show first error in errors (email[0] etc)
+      const firstEntry = Object.entries(serverErrors)[0]
+      if (firstEntry) {
+        const [, messages] = firstEntry
+        if (Array.isArray(messages) && messages[0]) {
+          errorModalTitle.value = response.data.message || 'Validation error.'
+          errorModalDescription.value = messages[0]
+          showErrorModal.value = true
+        }
+      }
+
+      // also keep field-level messages
       Object.entries(serverErrors).forEach(([field, messages]) => {
-        formErrors.value[field] = messages[0] // Show first error for each field
+        if (Array.isArray(messages) && messages[0]) {
+          formErrors.value[field] = messages[0]
+        }
       })
 
-      toast.add({
-        title: 'Validation Error',
-        description: response.data.message || 'Please check the form for errors.',
-        color: 'error',
-        duration: 5000
-      })
-    } else {
-      // Generic error
-      const errorMessage = response?.data?.message || (isEditMode.value ? 'Failed to update admin account.' : 'Failed to create admin account.')
-      toast.add({
-        title: 'Error',
-        description: errorMessage,
-        color: 'error'
-      })
+      return
     }
+
+    // non-validation backend error (e.g. super admin accounts cannot be modified)
+    if (response?.data?.message) {
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = response.data.message
+      showErrorModal.value = true
+      return
+    }
+
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = response?.data?.message || (isEditMode.value ? 'Failed to update admin account.' : 'Failed to create admin account.')
+    showErrorModal.value = true
   } catch (error) {
+    // if something weird happens, ensure modal is shown with a message
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = 'An unexpected error occurred.'
+    showErrorModal.value = true
+
+    toast.add({
+      title: 'Error',
+      description: 'An unexpected error occurred.',
+      color: 'error'
+    })
     toast.add({
       title: 'Error',
       description: 'An unexpected error occurred.',
@@ -196,6 +203,7 @@ const handleSubmit = async () => {
       :description="errorModalDescription"
       button-text="Dismiss"
     />
+
     <div class="max-w-2xl mx-auto">
       <NuxtLink
         to="/settings"
@@ -227,8 +235,8 @@ const handleSubmit = async () => {
           <USkeleton class="h-12 w-32 rounded-xl ml-auto" />
         </div>
 
-        <form v-else
-
+        <form
+          v-else
           class="space-y-6"
           @submit.prevent="handleSubmit"
         >
@@ -271,16 +279,16 @@ const handleSubmit = async () => {
             />
           </UFormField>
 
-
           <UFormField
             label="Role"
             name="role"
             :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
             :error="formErrors.role"
           >
-            <USelect
+            <USelectMenu
               v-model="formData.role"
-              :items="roles"
+              :options="roles"
+              option-attribute="value"
               size="lg"
               class="w-full"
               icon="i-lucide-shield"
@@ -357,3 +365,4 @@ const handleSubmit = async () => {
     />
   </div>
 </template>
+

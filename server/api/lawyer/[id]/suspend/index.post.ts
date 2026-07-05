@@ -29,6 +29,12 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
-    throwApiError(error, 'Failed to suspend lawyer')
+    const statusCode = getErrorStatusCode(error, 400)
+    const message = extractErrorMessage(error, 'Failed to update profile')
+
+    return {
+      status: statusCode,
+      message: message
+    }
   }
 })

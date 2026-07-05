@@ -37,7 +37,7 @@ const trendColorBackgroundClass = computed(() => {
     <div class="space-y-[10px]">
       <slot name="header">
         <div class="flex justify-between items-start">
-          <h4 class="text-[15px] font-normal captitalize">
+          <h4 class="text-[14px] font-light captitalize">
             {{ title }}
           </h4>
           <span
@@ -49,11 +49,11 @@ const trendColorBackgroundClass = computed(() => {
       </slot>
 
       <div class="flex items-baseline gap-2">
-        <span class="text-2xl font-semibold text-gray-900 tracking-tight">{{ value }}</span>
+        <span class="text-[24px] font-semibold text-gray-900 tracking-tight">{{ value }}</span>
       </div>
       <div
         v-if="trend"
-        class="flex items-center gap-1.5 text-[14px] font-medium"
+        class="flex items-center gap-1.5 text-[13px] font-medium"
       >
         <span
           v-if="!withChart"
@@ -65,7 +65,7 @@ const trendColorBackgroundClass = computed(() => {
       </div>
       <div
         v-else-if="trendType === 'neutral'"
-        class="text-amber-500 text-[14px] font-medium"
+        class="text-amber-500 text-[13px] font-medium"
       >
         Needs attention
       </div>

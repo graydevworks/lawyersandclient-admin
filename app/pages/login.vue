@@ -46,23 +46,23 @@ const handleLogin = async () => {
     <!-- Background Image with Overlay -->
     <div
       class="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-      style="background-image: url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=2070&auto=format&fit=crop')"
+      style="background-image: url('/images/login.jpg')"
     >
-      <div class="absolute inset-0 bg-[#001D31]/80 backdrop-blur-[1px]" />
+      <div class="absolute inset-0 bg-[#00000099] backdrop-blur-[1px]" />
     </div>
 
     <!-- Login Card -->
-    <div class="w-full max-w-[540px] z-10 bg-white rounded-[40px] shadow-2xl p-8 sm:p-12 md:p-16 flex flex-col items-center">
+    <div class="w-full max-w-[536px] z-10 bg-white rounded-[32px] shadow-2xl py-[40px] px-[56px] flex flex-col items-center">
       <!-- Logo -->
       <div class="mb-6">
         <img
-          src="/images/lawyers&clients.svg"
+          src="/images/LCS@2x.png"
           alt="Lawyers & Clients"
-          class="h-16 w-auto"
+          class="h-[39px] w-auto"
         >
       </div>
 
-      <h1 class="text-[24px] font-semibold text-[#111827] mb-10 text-center leading-tight">
+      <h1 class="text-[24px] font-normal text-[#111827] mb-10 text-center leading-tight">
         Sign In to access Admin dashboard
       </h1>
 
@@ -94,7 +94,7 @@ const handleLogin = async () => {
             size="xl"
             class="w-full"
             :ui="{
-              base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]'
+              base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[47px] px-6 text-[15px]'
             }"
           />
         </div>
@@ -113,12 +113,12 @@ const handleLogin = async () => {
               size="xl"
               class="w-full"
               :ui="{
-                base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[56px] px-6 text-[15px]'
+                base: 'rounded-[32px] bg-white border-gray-200 focus:ring-[#003357] h-[47px] px-6 text-[15px]'
               }"
             />
             <button
               type="button"
-              class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              class="absolute flex items-center right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               @click="showPassword = !showPassword"
             >
               <UIcon
@@ -134,7 +134,7 @@ const handleLogin = async () => {
           block
           size="xl"
           :loading="isLoading"
-          class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-[32px] h-[60px] text-[16px] transition-all shadow-lg active:scale-[0.98]"
+          class="bg-[#003357] hover:bg-[#002244] text-white font-bold rounded-[32px] h-[47px] text-[16px] transition-all shadow-lg active:scale-[0.98] disabled:bg-[#00335770]"
         >
           {{ isLoading ? 'Signing in...' : 'Login to your account' }}
         </UButton>

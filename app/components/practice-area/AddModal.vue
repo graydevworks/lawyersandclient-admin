@@ -41,7 +41,7 @@ const handleClose = () => {
     <!-- Form -->
     <div class="mt-4 space-y-4">
       <div>
-        <label class="block text-[14px] font-medium text-gray-500 mb-2">
+        <label class="block text-[14px] font-normal text-gray-500 mb-2">
           Name
         </label>
         <UInput
@@ -49,7 +49,7 @@ const handleClose = () => {
           placeholder="e.g Environmental law"
           size="lg"
           class="w-full"
-          :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
+          :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] ring-0 px-4 py-3 text-[14px] font-light' }"
           @keyup.enter="handleSave"
         />
       </div>
@@ -60,13 +60,13 @@ const handleClose = () => {
       <UButton
         variant="outline"
         color="neutral"
-        class="border border-[#D1D5DB] text-gray-900 rounded-[8px] px-5 py-2.5 text-[14px] font-medium hover:bg-gray-50"
+        class="border border-[#ECECEC] text-[#111111] rounded-[8px] px-5 py-2.5 text-[14px] font-semibold hover:bg-gray-50 px-3 ring-0"
         @click="handleCancel"
       >
         Cancel
       </UButton>
       <UButton
-        class="bg-[#003357] hover:bg-[#004474] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-medium"
+        class="bg-[#003357] disabled:bg-[#003357] hover:bg-[#004474] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-semibold"
         :disabled="!name.trim()"
         @click="handleSave"
       >

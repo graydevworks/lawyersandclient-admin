@@ -83,8 +83,8 @@ export default defineEventHandler(async (event) => {
         data: response
       }
     } catch (error) {
-    throwApiError(error, 'Invalid email or password. Please check your credentials and try again.')
-  }
+      throwApiError(error, 'Invalid email or password. Please check your credentials and try again.')
+    }
   } else {
     throw createError({
       statusCode: 400,

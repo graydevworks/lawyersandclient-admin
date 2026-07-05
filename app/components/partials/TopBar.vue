@@ -146,7 +146,7 @@ const closeDropdown = () => {
             alt="Logo"
             class="w-8"
           >
-          <span class="text-primary font-semibold text-sm md:text-base lg:text-lg truncate">Lawyers & Clients</span>
+          <span class="text-[#002f53] font-semibold text-sm md:text-base lg:text-lg truncate">Lawyers & Clients</span>
         </div>
       </NuxtLink>
       <div class="flex items-center gap-2 md:gap-4 flex-1 w-full">
@@ -247,7 +247,7 @@ const closeDropdown = () => {
           <UButton
             color="neutral"
             variant="ghost"
-            icon="i-lucide-bell"
+            icon="iconamoon:notification-thin"
             class="flex justify-center relative size-[36px] rounded-full bg-[#F6F6F6]"
           >
             <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />

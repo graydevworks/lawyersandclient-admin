@@ -314,7 +314,7 @@ onMounted(() => {
                 icon="i-lucide-search"
                 placeholder="Search by name or email..."
                 class="w-full md:w-[367px]"
-                :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
+                :ui="{ base: 'rounded-[36px] text-[14px] py-[10px] ring-[0.5px]' }"
               />
               <USelect
                 v-model="statusFilter"
@@ -322,7 +322,7 @@ onMounted(() => {
                 value-key="value"
                 label-key="label"
                 placeholder="Filter status"
-                class="w-[160px] rounded-[36px] h-full text-[14px] py-[10px]"
+                class="rounded-[36px] h-full text-[14px] py-[10px] ring-[0.5px]"
               />
             </div>
           </div>
@@ -347,7 +347,7 @@ onMounted(() => {
       <!-- Pagination -->
       <div
         v-if="clients.length > 0"
-        class="flex items-center justify-between text-sm text-gray-500 pt-2"
+        class="flex items-center justify-between text-sm text-gray-500 pt-2 pb-10"
       >
         <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} clients</span>
         <div class="flex items-center gap-1.5">
@@ -356,7 +356,7 @@ onMounted(() => {
             color="neutral"
             size="sm"
             icon="i-heroicons-arrow-left"
-            class="h-8 font-medium text-gray-500 bg-white shadow-sm"
+            class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
             :disabled="currentPage === 1"
             @click="handlePrevPage"
           >
@@ -374,7 +374,7 @@ onMounted(() => {
               :variant="page === currentPage ? 'solid' : 'ghost'"
               :color="page === currentPage ? 'primary' : 'neutral'"
               size="sm"
-              class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white hover:bg-[#003357]/30"
+              class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white hover:bg-[#003357]/30 ring-[#E8EAED] ring-[1px]"
               :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
               @click="goToPage(Number(page))"
             >
@@ -386,7 +386,7 @@ onMounted(() => {
             color="neutral"
             size="sm"
             trailing-icon="i-heroicons-arrow-right"
-            class="h-8 font-medium text-gray-500 bg-white shadow-sm"
+            class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
             :disabled="currentPage === totalPages"
             @click="handleNextPage"
           >

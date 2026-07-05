@@ -35,7 +35,7 @@ const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'active': return 'success'
     case 'suspended': return 'error'
-    case 'new': return 'primary'
+    case 'new': return 'info'
     case 'verified': return 'success'
     case 'pending': return 'warning'
     case 'rejected': return 'error'
@@ -83,7 +83,7 @@ const getStatusColor = (status: string) => {
             v-if="row.original.status"
             :color="getStatusColor(row.original.status)"
             variant="subtle"
-            class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
+            class="rounded-full px-2.5 h-[28px] text-[12px] font-medium capitalize"
           >
             {{ row.original.status }}
           </UBadge>
@@ -115,7 +115,7 @@ const getStatusColor = (status: string) => {
             variant="outline"
             color="neutral"
             size="xs"
-            class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
+            class="font-semibold text-[#013355] border-[#ECECEC] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[14px] ring-[0.5px]"
             @click="emit('view-profile', row.original)"
           />
         </template>
@@ -153,7 +153,7 @@ const getStatusColor = (status: string) => {
             v-if="row.status"
             :color="getStatusColor(row.status)"
             variant="subtle"
-            class="rounded-full px-2.5 h-[24px] text-[11px] font-medium shrink-0"
+            class="rounded-full px-2.5 h-[24px] text-[11px] font-medium shrink-0 capitalize"
           >
             {{ row.status }}
           </UBadge>

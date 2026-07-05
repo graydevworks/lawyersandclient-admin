@@ -284,7 +284,7 @@ onMounted(() => start())
   <div class="space-y-[24px]">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-semibold text-gray-900 leading-tight">
         Admin Dashboard
       </h1>
       <SharedDateRangePicker
@@ -379,11 +379,11 @@ onMounted(() => start())
               Sign ups
             </h3>
           </div>
-          <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
+          <div class="h-[340px] w-full overflow-hidden border-0 mt-auto">
             <ClientOnly>
               <apexchart
                 type="bar"
-                :height="373"
+                :height="340"
                 :options="signUpsOptions"
                 :series="signUpsSeries"
               />
@@ -392,25 +392,25 @@ onMounted(() => start())
         </UCard>
 
         <UCard
-          class="lg:col-span-4 rounded-[18px] p-0!"
-          :ui="{ header: 'border-[#f7f7f7]' }"
+          class="lg:col-span-4 rounded-[18px] p-0! border-0! ring-0"
+          :ui="{ body: 'p-[16px]! border-0!' }"
         >
           <div class="flex items-center justify-between border-b border-[#ECECEC] pb-[10px] mb-[20px]">
-            <h3 class="text-[16px] font-semibold text-gray-900">
+            <h3 class="text-[16px] font-medium text-[#222222]">
               Online now
             </h3>
             <ULink
               to="/online"
-              class="text-[14px] text-gray-400 hover:text-gray-600 transition-colors"
+              class="text-[14px] text-[#444444] font-light! hover:text-gray-600 transition-colors"
             >See all</ULink>
           </div>
           <template v-if="onlineNow.length > 0">
-            <div class="space-y-6">
+            <div class="space-y-[10px]">
               <div
                 v-for="(user, index) in onlineNow"
                 :key="user.name"
                 class="flex items-start justify-between group cursor-pointer"
-                :class="{ 'border-b border-[#f7f7f7]': index !== onlineNow.length - 1 }"
+                :class="{ 'border-b border-[#ECECECB2]': index !== onlineNow.length - 1 }"
               >
                 <div class="flex items-center gap-3 pb-[16px]">
                   <UAvatar
@@ -418,10 +418,10 @@ onMounted(() => start())
                     class="size-[36px] group-hover:scale-110 transition-transform"
                   />
                   <div>
-                    <p class="text-[14px] font-semibold text-gray-900 leading-tight">
+                    <p class="text-[14px] font-medium text-[#222222] leading-tight">
                       {{ user.name }}
                     </p>
-                    <p class="text-[13px] text-[#013355] font-medium">
+                    <p class="text-[13px] font-light! text-[#013355]">
                       {{ user.role }}
                     </p>
                   </div>
@@ -442,17 +442,17 @@ onMounted(() => start())
       <!-- Activity & Verification Queue -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <UCard
-          class="rounded-[18px] border-[#f3f3f3]"
-          :ui="{ header: 'border-[#f7f7f7]' }"
+          class="rounded-[18px] border-[#f3f3f3] border-0 ring-0"
+          :ui="{ header: 'border-[#ECECEC] px-[16px]!', body: 'px-[16px]!' }"
         >
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="text-[16px] font-semibold text-gray-900">
+              <h3 class="text-[16px] font-medium text-[#222222]">
                 Recent activity
               </h3>
               <ULink
                 to="/logs"
-                class="text-[14px] text-[#013355] font-medium flex items-center gap-1 hover:underline underline-offset-4"
+                class="text-[14px] text-[#013355] font-light flex items-center gap-1 hover:underline underline-offset-4"
               >
                 View all logs <UIcon name="i-lucide-arrow-up-right" />
               </ULink>
@@ -473,9 +473,9 @@ onMounted(() => start())
                 />
                 <div class="flex-1 min-w-0">
                   <p class="text-[14px] text-gray-600 leading-relaxed">
-                    <span class="font-semibold text-gray-900">{{ activity.name }}</span> {{ activity.action }}
+                    <span class="font-medium text-gray-900">{{ activity.name }}</span> {{ activity.action }}
                   </p>
-                  <p class="text-[13px] text-gray-400">
+                  <p class="text-[13px] text-gray-400 font-light">
                     {{ activity.time }}
                   </p>
                 </div>
@@ -491,17 +491,17 @@ onMounted(() => start())
         </UCard>
 
         <UCard
-          class="rounded-[18px] p-0!"
-          :ui="{ header: 'border-[#f7f7f7]' }"
+          class="rounded-[18px] p-0! border-0 ring-0"
+          :ui="{ header: 'border-[#ECECEC] px-[16px]!', body: 'px-[16px]!' }"
         >
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="text-[16px] font-semibold text-gray-900">
+              <h3 class="text-[16px] font-medium text-[#222222]">
                 Verification queue
               </h3>
               <ULink
                 to="/verification-queue"
-                class="text-[14px] text-gray-400 hover:text-gray-600 transition-colors"
+                class="text-[14px] text-[#013355] hover:text-gray-600 transition-colors"
               >
                 Open full queue <UIcon name="i-lucide-arrow-up-right" />
               </ULink>
@@ -523,15 +523,15 @@ onMounted(() => start())
                   />
                   <div class="flex-1 min-w-0">
                     <p class="text-[14px] text-gray-600 leading-relaxed">
-                      <span class="font-semibold text-gray-900">{{ item.name }}</span>
+                      <span class="font-medium text-gray-900">{{ item.name }}</span>
                     </p>
-                    <p class="text-[13px] text-gray-400 truncate">
+                    <p class="text-[13px] font-light text-gray-400 truncate">
                       {{ item.specialty }}
                     </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-[13px] text-gray-400 font-medium">{{ item.time }}</span>
+                  <span class="text-[13px] text-gray-400 font-light">{{ item.time }}</span>
                   <UButton
                     label="View"
                     variant="outline"

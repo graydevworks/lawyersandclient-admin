@@ -242,13 +242,13 @@ const goToPage = (page: number) => {
   <div class="flex flex-col gap-8">
     <!-- Top Bar -->
     <div class="flex items-center justify-between">
-      <div class="relative w-[400px]">
+      <div class="relative">
         <UInput
           v-model="searchQuery"
           icon="i-heroicons-magnifying-glass"
           placeholder="Search practice areas"
           size="md"
-          :ui="{ base: 'rounded-full' }"
+          :ui="{ base: 'rounded-full bg-white border-[#CCCCCC66] h-[42px] max-w-[500px] w-full font-light' }"
           color="neutral"
           @focus="isSearchDropdownOpen = String(searchQuery).trim().length > 0"
           @keydown.esc="isSearchDropdownOpen = false"
@@ -256,7 +256,7 @@ const goToPage = (page: number) => {
 
         <div
           v-if="isSearchDropdownOpen"
-          class="absolute left-0 right-0 z-50 mt-2 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
+          class="absolute left-0 right-0 z-50 mt-2 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden max-w-[450px] w-full xl:w-[600px]"
         >
           <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100">
             <div class="text-xs font-bold text-gray-400">
@@ -282,7 +282,7 @@ const goToPage = (page: number) => {
           <template v-else>
             <div
               v-if="searchResults.length === 0"
-              class="p-4 text-sm text-gray-500"
+              class="p-4 text-sm text-gray-500 w-[500px]"
             >
               No matching results
             </div>
@@ -294,15 +294,15 @@ const goToPage = (page: number) => {
               <div
                 v-for="area in searchResults"
                 :key="area.id"
-                class="flex justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                class="flex justify-between gap-[11px] px-[16px] py-[20px] hover:bg-gray-50 cursor-pointer"
                 @mousedown.prevent
                 @click="isSearchDropdownOpen = false"
               >
                 <div>
-                  <div class="font-medium text-gray-900">
+                  <div class="font-medium text-[14px] text-gray-900">
                     {{ area.name }}
                   </div>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-[14px] font-light text-gray-500">
                     {{ area.lawyers }} lawyers
                   </div>
                 </div>
@@ -314,7 +314,7 @@ const goToPage = (page: number) => {
                     @update:model-value="(next) => handleToggleClick(area.id, Boolean(next))"
                   />
                   <button
-                    class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors"
+                    class="text-[12px] font-medium text-[#003357] hover:text-red-600 transition-colors"
                     @click="handleDeleteClick(area.id)"
                   >
                     Delete
@@ -328,7 +328,7 @@ const goToPage = (page: number) => {
 
       <UButton
         color="primary"
-        class="bg-[#003357] hover:bg-[#004474] text-white px-5 py-2.5 rounded-lg text-sm font-medium"
+        class="bg-[#003357] hover:bg-[#004474] text-white px-5 py-[12.5px] rounded-lg text-[14px] font-semibold"
         icon="i-heroicons-plus"
         @click="isAddModalOpen = true"
       >
@@ -377,7 +377,7 @@ const goToPage = (page: number) => {
         <div
           v-for="area in practiceAreas"
           :key="area.id"
-          class="bg-white rounded-2xl p-5 flex flex-col gap-[12.5px]"
+          class="bg-white rounded-2xl p-5 flex flex-col gap-[11px]"
         >
           <div class="flex items-start justify-between">
             <h3 class="text-[14px] font-medium text-gray-900 pr-2">
@@ -391,11 +391,11 @@ const goToPage = (page: number) => {
             />
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-[14px] text-[#8A9BB1] font-normal">
+            <span class="text-[14px] text-[#8A9BB1] font-light">
               {{ area.lawyers }} lawyers
             </span>
             <button
-              class="text-[14px] font-semibold text-[#003357] hover:text-red-600 transition-colors"
+              class="text-[12px] font-medium text-[#003357] hover:text-red-600 transition-colors"
               @click="handleDeleteClick(area.id)"
             >
               Delete
@@ -410,14 +410,14 @@ const goToPage = (page: number) => {
       v-if="!skeleton && practiceAreas.length > 0"
       class="flex items-center justify-between text-sm text-gray-500 pt-2"
     >
-      <span>Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} practice areas</span>
+      <span class="font-medium">Showing {{ (currentPage - 1) * perPage + 1 }}–{{ Math.min(currentPage * perPage, totalItems) }} of {{ totalItems }} practice areas</span>
       <div class="flex items-center gap-1.5">
         <UButton
           variant="ghost"
           color="neutral"
           size="sm"
           icon="i-heroicons-arrow-left"
-          class="font-medium text-gray-500"
+          class="font-medium text-gray-500 bg-white h-8 border border-[#E8EAED]"
           :disabled="currentPage === 1"
           @click="handlePrevPage"
         >
@@ -431,7 +431,7 @@ const goToPage = (page: number) => {
           :color="page === currentPage ? 'primary' : 'neutral'"
           size="sm"
           class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
-          :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
+          :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500 border bg-white border-[#E8EAED]'"
           @click="goToPage(page)"
         >
           {{ page }}
@@ -442,7 +442,7 @@ const goToPage = (page: number) => {
           color="neutral"
           size="sm"
           trailing-icon="i-heroicons-arrow-right"
-          class="font-medium text-gray-500"
+          class="font-medium text-gray-500 bg-white h-8 border border-[#E8EAED]"
           :disabled="currentPage === totalPages"
           @click="handleNextPage"
         >

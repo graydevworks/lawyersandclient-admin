@@ -150,7 +150,7 @@ const handleSuccessComplete = () => {
     <template v-if="client">
       <div class="flex items-center gap-4 mt-3 mb-6">
         <UAvatar
-          :src="client.avatar || `https://i.pravatar.cc/150?u=${client.id}`"
+          :src="client.avatar || `https://?u=${client.name}`"
           :alt="client.name"
           size="lg"
           class="size-[56px]"
@@ -159,7 +159,7 @@ const handleSuccessComplete = () => {
           <h3 class="text-[18px] font-bold text-gray-900">
             {{ client.name }}
           </h3>
-          <p class="text-[13px] text-gray-400">
+          <p class="text-[12px] font-light text-gray-400">
             Client since {{ client.joined }}
           </p>
         </div>
@@ -170,24 +170,24 @@ const handleSuccessComplete = () => {
           Account Info
         </h4>
         <div class="space-y-0">
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">User ID</span>
             <span class="font-semibold text-gray-900">{{ client.id }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">Email</span>
             <span class="text-gray-900">{{ client.email || client.contact || 'N/A' }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">Location</span>
             <span class="text-gray-900">{{ client.location || 'N/A' }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3">
+          <div class="flex justify-between items-center text-[14px] py-3">
             <span class="text-gray-500">Status</span>
             <UBadge
               :color="statusBadgeColor"
               variant="subtle"
-              class="rounded-full px-3 py-0.5 font-bold text-[12px]"
+              class="rounded-full px-3 font-medium text-[14px] capitalize py-[6px]"
             >
               {{ client.status }}
             </UBadge>
@@ -200,19 +200,19 @@ const handleSuccessComplete = () => {
           Activity
         </h4>
         <div class="space-y-0">
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">Total chats</span>
             <span class="font-semibold text-gray-900">{{ client.totalChats ?? 0 }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">Reports filed</span>
             <span class="font-semibold text-gray-900">{{ client.reportsFiled ?? 0 }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
             <span class="text-gray-500">Last active</span>
             <span class="text-gray-900">{{ client.lastActive }}</span>
           </div>
-          <div class="flex justify-between items-center text-sm py-3">
+          <div class="flex justify-between items-center text-[14px] py-3">
             <span class="text-gray-500">Joined</span>
             <span class="text-gray-900">{{ client.joined }}</span>
           </div>
@@ -234,7 +234,7 @@ const handleSuccessComplete = () => {
           variant="outline"
           color="neutral"
           :loading="updating"
-          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px] text-[14px] hover:bg-gray-50"
+          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 px-4 rounded-[8px] text-[14px] hover:bg-gray-50 ring-[0.5px] text-left ring-[#E5E7EB] justify-start"
           @click="handleSuspend"
         >
           Suspend account
@@ -245,7 +245,7 @@ const handleSuccessComplete = () => {
           variant="outline"
           color="neutral"
           :loading="updating"
-          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px] text-[14px] hover:bg-gray-50"
+          class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 px-4 rounded-[8px] text-[14px] hover:bg-gray-50 ring-[0.5px] text-left justify-start"
           @click="handleReinstate"
         >
           Reinstate account

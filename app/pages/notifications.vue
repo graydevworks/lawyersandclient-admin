@@ -461,7 +461,7 @@ const submitNotification = async () => {
       <template v-else>
         <div
           ref="listContainerRef"
-          class="space-y-0 pb-4"
+          class="space-y-0 pb-4 max-h-[520px] overflow-y-auto"
           @scroll.passive="onScroll"
         >
           <div

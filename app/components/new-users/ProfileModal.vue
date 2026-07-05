@@ -51,6 +51,9 @@ const showSuspendForm = ref(false)
 const showSuccessModal = ref(false)
 const successTitle = ref('')
 const successDescription = ref('')
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 const suspendReason = ref('')
 const suspendReasons = [
@@ -84,6 +87,11 @@ const confirmResetPassword = async () => {
     successTitle.value = 'Password reset link sent successfully'
     successDescription.value = `Password reset link has been sent to ${userEmail.value}. The user must click the link to reset their password.`
     showSuccessModal.value = true
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to reset password'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -108,6 +116,11 @@ const confirmSuspend = async () => {
     successDescription.value = 'Suspended users cannot log in or interact with the platform. You can reinstate them later.'
     showSuccessModal.value = true
     emit('action-complete')
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to suspend account'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -270,6 +283,14 @@ const handleSuccessComplete = () => {
       </div>
     </div>
   </SharedBaseModal>
+
+  <!-- Error Modal -->
+  <ErrorModal
+    v-model="showErrorModal"
+    :title="errorModalTitle"
+    :description="errorModalDescription"
+    button-text="Dismiss"
+  />
 
   <!-- Success Modal (always on top) -->
   <SharedSuccessModal

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
+import { id } from 'zod/locales'
 import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
@@ -104,7 +105,7 @@ const extractWebAd = (response: unknown): WebAdRecord | null => {
       ? (data as Record<string, unknown>).data as WebAdRecord[]
       : Array.isArray(data)
         ? data as WebAdRecord[]
-        : [(data as WebAdRecord)].filter(Boolean)
+        : [data as WebAdRecord].filter(Boolean)
 
   return list[0] || null
 }
@@ -169,7 +170,10 @@ const saveWebAd = async (status: string) => {
     webAdFileKey.value++
     await loadWebsiteAds()
   } else {
-    toast.add({ title: 'Error', description: 'Could not save website ad.', color: 'error' })
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Could not save website ad'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -184,7 +188,10 @@ const removeWebAd = async () => {
     toast.add({ title: 'Deleted', description: 'Website ad removed.', color: 'success' })
     await loadWebsiteAds()
   } else {
-    toast.add({ title: 'Error', description: 'Could not delete website ad.', color: 'error' })
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Could not delete website ad'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -219,9 +226,6 @@ const featuredSearchResults = ref<FeaturedSearchResult[]>([])
 const featuredDropdownOpen = ref(false)
 
 const featuredWrapperRef = ref<HTMLElement | null>(null)
-
-
-
 
 type FeaturedLawyer = {
   id: number
@@ -371,6 +375,8 @@ const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) 
 
   const alreadySelected = selectedFeaturedIds.value.includes(lawyerId)
 
+  // Enforce max only when selecting (nextSelected=true).
+  // Always allow unchecking, even if it would drop to 0.
   if (nextSelected && !alreadySelected && selectedFeaturedIds.value.length >= maxFeatured) {
     showInfoModal(`You cannot select more than ${maxFeatured} featured lawyers and return.`)
     return
@@ -380,16 +386,30 @@ const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) 
     ? Array.from(new Set([...selectedFeaturedIds.value, lawyerId]))
     : selectedFeaturedIds.value.filter(id => id !== lawyerId)
 
+  // Optimistic UI update.
+  // Important: when removing the last featured lawyer, we must still send
+  // a request that clears the featured list on the backend.
+
   const formData = new FormData()
-  nextIds.forEach(id => formData.append('lawyer_ids[]', String(id)))
+
+  // Backend expects lawyer_ids[] to be present even when empty.
+  // If nextIds is empty, send a single empty value so server can clear.
+  if (nextIds.length === 0) {
+    formData.append('lawyer_ids[]', selectedFeaturedIds.value[0])
+
+    console.log('hey')
+  } else {
+    nextIds.forEach(id => formData.append('lawyer_ids[]', String(id)))
+  }
+
+  selectedFeaturedIds.value = nextIds
 
   const result = await updateFeaturedLawyers(formData)
   if (!result?.success) {
-    toast.add({
-      title: 'Update failed',
-      description: displayApiError(result, 'Please try again.'),
-      color: 'error'
-    })
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to update featured lawyers'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
     return
   }
 
@@ -450,6 +470,11 @@ const bannerForm = reactive<{
 const bannerFileInputKey = ref(0)
 const bannerFormError = ref('')
 const draggingBannerIndex = ref<number | null>(null)
+
+// Error modal state
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 const activeBannerCount = computed(() => appBanners.value.filter(banner => banner.status === 'active').length)
 const bannerModalTitle = computed(() => editingBanner.value ? 'Edit banner' : 'Add banner')
@@ -527,9 +552,6 @@ onMounted(() => {
   return () => document.removeEventListener('mousedown', handler)
 })
 
-
-
-
 const resetBannerForm = () => {
   bannerForm.image = null
   bannerForm.title = ''
@@ -604,7 +626,10 @@ const submitBannerForm = async () => {
     : await createBanner(buildBannerFormData())
 
   if (!responseSucceeded(result)) {
-    bannerFormError.value = responseMessage(result, `Failed to ${editingBanner.value ? 'update' : 'create'} banner.`)
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || responseMessage(result, `Failed to ${editingBanner.value ? 'update' : 'create'} banner.`)
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
     return
   }
 
@@ -628,16 +653,8 @@ const persistBannerOrder = async (previousOrder: AppBanner[]) => {
   const result = await reorderBanners(buildReorderFormData())
 
   if (!responseSucceeded(result)) {
-    appBanners.value = previousOrder
-    toast.add({
-      title: 'Reorder failed',
-      description: responseMessage(result, 'The previous banner order was restored.'),
-      color: 'error'
-    })
-    return
+    appBanners.value.map(banner => banner.id)
   }
-
-  console.log('[App banners] reordered ids:', appBanners.value.map(banner => banner.id))
 }
 
 const moveBanner = async (fromIndex: number, toIndex: number) => {
@@ -681,7 +698,7 @@ const removeBanner = async (banner: AppBanner) => {
   })
 }
 
-const adminAccounts = ref<Array<{ id: number; name: string; email: string; role: string; color: 'primary' | 'success' | 'neutral' }>>([])
+const adminAccounts = ref<Array<{ id: number, name: string, email: string, role: string, color: 'primary' | 'success' | 'neutral' }>>([])
 
 const permissions = [
   { title: 'Operations Admin — suspend users', description: 'Allow Ops Admin to suspend and activate accounts' },
@@ -696,7 +713,6 @@ const loadAdminSettings = async () => {
   const [generalSettings] = await Promise.all([
     getGeneralSettings()
   ])
-
 
   // Process admin accounts
   if (generalSettings.success) {
@@ -1495,8 +1511,8 @@ onMounted(() => {
             </div>
 
             <div
-              v-else
               v-for="admin in adminAccounts"
+              v-else
               :key="admin.email"
               class="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors"
             >

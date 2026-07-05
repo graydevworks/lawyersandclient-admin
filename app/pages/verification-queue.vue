@@ -55,6 +55,9 @@ const showSuccessModal = ref(false)
 const successTitle = ref('')
 const successDescription = ref('')
 const rejectReason = ref('')
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 // Document preview state
 const showDocPreview = ref(false)
@@ -237,6 +240,11 @@ const confirmApprove = async () => {
     showSuccessModal.value = true
     // Silent refetch
     fetchQueue()
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to approve verification'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -256,6 +264,11 @@ const confirmReject = async () => {
     showSuccessModal.value = true
     // Silent refetch
     fetchQueue()
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to reject verification'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -264,9 +277,15 @@ const savingNote = ref(false)
 const saveNote = async () => {
   if (!selectedSubmission.value || !reviewNote.value.trim()) return
   savingNote.value = true
-  await reviewVerification(selectedSubmission.value.id, { id: selectedSubmission.value.id, note: reviewNote.value })
+  const result = await reviewVerification(selectedSubmission.value.id, { id: selectedSubmission.value.id, note: reviewNote.value })
   savingNote.value = false
   reviewNote.value = ''
+  if (!result.success) {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to save note'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
+  }
   // Silent refetch
   fetchQueue()
 }
@@ -969,6 +988,14 @@ onMounted(() => start())
         </div>
       </div>
     </SharedBaseModal>
+
+    <!-- Error Modal -->
+    <ErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+    />
 
     <!-- Success Modal (always on top) -->
     <SharedSuccessModal

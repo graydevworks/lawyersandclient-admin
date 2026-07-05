@@ -228,7 +228,13 @@ onUnmounted(() => {
           </div>
 
           <div class="space-y-1 -mx-4">
-            <template v-if="submissions.length === 0 && isFetching">
+            <SharedEmptyState
+              v-if="submissions.length === 0 && !isFetching"
+              icon="i-lucide-file-text"
+              title="No reports"
+              description="There are no reports to show for the current filter."
+            />
+            <template v-else-if="submissions.length === 0 && isFetching">
               <div
                 v-for="i in 5"
                 :key="i"
@@ -247,7 +253,7 @@ onUnmounted(() => {
               v-else
               :key="sub.id"
               class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
+              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"c
               @click="onSelectReport(sub.id)"
             >
               <h3 class="font-bold text-sm text-gray-900 line-clamp-1">

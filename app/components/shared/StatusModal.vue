@@ -53,7 +53,10 @@ const primaryBtnClass = computed(() => {
 <template>
   <UModal
     v-model:open="isOpen"
-    :ui="{ content: modalContentClasses(), overlay: 'bg-black/40 z-[9999]' }"
+    :ui="{
+      content: modalContentClasses(),
+      overlay: 'bg-black/40 z-[9999]'
+    }"
   >
     <template #content>
       <div class="bg-white px-6 py-8 flex flex-col items-center text-center relative">

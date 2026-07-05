@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLawyers } from '../../../composables/useLawyers'
+import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,10 +32,13 @@ type Lawyer = {
     title?: string
     type?: string
     size?: string
-    status?: string
-    icon?: string
-    color?: string
-    isMissing?: boolean
+  status?: string
+  icon?: string
+  color?: string
+  isMissing?: boolean
+  url?: string
+  file_url?: string
+  document_url?: string
   }>
   reviews?: Array<{
     name?: string
@@ -63,6 +67,10 @@ const isReinstateSuccessOpen = ref(false)
 
 const isDeleteConfirmOpen = ref(false)
 const isDeleteSuccessOpen = ref(false)
+
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 const suspendReason = ref('Abuse / misconduct')
 const deleteReason = ref('Abuse / misconduct')
@@ -157,7 +165,6 @@ const loadLawyer = async () => {
         activity: d.activity,
         documents: d.documents,
         reviews: d.reviews,
-        isAvailable: d.is_available,
         banner: d.banner_photo_url,
         profilePicture: d.profile_photo_url,
         verificationStatus: d.verification_status,
@@ -185,9 +192,16 @@ watch(
 const handleResetPassword = async () => {
   isMutating.value = true
   try {
-    await resetLawyerPassword(id)
-    isResetConfirmOpen.value = false
-    isResetSuccessOpen.value = true
+    const result = await resetLawyerPassword(id)
+    if (result.success) {
+      isResetConfirmOpen.value = false
+      isResetSuccessOpen.value = true
+    } else {
+      const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to reset password'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
+    }
   } finally {
     isMutating.value = false
   }
@@ -205,6 +219,11 @@ const handleSuspend = async () => {
       isSuspended.value = true
       lawyer.value.status = 'Suspended'
       isSuspendSuccessOpen.value = true
+    } else {
+      const errorMessage = (res as any).validationMessages?.[0] || (res as any).error || 'Failed to suspend account'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
     }
   } finally {
     isMutating.value = false
@@ -219,6 +238,11 @@ const handleReinstate = async () => {
       isReinstateConfirmOpen.value = false
       isSuspended.value = false
       isReinstateSuccessOpen.value = true
+    } else {
+      const errorMessage = (res as any).validationMessages?.[0] || (res as any).error || 'Failed to reinstate account'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
     }
   } finally {
     isMutating.value = false
@@ -234,6 +258,11 @@ const handleDelete = async () => {
       isDeleteSuccessOpen.value = true
       await new Promise(resolve => setTimeout(resolve, 800))
       router.push('/lawyers')
+    } else {
+      const errorMessage = (res as any).validationMessages?.[0] || (res as any).error || 'Failed to delete account'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
     }
   } finally {
     isMutating.value = false
@@ -476,6 +505,8 @@ const handleDelete = async () => {
           v-if="lawyer.documents?.length"
           class="rounded-[24px] border-0 ring-0 shadow-sm"
         >
+
+
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -692,7 +723,7 @@ const handleDelete = async () => {
                 color="neutral"
                 class="bg-white text-gray-900 border-gray-200 font-bold rounded-xl py-3 hover:bg-gray-50"
                 :disabled="isMutating"
-                @click="() => { suspendReason = suspendReasons[0]!; isSuspendDialogOpen = true }"
+@click="() => { suspendReason = suspendReasons[0] ?? 'Abuse / misconduct'; isSuspendDialogOpen = true }"
               >
                 Suspend account
               </UButton>
@@ -749,7 +780,7 @@ const handleDelete = async () => {
         v-model="suspendReason"
         :items="suspendReasons"
         class="w-full"
-        :ui="{ base: 'w-full' }"
+        :content="{ class: 'z-[999999]! important', strategy: 'fixed' }"
       />
     </SharedConfirmationModal>
 
@@ -810,13 +841,22 @@ const handleDelete = async () => {
         v-model="deleteReason"
         :items="deleteReasons"
         class="w-full mb-4"
-        :ui="{ base: 'w-full z-[999999999]!' }"
+        :portal="true"
+        :ui="{ content: 'z-[9999]' }"
       />
       <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
         <UCheckbox v-model="deleteConfirmed" />
         I understand this action cannot be reversed
       </label>
     </SharedConfirmationModal>
+
+    <!-- Error Modal -->
+    <ErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+    />
 
     <SharedSuccessModal
       v-model="isDeleteSuccessOpen"

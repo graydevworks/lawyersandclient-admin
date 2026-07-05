@@ -414,11 +414,11 @@ onMounted(() => start())
             Sign ups
           </h3>
         </div>
-        <div class="h-[373px] w-full overflow-hidden border-0 mt-auto">
+        <div class="h-[250px] w-full overflow-hidden border-0 mt-auto">
           <ClientOnly>
             <apexchart
               type="bar"
-              :height="373"
+              :height="250"
               :options="signUpsOptions"
               :series="signUpsSeries"
             />
