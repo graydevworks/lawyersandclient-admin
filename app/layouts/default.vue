@@ -46,7 +46,7 @@ const isTabletSheetOpen = ref(false)
     <!-- Main Content -->
     <div
       class="flex-1 flex flex-col min-h-screen transition-all duration-300"
-      :class="['lg:ml-64']"
+      :class="['lg:ml-62']"
     >
       <PartialsTopBar
         @toggle-sidebar="isSidebarOpen = !isSidebarOpen"

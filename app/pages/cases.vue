@@ -99,10 +99,10 @@ const viewCase = (row: CaseRow) => {
 
 const getStatusColor = (status: string): string => {
   switch (status?.toLowerCase()) {
-    case 'accepted': return 'primary'
+    case 'accepted': return 'success'
     case 'open': return 'warning'
     case 'declined': return 'error'
-    case 'completed': return 'success'
+    case 'completed': return 'neutral'
     default: return 'neutral'
   }
 }
@@ -324,10 +324,10 @@ onMounted(() => start())
     <!-- Header Section -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        <h1 class="text-[16px] font-bold text-gray-900 leading-tight">
           Cases
         </h1>
-        <p class="text-sm text-gray-500">
+        <p class="text-[14px] text-gray-500">
           All active lawyer-client engagements
         </p>
       </div>
@@ -498,9 +498,9 @@ onMounted(() => start())
                   v-if="row.original.status"
                   :color="getStatusColor(row.original.status) as any"
                   variant="subtle"
-                  class="rounded-full px-2.5 h-[28px] text-[12px] font-medium"
+                  class="rounded-full px-2.5 h-[28px] text-[12px] font-medium capitalize"
                 >
-                  {{ row.original.status == 'Accepted' ? 'Active' : row.original.status == 'Open' ? 'Pending' : row.original.status }}
+                  {{ row.original.status == 'accepted' ? 'Active' : row.original.status == 'open' ? 'Pending' : row.original.status }}
                 </UBadge>
               </template>
 
@@ -514,7 +514,7 @@ onMounted(() => start())
                   variant="outline"
                   color="neutral"
                   size="xs"
-                  class="font-semibold text-[#003357] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px]"
+                  class="font-semibold text-[#013355] border-[#E2E8F0] hover:bg-[#F8F9FB] py-[9px] px-[12px] rounded-[4px] text-[13px] border-[0.5px] ring-0"
                   @click="viewCase(row.original)"
                 />
               </template>
@@ -577,54 +577,53 @@ onMounted(() => start())
               </div>
             </div>
           </div>
-
-          <!-- Pagination Footer -->
-          <div class="px-6 py-5 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-4">
-            <div class="text-xs text-gray-500">
-              Showing {{ totalItems ? (currentPage - 1) * perPage + 1 : 0 }}–{{ Math.min(currentPage * perPage, totalItems || cases.length) }} of {{ totalItems || cases.length }} cases
-            </div>
-            <div class="flex items-center gap-1.5">
-              <UButton
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                icon="i-heroicons-arrow-left"
-                class="h-8 font-medium text-gray-500 bg-white shadow-sm"
-                :disabled="currentPage === 1"
-                @click="handlePrevPage"
-              >
-                Prev
-              </UButton>
-
-              <UButton
-                v-for="page in visiblePages"
-                :key="page"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white"
-                :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
-                @click="goToPage(page)"
-              >
-                {{ page }}
-              </UButton>
-
-              <UButton
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                trailing-icon="i-heroicons-arrow-right"
-                class="h-8 font-medium text-gray-500 bg-white shadow-sm"
-                :disabled="currentPage === totalPages"
-                @click="handleNextPage"
-              >
-                Next
-              </UButton>
-            </div>
-          </div>
         </template>
       </UCard>
     </template>
+    <!-- Pagination Footer -->
+    <div class="px-6 py-5 pt-0 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-2">
+      <div class="text-xs text-gray-500">
+        Showing {{ totalItems ? (currentPage - 1) * perPage + 1 : 0 }}–{{ Math.min(currentPage * perPage, totalItems || cases.length) }} of {{ totalItems || cases.length }} cases
+      </div>
+      <div class="flex items-center gap-1.5">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          icon="i-heroicons-arrow-left"
+          class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
+          :disabled="currentPage === 1"
+          @click="handlePrevPage"
+        >
+          Prev
+        </UButton>
+
+        <UButton
+          v-for="page in visiblePages"
+          :key="page"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white ring-[#E8EAED] ring-[1px]"
+          :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
+          @click="goToPage(page)"
+        >
+          {{ page }}
+        </UButton>
+
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          trailing-icon="i-heroicons-arrow-right"
+          class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
+          :disabled="currentPage === totalPages"
+          @click="handleNextPage"
+        >
+          Next
+        </UButton>
+      </div>
+    </div>
 
     <CaseDetailsModal
       v-model="isModalOpen"

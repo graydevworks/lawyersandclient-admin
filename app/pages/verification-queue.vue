@@ -108,7 +108,7 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
       hasMoreSubmissions.value = currentPage.value < totalPages.value
     }
 
-    pending.value = statistics.pending || 0
+    pending.value = statistics.total_pending || 0
     urgent.value = statistics.urgent || 0
 
     console.log('Submissions', submissionList)
@@ -302,10 +302,10 @@ const isImageDoc = (type: string) => {
 
 const getDocIcon = (type: string) => {
   const t = (type || '').toLowerCase()
-  if (t.includes('pdf')) return 'i-lucide-file-text'
+  if (t.includes('pdf')) return 'pepicons-pencil:file'
   if (t.includes('image') || t.includes('jpg') || t.includes('png')) return 'i-lucide-image'
-  if (t.includes('word') || t.includes('doc')) return 'i-lucide-file-text'
-  return 'i-lucide-file'
+  if (t.includes('word') || t.includes('doc')) return 'pepicons-pencil:file'
+  return 'pepicons-pencil:file'
 }
 
 const getDocIconColor = (name: string, uploaded: boolean) => {
@@ -418,26 +418,26 @@ onMounted(() => start())
   <div class="h-[calc(100vh-theme(spacing.24))] flex flex-col">
     <!-- Header -->
     <div class="mb-6 shrink-0">
-      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-semibold text-gray-900 leading-tight">
         Verification Queue
       </h1>
-      <p class="text-sm text-gray-500 mt-1">
+      <p class="text-[14px] text-gray-500 mt-1">
         {{ pending }} pending &middot; {{ urgent }} need urgent attention
       </p>
     </div>
 
     <!-- Main Content Split -->
-    <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+    <div class="flex-1 flex flex-col lg:flex-row min-h-0 mb-10">
       <!-- Left Column: List -->
       <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0"
+        class="bg-white rounded-xl rounded-tr-none flex flex-col overflow-hidden shrink-0"
         :class="[
           showDetail && isMobile ? 'hidden' : 'block',
           isMobile ? 'w-full' : 'lg:w-1/3'
         ]"
       >
         <div class="p-5 border-b border-gray-100">
-          <h2 class="font-bold text-gray-900 mb-4">
+          <h2 class="font-medium text-gray-900 mb-2">
             Submissions
           </h2>
           <UInput
@@ -445,7 +445,7 @@ onMounted(() => start())
             icon="i-heroicons-magnifying-glass"
             placeholder="Search ..."
             class="w-full"
-            :ui="{ base: 'rounded-[36px] text-[14px] py-[10px]' }"
+            :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
           />
         </div>
 
@@ -495,8 +495,8 @@ onMounted(() => start())
           <div
             v-for="sub in filteredSubmissions"
             :key="sub.id"
-            class="p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors flex items-start gap-3 border-l-4"
-            :class="selectedSubmission?.id === sub.id ? 'bg-blue-50/30 border-l-blue-600' : 'border-l-transparent'"
+            class="p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors flex items-start gap-3 border-l"
+            :class="selectedSubmission?.id === sub.id ? 'bg-[#EBF3FC] border-b-0 border-[#013355]!' : 'border-l-transparent'"
             @click="selectSubmission(sub)"
           >
             <UAvatar
@@ -534,8 +534,8 @@ onMounted(() => start())
               <UBadge
                 variant="soft"
                 size="xs"
-                class="rounded-full px-3 text-[12px] font-light bg-[#F1EFE8] text-[#5F5E5A]"
-                :class="{ 'bg-[#FCEBEB] text-[#A32D2D]': sub.priority === 'Urgent' }"
+                class="rounded-full px-3 text-[11.12px] font-light bg-[#F1EFE8] text-[#5F5E5A] capitalize"
+                :class="{ 'bg-[#FCEBEB] text-[#A32D2D]': sub.priority == 'urgent' }"
               >
                 {{ sub.priority }}
               </UBadge>
@@ -581,25 +581,25 @@ onMounted(() => start())
 
         <!-- Detail Loading Skeleton -->
         <template v-if="detailLoading">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 animate-pulse">
+          <div class="bg-white p-4 md:p-6 animate-pulse">
             <USkeleton class="h-6 w-48 mb-2" />
             <USkeleton class="h-4 w-72" />
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 lg:ml-6">
               <USkeleton class="h-3 w-20" />
               <USkeleton class="h-4 w-full" />
               <USkeleton class="h-4 w-full" />
               <USkeleton class="h-4 w-3/4" />
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 lg:ml-6">
               <USkeleton class="h-3 w-20" />
               <USkeleton class="h-4 w-full" />
               <USkeleton class="h-4 w-full" />
               <USkeleton class="h-4 w-3/4" />
             </div>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 lg:ml-6">
             <USkeleton class="h-3 w-24" />
             <div class="grid grid-cols-3 gap-4">
               <USkeleton class="h-36 w-full rounded-xl" />
@@ -611,12 +611,12 @@ onMounted(() => start())
 
         <!-- Actual Content -->
         <template v-else>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
+          <div class="bg-white p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0 border-l-2 border-[#ECECEC]">
             <div>
               <h2 class="text-xl font-normal text-gray-900">
                 {{ selectedSubmission.name }}
               </h2>
-              <p class="text-sm text-gray-500 mt-1">
+              <p class="text-[13px] text-gray-500 mt-1">
                 {{ selectedSubmission.specialty }} &middot; {{ selectedSubmission.location }} &middot; Submitted {{ selectedSubmission.fullDate }}
               </p>
             </div>
@@ -639,26 +639,26 @@ onMounted(() => start())
           </div>
 
           <!-- Info Cards Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0 lg:ml-6">
+            <div class="bg-white rounded-xl p-[16px]">
+              <h3 class="text-[12px] font-medium text-gray-400 tracking-wider uppercase mb-[8px]">
                 Submission
               </h3>
               <div>
-                <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Submitted</span>
-                  <span class="font-medium text-gray-900">{{ selectedSubmission.fullDate || '-' }}</span>
+                <div class="flex justify-between items-center text-sm border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Submitted</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.fullDate || '-' }}</span>
                 </div>
-                <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Documents</span>
-                  <span class="font-medium text-gray-900">{{ selectedSubmission.docsUploaded }} of {{ selectedSubmission.docsTotal || '-'  }} uploaded</span>
+                <div class="flex justify-between items-center text-sm border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Documents</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.docsUploaded }} of {{ selectedSubmission.docsTotal || '-'  }} uploaded</span>
                 </div>
-                <div class="flex justify-between items-center text-sm border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Days Pending</span>
+                <div class="flex justify-between items-center text-sm border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Days Pending</span>
                   <span :class="selectedSubmission.missing !== 'None' ? 'text-[#A32D2D]' : 'text-gray-900'">{{ selectedSubmission.missing || '-'  }}</span>
                 </div>
                 <div class="flex justify-between items-center text-sm py-[12px]">
-                  <span class="text-gray-500">Priority</span>
+                  <span class="font-light text-[14px] text-[#3C475D]">Priority</span>
                   <UBadge
                     :color="selectedSubmission.priority === 'Urgent' ? 'error' : 'neutral'"
                     variant="soft"
@@ -670,34 +670,34 @@ onMounted(() => start())
               </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-6">
+            <div class="bg-white rounded-xl p-[16px]">
+              <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-[8px]">
                 Applicant
               </h3>
               <div class="text-sm">
-                <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Lawyer ID</span>
-                  <span class="font-medium text-gray-900 uppercase">{{ selectedSubmission.id || '-'  }}</span>
+                <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Lawyer ID</span>
+                  <span class="text-[14px] font-medium text-gray-900 uppercase">{{ selectedSubmission.id || '-'  }}</span>
                 </div>
-                <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Email</span>
-                  <span class="font-medium text-gray-900">{{ selectedSubmission.email || '-'  }} 45</span>
+                <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Email</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.email || '-'  }} 45</span>
                 </div>
-                <div class="flex justify-between items-center border-b border-gray-100 py-[12px]">
-                  <span class="text-gray-500">Location</span>
-                  <span class="font-medium text-gray-900">{{ selectedSubmission.location || '-' }}</span>
+                <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">Location</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.location || '-' }}</span>
                 </div>
-                <div class="flex justify-between items-center py-[12px]">
-                  <span class="text-gray-500">Practice area</span>
-                  <span class="font-medium text-gray-900">{{ selectedSubmission.specialty || '-' }}</span>
+                <div class="flex justify-between items-start items-center py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D] text-nowrap mr-2">Practice area</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.specialty || '-' }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Documents Section -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 shrink-0">
-            <div class="flex justify-between items-center mb-6">
+          <div class="bg-white rounded-xl p-[16px] shrink-0 lg:ml-6">
+            <div class="flex justify-between items-center mb-2">
               <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase">
                 Documents
               </h3>
@@ -722,7 +722,7 @@ onMounted(() => start())
                 :key="doc.name"
                 class="border rounded-xl overflow-hidden flex flex-col transition-shadow"
                 :class="[
-                  doc.uploaded ? 'border-gray-200 cursor-pointer hover:shadow-md' : 'border-gray-200 border-dashed cursor-default'
+                  doc.uploaded ? 'border-[#ECECEC66] cursor-pointer hover:shadow-md' : 'border-[#ECECEC66] cursor-default'
                 ]"
                 @click="openDocPreview(doc)"
               >
@@ -736,15 +736,15 @@ onMounted(() => start())
                     :class="getDocIconColor(doc.name, doc.uploaded)"
                   />
                 </div>
-                <div class="p-4 bg-white flex-1 border-t border-gray-100">
-                  <h4 class="text-sm font-medium text-gray-900">
+                <div class="p-4 bg-white flex-1 border-t border-gray-100 leading-4">
+                  <h4 class="text-[13px] font-medium text-[#111111]">
                     {{ doc.name }}
                   </h4>
-                  <p class="text-xs text-gray-500 mt-1">
+                  <p class="text-[12px] text-gray-500">
                     {{ doc.type }}
                   </p>
                   <p
-                    class="text-xs mt-3 font-medium flex items-center gap-1"
+                    class="text-[12px] font-medium flex items-center gap-1"
                     :class="doc.uploaded ? 'text-emerald-600' : 'text-rose-500'"
                   >
                     <UIcon
@@ -767,7 +767,7 @@ onMounted(() => start())
           </div>
 
           <!-- Review Notes -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 shrink-0">
+          <div class="bg-white rounded-xl p-[16px] shrink-0 lg:ml-6">
             <h3 class="text-xs font-medium text-gray-400 tracking-wider uppercase mb-5">
               Review Notes
             </h3>
@@ -775,7 +775,7 @@ onMounted(() => start())
               v-model="reviewNote"
               placeholder="Add review notes here — visible to operations team only..."
               class="mb-4 w-full"
-              :ui="{ base: 'bg-[#F9FAFB] border border-[#ECECEC] py-[12.5px] px-[15px]' }"
+              :ui="{ base: 'bg-[#F9FAFB] border border-[#ECECEC] py-[12.5px] px-[15px] ring-0' }"
               :rows="3"
               variant="outline"
             />
@@ -807,7 +807,7 @@ onMounted(() => start())
           </div>
 
           <!-- Activity History -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 shrink-0">
+          <div class="bg-white rounded-xl p-[16px] shrink-0 lg:ml-6">
             <h3 class="text-xs font-bold text-gray-400 tracking-wider uppercase mb-6">
               Activity History
             </h3>
@@ -821,7 +821,7 @@ onMounted(() => start())
                 class="relative pl-6"
                 :class="{ 'border-b border-gray-100 pb-[10px]': index !== selectedSubmission.history.length - 1 }"
               >
-                <div class="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full bg-[#185FA5] z-10" />
+                <div class="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-[#185FA5] z-10" />
                 <p class="text-sm text-gray-900 font-medium">
                   {{ event.action }}
                 </p>

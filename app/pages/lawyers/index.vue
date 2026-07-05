@@ -253,7 +253,7 @@ onMounted(() => start())
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-semibold text-gray-900 leading-tight">
         Lawyers
       </h1>
       <SharedDateRangePicker

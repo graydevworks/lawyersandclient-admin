@@ -134,19 +134,19 @@ const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'prim
   >
     <template v-if="caseData">
       <div class="mt-3 mb-6">
-        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+        <h4 class="text-[12px] font-medium text-gray-400 uppercase tracking-widest mb-2">
           Matter
         </h4>
-        <h3 class="text-[18px] font-bold text-gray-900 leading-tight mb-1">
+        <h3 class="text-[16px] font-bold text-gray-900 leading-tight mb-1">
           {{ caseData.matter }}
         </h3>
-        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+        <p class="text-[12px] font-medium text-gray-400 uppercase tracking-widest">
           {{ caseData.category }}
         </p>
       </div>
 
       <div class="mb-6">
-        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+        <h4 class="text-[12px] font-medium text-gray-400 uppercase tracking-widest mb-3">
           Parties
         </h4>
         <div class="space-y-0">

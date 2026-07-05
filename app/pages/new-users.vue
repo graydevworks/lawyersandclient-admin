@@ -355,7 +355,7 @@ onMounted(() => start())
 <template>
   <div class="space-y-8">
     <div class="flex items-center justify-between">
-      <h1 class="text-[20px] font-semibold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-semibold text-gray-900 leading-tight">
         New Users
       </h1>
     </div>
@@ -437,7 +437,7 @@ onMounted(() => start())
               :model-value="activeTab"
               :items="items"
               variant="link"
-              :ui="{ content: 'hidden' }"
+              :ui="{ content: 'hidden', indicator: 'bg-[#013355] b-1.5' }"
               @update:model-value="handleTabChange"
             />
             <div class="flex items-center gap-4">
@@ -489,7 +489,7 @@ onMounted(() => start())
             color="neutral"
             size="sm"
             icon="i-heroicons-arrow-left"
-            class="font-medium text-gray-500"
+            class="font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px] h-[32px]"
             :disabled="currentPage === 1"
             @click="handlePrevPage"
           >
@@ -501,7 +501,7 @@ onMounted(() => start())
             :variant="page === currentPage ? 'solid' : 'ghost'"
             :color="page === currentPage ? 'primary' : 'neutral'"
             size="sm"
-            class="w-8 h-8 flex items-center justify-center rounded-md font-medium"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white ring-[#E8EAED] ring-[1px]"
             :class="page === currentPage ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'text-gray-500'"
             @click="goToPage(page)"
           >
@@ -512,7 +512,7 @@ onMounted(() => start())
             color="neutral"
             size="sm"
             trailing-icon="i-heroicons-arrow-right"
-            class="font-medium text-gray-500"
+            class="font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px] h-[32px]"
             :disabled="currentPage === totalPages"
             @click="handleNextPage"
           >
