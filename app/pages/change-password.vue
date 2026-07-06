@@ -57,10 +57,10 @@ const handleSubmit = async () => {
 <template>
   <div class="max-w-xl mx-auto space-y-6">
     <div>
-      <h1 class="text-[20px] font-semibold text-gray-900">
+      <h1 class="text-[16px] font-semibold text-gray-900">
         Change Password
       </h1>
-      <p class="text-sm text-gray-500 mt-1">
+      <p class="text-[14px] text-gray-500 mt-1">
         Update your admin account password
       </p>
     </div>
@@ -86,7 +86,7 @@ const handleSubmit = async () => {
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              class="flex items-center absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               @click="showCurrentPassword = !showCurrentPassword"
             >
               <UIcon
@@ -113,7 +113,7 @@ const handleSubmit = async () => {
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              class="flex items-center absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               @click="showNewPassword = !showNewPassword"
             >
               <UIcon
@@ -140,7 +140,7 @@ const handleSubmit = async () => {
             />
             <button
               type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              class="flex items-center absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               @click="showConfirmPassword = !showConfirmPassword"
             >
               <UIcon

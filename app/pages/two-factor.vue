@@ -79,21 +79,21 @@ const cancelDisable = () => {
 <template>
   <div class="max-w-xl mx-auto space-y-6">
     <div>
-      <h1 class="text-[20px] font-semibold text-gray-900">
+      <h1 class="text-[16px] font-semibold text-gray-900">
         Two-Factor Authentication
       </h1>
-      <p class="text-sm text-gray-500 mt-1">
+      <p class="text-[14px] text-gray-500 mt-1">
         Add an extra layer of security to your account
       </p>
     </div>
 
     <UCard class="rounded-2xl border-0 ring-0 p-2">
-      <div class="flex items-center justify-between py-4">
+      <div class="flex items-center justify-between py-1">
         <div>
           <h3 class="font-medium text-gray-900">
             Enable 2FA
           </h3>
-          <p class="text-sm text-gray-500">
+          <p class="text-[14px] text-gray-500">
             Secure your account with 2FA
           </p>
         </div>

@@ -601,7 +601,7 @@ onMounted(() => start())
           </div>
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 lg:ml-6">
             <USkeleton class="h-3 w-24" />
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <USkeleton class="h-36 w-full rounded-xl" />
               <USkeleton class="h-36 w-full rounded-xl" />
               <USkeleton class="h-36 w-full rounded-xl" />

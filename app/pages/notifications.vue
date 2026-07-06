@@ -49,7 +49,7 @@ const typeTabs = [
   { label: 'Announcement', value: 'announcement' },
   { label: 'Platform update', value: 'platform_update' },
   { label: 'Promotion', value: 'promotion' },
-  { label: 'Security alert', value: 'security_alert' },
+  { label: 'Security alert', value: 'security_alert' }
 ]
 
 const activeQuery = computed(() => {
@@ -227,10 +227,10 @@ const submitNotification = async () => {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-medium text-gray-900 leading-tight">
         Notification Management
       </h1>
-      <p class="text-sm text-gray-500">
+      <p class="text-[14px] text-gray-500">
         Send and track push notifications & broadcasts
       </p>
     </div>
@@ -242,10 +242,10 @@ const submitNotification = async () => {
         <UCard>
           <div class="space-y-6">
             <div>
-              <h2 class="text-lg font-bold text-gray-900">
+              <h2 class="text-[14px] font-medium text-gray-900">
                 Compose notification
               </h2>
-              <p class="text-sm text-gray-500">
+              <p class="text-[12px] text-gray-500">
                 Reported by Tunde Bakare • against Emeka Nwachukwu
               </p>
             </div>
@@ -325,10 +325,10 @@ const submitNotification = async () => {
         <UCard>
           <div class="space-y-8">
             <div>
-              <h2 class="text-lg font-bold text-gray-900">
+              <h2 class="text-[14px] font-medium text-gray-900">
                 Performance
               </h2>
-              <p class="text-sm text-gray-500">
+              <p class="text-[12px] text-gray-500">
                 Here's how your notifications have performed
               </p>
             </div>
@@ -338,43 +338,50 @@ const submitNotification = async () => {
                 Last Broadcast Performance
               </h3>
 
-              <div class="space-y-5">
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center text-sm">
+              <div class="space-y-[8px]">
+                <div class="flex justify-between items-center space-y-2">
+                  <div class="text-[14px]">
                     <span class="text-gray-600 font-medium">Delivered</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UProgress
+                      v-model="stats.delivered"
+                      :max="stats.recipient_count"
+                      color="primary"
+                      class="h-[6px] w-[106px]"
+                    />
                     <span class="font-bold text-gray-900">{{ stats.delivered }}</span>
                   </div>
-                  <UProgress
-                    v-model="stats.delivered"
-                    :max="stats.recipient_count"
-                    color="primary"
-                    class="h-2"
-                  />
                 </div>
 
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center text-sm">
-                    <span class="text-gray-600 font-medium">Opened</span>
+                <div class="flex justify-between items-center space-y-2">
+                  <div class="flex justify-between items-center space-y-2">
+                    <span class="text-[14px] text-gray-600 font-medium">Opened</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UProgress
+                      v-model="stats.opened"
+                      :max="stats.recipient_count"
+                      color="primary"
+                      class="h-[6px] w-[106px]"
+                    />
                     <span class="font-bold text-gray-900">{{ stats.opened }}</span>
                   </div>
-                  <UProgress
-                    v-model="stats.opened"
-                    :max="stats.recipient_count"
-                    color="primary"
-                    class="h-2"
-                  />
                 </div>
 
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center text-sm">
-                    <span class="text-gray-600 font-medium">Open Rate</span>
+                <div class="flex justify-between items-center space-y-2">
+                  <div class="flex justify-between items-center space-y-2">
+                    <span class="text-[14px] text-gray-600 font-medium">Open Rate</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UProgress
+                      v-model="stats.open_rate"
+                      :max="100"
+                      color="primary"
+                      class="h-[6px] w-[106px]"
+                    />
                     <span class="font-bold text-gray-900">{{ stats.open_rate }}%</span>
                   </div>
-                  <UProgress
-                    v-model="stats.open_rate"
-                    color="primary"
-                    class="h-2"
-                  />
                 </div>
               </div>
             </div>
@@ -427,7 +434,8 @@ const submitNotification = async () => {
             v-model="searchQuery"
             placeholder="Search notifications"
             icon="i-heroicons-magnifying-glass"
-            class="w-[280px]"
+            class="w-full md:w-[367px]"
+            :ui="{ base: 'rounded-[36px] text-[14px] py-[10px] ring-[0.5px]' }"
             @keyup.enter="applySearch"
           />
         </div>

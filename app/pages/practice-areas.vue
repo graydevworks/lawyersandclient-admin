@@ -386,7 +386,7 @@ const goToPage = (page: number) => {
             <USwitch
               v-model:model-value="area.active"
               class="shrink-0"
-              :ui="{ base: 'bg-[#013355]! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
+              :ui="{ base: 'data-[state=checked]:bg-[#003357]! data-[state=checked]:text-white! w-[45.71428680419922px]', thumb: 'w-[26px]' }"
               @update:model-value="(next) => handleToggleClick(area.id, Boolean(next))"
             />
           </div>

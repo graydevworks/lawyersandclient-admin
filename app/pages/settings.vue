@@ -478,7 +478,13 @@ const errorModalDescription = ref('')
 
 const activeBannerCount = computed(() => appBanners.value.filter(banner => banner.status === 'active').length)
 const bannerModalTitle = computed(() => editingBanner.value ? 'Edit banner' : 'Add banner')
-const bannerStatusOptions = ['active', 'inactive']
+
+const bannerStatusBoolean = computed({
+  get: () => bannerForm.status === 'active',
+  set: (val: boolean) => {
+    bannerForm.status = val ? 'active' : 'inactive'
+  }
+})
 
 const responseSucceeded = (result: any) => {
   const status = Number(result?.data?.status ?? result?.data?.data?.status ?? 200)
@@ -724,7 +730,7 @@ const loadAdminSettings = async () => {
       name: acc.name || acc.full_name || '',
       email: acc.email || '',
       role: acc.role || '',
-      color: acc.role === 'operations_admin' ? 'primary' as const : acc.role === 'support_admin' ? 'success' as const : 'neutral' as const
+      color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'success' as const : 'neutral' as const
     }))
   }
 }
@@ -738,19 +744,19 @@ onMounted(() => {
   <div class="space-y-8 max-w-7xl">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        <h1 class="text-[16px] font-bold text-gray-900 leading-tight">
           {{ activeTab === 'Content Management' ? 'Content Management' : 'System Settings' }}
         </h1>
-        <p class="text-sm text-gray-500">
+        <p class="text-[14px] text-gray-500">
           {{ activeTab === 'Content Management' ? 'Manage public facing pages, FAQs, and blog posts' : 'Platform configuration • Super Admin only' }}
         </p>
       </div>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-6">
+    <div class="flex flex-col xl:flex-row gap-6">
       <!-- Sidebar Settings menu -->
       <UCard
-        class="lg:w-72 shrink-0 border border-gray-100"
+        class="lg:w-72 shrink-0 border-0 ring-0 border-gray-100 rounded-[16px]"
         :ui="{
           body: 'p-0 sm:p-0',
           root: 'overflow-hidden'
@@ -763,19 +769,15 @@ onMounted(() => {
             :class="showContentMenu ? '-translate-x-full' : 'translate-x-0'"
           >
             <!-- Main Settings Menu -->
-            <div class="w-full shrink-0">
+            <div class="w-full shrink-0 px-4">
               <div class="flex flex-col py-4">
                 <button
                   v-for="tab in tabs"
                   :key="tab.id"
-                  class="flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors relative"
-                  :class="activeTab === tab.id ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-600 hover:bg-gray-50'"
+                  class="flex items-center gap-3 px-2 py-3 text-sm font-medium transition-colors relative"
+                  :class="activeTab === tab.id ? 'bg-[#EFF6FF] border-l-2 text-[#003357] rounded-xl' : 'text-gray-600 hover:bg-gray-50'"
                   @click="handleTabClick(tab.id)"
                 >
-                  <div
-                    v-if="activeTab === tab.id"
-                    class="absolute left-0 top-0 bottom-0 w-1 bg-[#003357]"
-                  />
                   <UIcon
                     :name="tab.icon"
                     class="w-5 h-5"
@@ -784,7 +786,7 @@ onMounted(() => {
                   {{ tab.label }}
                 </button>
 
-                <div class="px-6 py-4 mt-2 border-t border-gray-100">
+                <div class="px-2 py-4">
                   <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors">
                     <UIcon
                       name="i-lucide-log-out"
@@ -836,11 +838,11 @@ onMounted(() => {
       </UCard>
 
       <!-- Content Area -->
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0 rounded-[16px]">
         <!-- Content Management Section -->
         <div
           v-if="activeTab === 'Content Management'"
-          class="h-full"
+          class="h-full bg-white"
         >
           <!-- Sub-Content Area -->
           <div class="bg-white rounded-xl border border-gray-100 overflow-hidden min-h-[600px]">
@@ -896,14 +898,12 @@ onMounted(() => {
                   </div>
 
                   <div class="max-h-64 overflow-auto">
-                    <button
+                    <div
                       v-for="l in featuredSearchResults"
                       :key="l.id"
-                      type="button"
                       class="w-full text-left px-3 py-3 hover:bg-gray-50 flex items-center justify-between gap-3"
-                      @click.prevent="toggleFeaturedSelection(l.id, !selectedFeaturedIds.includes(l.id))"
                     >
-                      <div class="flex items-center gap-3 min-w-0">
+                      <div class="flex items-center gap-3 min-w-0 flex-1">
                         <UAvatar
                           size="md"
                           :src="l.avatarUrl"
@@ -922,11 +922,13 @@ onMounted(() => {
                       <div class="shrink-0">
                         <UCheckbox
                           :model-value="selectedFeaturedIds.includes(l.id)"
-                          color="primary"
-                          class="rounded-lg"
+                          color="secondary"
+                          size="md"
+                          class="rounded-md"
+                          @update:model-value="(val) => toggleFeaturedSelection(l.id, Boolean(val))"
                         />
                       </div>
-                    </button>
+                    </div>
                   </div>
 
                   <div
@@ -963,8 +965,9 @@ onMounted(() => {
 
                   <UCheckbox
                     :model-value="selectedFeaturedIds.includes(lawyer.id)"
-                    color="primary"
-                    class="rounded-lg"
+                    color="secondary"
+                    size="md"
+                    class="rounded-md"
                     @update:model-value="(val) => toggleFeaturedSelection(lawyer.id, val)"
                   />
                 </div>
@@ -1244,7 +1247,7 @@ onMounted(() => {
               v-if="activeContentTab === 'App banners'"
               class="p-6 md:p-8 space-y-6"
             >
-              <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div class="flex flex-col xl:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <h2 class="text-lg font-bold text-gray-900">
                     App banners
@@ -1423,24 +1426,24 @@ onMounted(() => {
         <!-- Security Tab -->
         <div
           v-else-if="activeTab === 'Security'"
-          class="p-6 md:p-8 space-y-8 bg-white rounded-xl border border-gray-100"
+          class="p-6 md:p-[16px] space-y-[10px] bg-white rounded-xl"
         >
           <div>
-            <h2 class="text-lg font-bold text-gray-900">
+            <h2 class="text-[14px] font-medium text-gray-900">
               Authentication
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-[12px] text-gray-500">
               Login and session security
             </p>
           </div>
 
-          <div class="space-y-6">
+          <div class="space-y-6 bg-white">
             <div class="flex items-center justify-between py-4 border-b border-gray-100">
               <div>
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Two-Factor Authentication
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-[12px] text-gray-500">
                   Secure your account with 2FA
                 </p>
               </div>
@@ -1454,16 +1457,16 @@ onMounted(() => {
               </UButton>
             </div>
 
-            <div class="flex items-center justify-between py-4">
+            <div class="flex items-center justify-between">
               <div>
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Change password
                 </h3>
               </div>
               <UButton
                 color="neutral"
                 variant="solid"
-                class="shadow-sm border border-gray-200"
+                class="bg-[#013355]"
                 to="/change-password"
               >
                 Change
@@ -1475,88 +1478,91 @@ onMounted(() => {
         <!-- Admin accounts Tab -->
         <div
           v-if="activeTab === 'Admin accounts'"
-          class="p-6 md:p-8 space-y-8"
+          class="p-6 md:p-[16px] space-y-8"
         >
-          <div class="flex items-start justify-between">
-            <div>
-              <h2 class="text-lg font-bold text-gray-900">
-                Admin accounts
-              </h2>
-              <p class="text-sm text-gray-500">
-                Manage roles and access levels
-              </p>
-            </div>
-            <UButton
-              icon="i-lucide-plus"
-              color="primary"
-              class="bg-[#003357] hover:bg-[#002244]"
-              @click="navigateTo('/account-details')"
-            >
-              Create admin
-            </UButton>
-          </div>
-
-          <div class="space-y-4">
-            <div
-              v-if="adminAccounts.length === 0"
-              class="border border-dashed border-gray-200 rounded-2xl py-12"
-            >
-              <SharedEmptyState
-                icon="i-lucide-users"
-                title="No admin accounts"
-                description="Create the first admin account to manage platform access."
-                action-label="Create admin"
-                @action="navigateTo('/account-details')"
-              />
+          <div class="bg-white rounded-[8px]">
+            <div class="flex items-start justify-between border-b border-[#F0F1F3] p-6 md:p-[16px]">
+              <div>
+                <h2 class="text-[14px] font-medium text-gray-900">
+                  Admin accounts
+                </h2>
+                <p class="text-[12px] text-gray-500">
+                  Manage roles and access levels
+                </p>
+              </div>
+              <UButton
+                icon="i-lucide-plus"
+                color="primary"
+                class="bg-[#003357] h-[34px] text-[12px] hover:bg-[#002244] rounded-[8px]"
+                :ui="{leadingIcon: 'size-[14px]'}"
+                @click="navigateTo('/account-details')"
+              >
+                Create admin
+              </UButton>
             </div>
 
-            <div
-              v-for="admin in adminAccounts"
-              v-else
-              :key="admin.email"
-              class="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors"
-            >
-              <div class="flex items-center gap-4">
-                <UAvatar
-                  :alt="admin.name"
-                  size="md"
-                  class="bg-gray-100 text-gray-500"
+            <div class="space-y-4 p-6 md:p-[16px]">
+              <div
+                v-if="adminAccounts.length === 0"
+                class="border border-dashed border-gray-200 rounded-2xl py-12"
+              >
+                <SharedEmptyState
+                  icon="i-lucide-users"
+                  title="No admin accounts"
+                  description="Create the first admin account to manage platform access."
+                  action-label="Create admin"
+                  @action="navigateTo('/account-details')"
                 />
-                <div>
-                  <h3 class="font-medium text-gray-900">
-                    {{ admin.name }}
-                  </h3>
-                  <p class="text-sm text-gray-400">
-                    {{ admin.email }}
-                  </p>
+              </div>
+
+              <div
+                v-for="admin in adminAccounts"
+                v-else
+                :key="admin.email"
+                class="flex items-center justify-between p-4 px-0 border-b border-[#F0F1F3] hover:border-gray-200 transition-colors"
+              >
+                <div class="flex items-center gap-4">
+                  <UAvatar
+                    :alt="admin.name"
+                    size="md"
+                    class="bg-gray-100 text-gray-500"
+                  />
+                  <div>
+                    <h3 class="text-[14px] font-medium text-gray-900">
+                      {{ admin.name }}
+                    </h3>
+                    <p class="text-[12px] text-gray-400">
+                      {{ admin.email }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <UBadge
+                    :color="admin.color"
+                    variant="subtle"
+                    class="rounded-full px-3 py-1.5 font-medium hidden sm:block capitalize"
+                  >
+                    {{ admin.role }}
+                  </UBadge>
+                  <UButton
+                    color="neutral"
+                    variant="solid"
+                    size="sm"
+                    class="bg-white text-black ring-1 ring-[#ECECEC] px-4 hover:bg-[#01335520]"
+                    @click="navigateTo(`/account-details?id=${admin.id}`)"
+                  >
+                    Edit
+                  </UButton>
                 </div>
               </div>
-              <div class="flex items-center gap-4">
-                <UBadge
-                  :color="admin.color"
-                  variant="subtle"
-                  class="rounded-full px-3 py-1 font-medium hidden sm:block"
-                >
-                  {{ admin.role }}
-                </UBadge>
-                <UButton
-                  color="neutral"
-                  variant="solid"
-                  size="sm"
-                  class="shadow-sm border border-gray-200"
-                  @click="navigateTo(`/account-details?id=${admin.id}`)"
-                >
-                  Edit
-                </UButton>
-              </div>
             </div>
           </div>
 
-          <div class="pt-6">
-            <h2 class="text-lg font-bold text-gray-900">
+          <div class="pt-6 bg-white p-6 md:p-[16px] rounded-[8px]">
+            <h2 class="text-[14px] font-medium text-gray-900">
               Role permissions
             </h2>
-            <p class="text-sm text-gray-500 mb-6">
+            <p class="text-[12px] text-[#919191] mb-4">
               What each role can access and do
             </p>
 
@@ -1564,12 +1570,12 @@ onMounted(() => {
               <div
                 v-for="(permission, idx) in permissions"
                 :key="idx"
-                class="py-4 border-t border-gray-100"
+                class="pt-3 border-t border-gray-100"
               >
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   {{ permission.title }}
                 </h3>
-                <p class="text-sm text-gray-500 mt-1">
+                <p class="text-[12px] text-[#919191] mt-1">
                   {{ permission.description }}
                 </p>
               </div>
@@ -1580,78 +1586,78 @@ onMounted(() => {
         <!-- General Tab -->
         <div
           v-if="activeTab === 'General'"
-          class="p-6 md:p-8 space-y-8"
+          class="space-y-[10px] bg-white rounded-[8px]"
         >
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">
+          <div class="p-6 md:p-[16px] border-b border-[#F0F1F3] rounded-[8px]">
+            <h2 class="text-[14px] font-medium text-gray-900">
               App Settings
             </h2>
-            <p class="text-sm text-gray-500">
+            <p class="text-[12px] text-gray-500">
               Core platform configuration
             </p>
           </div>
 
-          <div class="space-y-6">
+          <div class="p-6 md:p-[16px]">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-gray-100 gap-4">
               <div class="flex-1">
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Platform name
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-[12px] text-gray-500">
                   Displayed across the app and email communications
                 </p>
               </div>
               <UInput
                 model-value="Lawyers & Clients"
-                class="w-full sm:w-64"
+                :ui="{ base: 'h-[39px] border-0 ring-0 rounded-[8.75px] bg-[#F9FAFB] text-[14px]' }"
                 readonly
               />
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-gray-100 gap-4">
               <div class="flex-1">
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Support email
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-[12px] text-gray-500">
                   Where user support requests are directed
                 </p>
               </div>
               <UInput
                 model-value="support@lawyerclients.ng"
-                class="w-full sm:w-64"
+                :ui="{ base: 'h-[39px] border-0 ring-0 rounded-[8.75px] bg-[#F9FAFB] text-[14px]' }"
                 readonly
               />
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-gray-100 gap-4">
               <div class="flex-1">
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Default country
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-[12px] text-gray-500">
                   Used for phone formatting and location defaults
                 </p>
               </div>
               <UInput
                 model-value="Nigeria (NG)"
-                class="w-full sm:w-64"
+                :ui="{ base: 'h-[39px] border-0 ring-0 rounded-[8.75px] bg-[#F9FAFB] text-[14px]' }"
                 readonly
               />
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center justify-between py-4 gap-4">
               <div class="flex-1">
-                <h3 class="font-medium text-gray-900">
+                <h3 class="text-[14px] font-medium text-gray-900">
                   Default language
                 </h3>
-                <p class="text-sm text-gray-500">
+                <p class="text-[12px] text-gray-500">
                   Platform interface language
                 </p>
               </div>
               <UInput
                 model-value="English"
-                class="w-full sm:w-64"
+                :ui="{ base: 'h-[39px] border-0 ring-0 rounded-[8.75px] bg-[#F9FAFB] text-[14px]' }"
                 readonly
               />
             </div>
@@ -1734,13 +1740,16 @@ onMounted(() => {
           <label class="block text-[14px] font-medium text-gray-500">
             Status
           </label>
-          <USelect
-            v-model="bannerForm.status"
-            :options="bannerStatusOptions"
-            size="lg"
-            class="w-full"
-            :ui="{ base: 'rounded-[8px] border border-[#E5E7EB] px-4 py-3 text-[14px]' }"
-          />
+          <div class="flex items-center gap-3">
+            <USwitch
+              v-model:model-value="bannerStatusBoolean"
+              size="lg"
+              :ui="{ base: 'data-[state=checked]:bg-[#003357]! data-[state=checked]:text-white!' }"
+            />
+            <span class="text-sm font-medium text-gray-700">
+              {{ bannerStatusBoolean ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
         </div>
 
         <p
@@ -1762,7 +1771,7 @@ onMounted(() => {
           </UButton>
           <UButton
             type="submit"
-            class="bg-[#003357] hover:bg-[#004474] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-medium"
+            class="bg-[#003357] hover:bg-[#004474] text-white rounded-[8px] px-5 py-2.5 text-[14px] font-medium disabled:bg-[#003357]"
             :loading="bannersUpdating"
           >
             {{ editingBanner ? 'Save changes' : 'Create banner' }}

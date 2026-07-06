@@ -120,7 +120,7 @@ const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'prim
     case 'open': return 'warning'
     case 'declined': return 'error'
     case 'pending': return 'warning'
-    case 'completed': return 'primary'
+    case 'completed': return 'neutral'
     default: return 'neutral'
   }
 }
@@ -151,45 +151,45 @@ const getStatusColor = (status: string): 'success' | 'error' | 'warning' | 'prim
         </h4>
         <div class="space-y-0">
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Client</span>
+            <span class="text-[#3C475D]">Client</span>
             <span class="text-gray-900 font-semibold">{{ caseData.client.name }} · {{ caseData.client.location }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Lawyer</span>
+            <span class="text-[#3C475D]">Lawyer</span>
             <span class="text-gray-900 font-semibold">{{ caseData.lawyer.name }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3">
-            <span class="text-gray-500">Practice area</span>
+            <span class="text-[#3C475D]">Practice area</span>
             <span class="text-gray-900 font-semibold">{{ caseData.practiceArea }}</span>
           </div>
         </div>
       </div>
 
-      <div class="mb-6">
+      <div>
         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
           Activity
         </h4>
         <div class="space-y-0">
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Status</span>
+            <span class="text-[#3C475D]">Status</span>
             <UBadge
               :color="getStatusColor(caseData.status)"
               variant="subtle"
-              class="rounded-full px-3 py-0.5 font-bold text-[12px]"
+              class="rounded-full px-3 py-[4px] font-bold text-[12px] capitalize"
             >
               {{ caseData.status }}
             </UBadge>
           </div>
-          <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Opened</span>
+          <div class="flex justify-between items-center text-[14px] py-3 border-b border-gray-100">
+            <span class="text-[#3C475D]">Opened</span>
             <span class="text-gray-900 font-semibold">{{ caseData.openedDate }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3 border-b border-gray-100">
-            <span class="text-gray-500">Days elapsed</span>
+            <span class="text-[#3C475D]">Days elapsed</span>
             <span class="text-gray-900 font-semibold">{{ caseData.timeElapsed }}</span>
           </div>
           <div class="flex justify-between items-center text-sm py-3">
-            <span class="text-gray-500">Last activity</span>
+            <span class="text-[#3C475D]">Last activity</span>
             <span class="text-gray-900 font-semibold">{{ caseData.lastActivity }}</span>
           </div>
         </div>

@@ -34,7 +34,7 @@ const trendColorBackgroundClass = computed(() => {
     class="h-full border-0 ring-0 rounded-[10px]"
     :ui="{ body: 'p-[16px]!' }"
   >
-    <div class="space-y-[10px]">
+    <div class="space-y-[-3px]">
       <slot name="header">
         <div class="flex justify-between items-start">
           <h4 class="text-[14px] font-light captitalize">

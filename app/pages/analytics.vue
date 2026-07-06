@@ -311,10 +311,10 @@ onMounted(() => start())
   <div class="space-y-8">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+        <h1 class="text-[16px] font-bold text-gray-900 leading-tight">
           Analytics
         </h1>
-        <p class="text-sm text-gray-400">
+        <p class="text-[14px] text-gray-400">
           Platform insights and trends
         </p>
       </div>
@@ -369,20 +369,20 @@ onMounted(() => start())
 
       <!-- Main Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <UCard class="lg:col-span-2">
+        <UCard class="lg:col-span-2 border-0 ring-0" :ui="{ header: 'border-0', body: 'pt-0!' }">
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="font-bold text-gray-900">
+              <h3 class="font-medium text-gray-900">
                 User growth
               </h3>
             </div>
           </template>
-          <div class="w-full h-96 overflow-hidden rounded-md">
+          <div class="w-full h-[430px] overflow-hidden rounded-md">
             <ClientOnly>
               <apexchart
                 type="line"
                 width="100%"
-                height="380"
+                height="430"
                 :options="userGrowthOptions"
                 :series="userGrowthSeries"
               />
@@ -390,12 +390,12 @@ onMounted(() => start())
           </div>
         </UCard>
 
-        <UCard>
+        <UCard class="border-0 ring-0">
           <template #header>
-            <h3 class="font-bold text-gray-900">
+            <h3 class="font-medium text-[14px] text-gray-900">
               Practice area breakdown
             </h3>
-            <p class="text-xs text-gray-400">
+            <p class="text-[14px] text-[#787878]">
               Share of verified lawyers
             </p>
           </template>
@@ -411,7 +411,7 @@ onMounted(() => start())
                 />
               </ClientOnly>
             </div>
-            <div class="mt-20 w-full space-y-2">
+            <div class="w-full space-y-2">
               <div
                 v-for="(label, i) in practiceAreaOptions.labels"
                 :key="label"
@@ -435,9 +435,9 @@ onMounted(() => start())
 
       <!-- Horizontal Bars Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UCard>
+        <UCard class="border-0 ring-0">
           <template #header>
-            <h3 class="font-bold text-gray-900">
+            <h3 class="font-medium text-[14px] text-gray-900">
               Most searched categories
             </h3>
           </template>
@@ -459,9 +459,9 @@ onMounted(() => start())
           </div>
         </UCard>
 
-        <UCard>
+        <UCard class="border-0 ring-0">
           <template #header>
-            <h3 class="font-bold text-gray-900">
+            <h3 class="font-medium text-[14px] text-gray-900">
               Lawyers Years of Experience
             </h3>
           </template>
@@ -486,10 +486,10 @@ onMounted(() => start())
       </div>
 
       <!-- Locations -->
-      <UCard>
+      <UCard class="border-0 ring-0">
         <template #header>
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <h3 class="font-bold text-gray-900">
+            <h3 class="font-medium text-[14px] text-gray-900">
               Most active locations
             </h3>
           </div>
@@ -518,8 +518,8 @@ onMounted(() => start())
                 </div>
               </div>
               <div class="flex gap-4">
-                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#003357] rounded-full" /> {{ formatCompactNumber(loc.clientsTotal) }} <span class="text-gray-400 font-medium">clients</span></span>
-                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-[#93E2FF] rounded-full" /> {{ formatCompactNumber(loc.lawyersTotal) }} <span class="text-gray-400 font-medium">lawyers</span></span>
+                <span class="flex items-center gap-1.5"><span class="w-[12px] h-[12px] bg-[#003357] rounded-[4px]" /> {{ formatCompactNumber(loc.clientsTotal) }} <span class="text-gray-400 font-medium">clients</span></span>
+                <span class="flex items-center gap-1.5"><span class="w-[12px] h-[12px] bg-[#93E2FF] rounded-[4px]" /> {{ formatCompactNumber(loc.lawyersTotal) }} <span class="text-gray-400 font-medium">lawyers</span></span>
               </div>
             </div>
             <div class="space-y-1">

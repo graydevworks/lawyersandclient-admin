@@ -186,18 +186,18 @@ onUnmounted(() => {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+      <h1 class="text-[16px] font-bold text-gray-900 leading-tight">
         Reports & Disputes
       </h1>
-      <p class="text-sm text-gray-500">
+      <p class="text-[14px] text-gray-500">
         Reports
       </p>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 items-start">
-      <UCard class="lg:w-[400px] flex-shrink-0">
+      <UCard class="lg:w-[400px] flex-shrink-0" :ui="{body: 'p-0!'}">
         <div class="p-4 sm:p-4">
-          <h2 class="font-bold text-gray-900 text-lg mb-4">
+          <h2 class="font-medium text-gray-900 text-lg mb-4">
             Submissions
           </h2>
 
@@ -205,7 +205,8 @@ onUnmounted(() => {
             v-model="searchQuery"
             icon="i-lucide-search"
             placeholder="Search reports..."
-            class="mb-6"
+            class="mb-6 w-full"
+            :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
           />
 
           <div
@@ -220,7 +221,7 @@ onUnmounted(() => {
               v-for="t in tabs"
               :key="t.value"
               class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
-              :class="activeTab === t.value ? 'bg-[#EFF6FF] text-[#003357]' : 'text-gray-500 hover:text-gray-900'"
+              :class="activeTab === t.value ? 'bg-[#EFF6FF] text-[#003357] border-b-0 border-[#013355]!' : 'text-gray-500 hover:text-gray-900'"
               @click="activeTab = t.value"
             >
               {{ t.label }}
@@ -253,7 +254,7 @@ onUnmounted(() => {
               v-else
               :key="sub.id"
               class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"c
+              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
               @click="onSelectReport(sub.id)"
             >
               <h3 class="font-bold text-sm text-gray-900 line-clamp-1">

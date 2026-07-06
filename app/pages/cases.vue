@@ -579,51 +579,51 @@ onMounted(() => start())
           </div>
         </template>
       </UCard>
+      <!-- Pagination Footer -->
+      <div class="px-6 py-5 pt-0 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-2">
+        <div class="text-xs text-gray-500">
+          Showing {{ totalItems ? (currentPage - 1) * perPage + 1 : 0 }}–{{ Math.min(currentPage * perPage, totalItems || cases.length) }} of {{ totalItems || cases.length }} cases
+        </div>
+        <div class="flex items-center gap-1.5">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-heroicons-arrow-left"
+            class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
+            :disabled="currentPage === 1"
+            @click="handlePrevPage"
+          >
+            Prev
+          </UButton>
+
+          <UButton
+            v-for="page in visiblePages"
+            :key="page"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white ring-[#E8EAED] ring-[1px]"
+            :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </UButton>
+
+          <UButton
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            trailing-icon="i-heroicons-arrow-right"
+            class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
+            :disabled="currentPage === totalPages"
+            @click="handleNextPage"
+          >
+            Next
+          </UButton>
+        </div>
+      </div>
     </template>
-    <!-- Pagination Footer -->
-    <div class="px-6 py-5 pt-0 border-t border-gray-100 flex items-center justify-between bg-gray-50/20 mt-2">
-      <div class="text-xs text-gray-500">
-        Showing {{ totalItems ? (currentPage - 1) * perPage + 1 : 0 }}–{{ Math.min(currentPage * perPage, totalItems || cases.length) }} of {{ totalItems || cases.length }} cases
-      </div>
-      <div class="flex items-center gap-1.5">
-        <UButton
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          icon="i-heroicons-arrow-left"
-          class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
-          :disabled="currentPage === 1"
-          @click="handlePrevPage"
-        >
-          Prev
-        </UButton>
-
-        <UButton
-          v-for="page in visiblePages"
-          :key="page"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          class="w-8 h-8 flex items-center justify-center rounded-md font-medium bg-white ring-[#E8EAED] ring-[1px]"
-          :class="page === currentPage ? 'bg-[#003357] text-white' : 'text-gray-500'"
-          @click="goToPage(page)"
-        >
-          {{ page }}
-        </UButton>
-
-        <UButton
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          trailing-icon="i-heroicons-arrow-right"
-          class="h-8 font-medium text-gray-500 bg-white ring-[#E8EAED] ring-[1px]"
-          :disabled="currentPage === totalPages"
-          @click="handleNextPage"
-        >
-          Next
-        </UButton>
-      </div>
-    </div>
 
     <CaseDetailsModal
       v-model="isModalOpen"

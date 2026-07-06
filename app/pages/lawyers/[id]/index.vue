@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLawyers } from '../../../composables/useLawyers'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import { formatRelativeDate } from '~/util/helper'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ type Lawyer = {
   languages?: string[]
   bio?: string
   practiceAreas?: string[]
+  verificationStatus?: string
   activity?: {
     totalChats?: number
     reportsFiled?: number
@@ -32,13 +34,13 @@ type Lawyer = {
     title?: string
     type?: string
     size?: string
-  status?: string
-  icon?: string
-  color?: string
-  isMissing?: boolean
-  url?: string
-  file_url?: string
-  document_url?: string
+    status?: string
+    icon?: string
+    color?: string
+    isMissing?: boolean
+    url?: string
+    file_url?: string
+    document_url?: string
   }>
   reviews?: Array<{
     name?: string
@@ -92,6 +94,10 @@ const deleteReasons = [
 const isMutating = ref(false)
 
 const { showLawyers, resetLawyerPassword, suspendLawyer, reinstateLawyer, deleteLawyer } = useLawyers()
+
+// Document preview state
+const showDocPreview = ref(false)
+const previewDoc = ref<{ name: string, type: string, url: string } | null>(null)
 
 const isSuspended = ref(false)
 
@@ -170,6 +176,8 @@ const loadLawyer = async () => {
         verificationStatus: d.verification_status,
         workExperience: d.work_experiences
       }
+
+      console.log(lawyer.value)
     }
   } catch (e) {
     console.log('[Lawyers Details] loadLawyer error:', e)
@@ -266,6 +274,51 @@ const handleDelete = async () => {
     }
   } finally {
     isMutating.value = false
+  }
+}
+
+// --- Document actions ---
+const isImageDoc = (type: string) => {
+  const t = (type || '').toLowerCase()
+  return t.includes('image') || t.includes('jpg') || t.includes('jpeg') || t.includes('png') || t.includes('gif') || t.includes('webp')
+}
+
+const getDocIcon = (type: string) => {
+  const t = (type || '').toLowerCase()
+  if (t.includes('pdf')) return 'pepicons-pencil:file'
+  if (t.includes('image') || t.includes('jpg') || t.includes('png')) return 'i-lucide-image'
+  if (t.includes('word') || t.includes('doc')) return 'pepicons-pencil:file'
+  return 'pepicons-pencil:file'
+}
+
+const getDocIconColor = (name: string, uploaded: boolean) => {
+  if (!uploaded) return 'text-gray-300'
+  if (name.toLowerCase().includes('government') || name.toLowerCase().includes('id')) return 'text-indigo-500'
+  return 'text-[#185FA5]'
+}
+
+const downloadDocument = (doc: { name: string, url: string }) => {
+  if (!doc.url) return
+  const personName = lawyer.value.name?.replace(/\s+/g, '_') || 'user'
+  const fileName = `${personName}_${doc.name.replace(/\s+/g, '_')}`
+  const link = window.document.createElement('a')
+  link.href = doc.url
+  link.download = fileName
+  link.target = '_blank'
+  window.document.body.appendChild(link)
+  link.click()
+  window.document.body.removeChild(link)
+}
+
+const openDocPreview = (doc: { title: string, type: string, url: string }) => {
+  if (!doc.url) return
+  previewDoc.value = { name: doc.title, type: doc.type, url: doc.url }
+  showDocPreview.value = true
+}
+
+const openInNewTab = () => {
+  if (previewDoc.value?.url) {
+    window.open(previewDoc.value.url, '_blank')
   }
 }
 </script>
@@ -434,8 +487,8 @@ const handleDelete = async () => {
     >
       <div class="lg:col-span-8 space-y-6">
         <UCard
-          class="overflow-hidden rounded-[24px] border-0 ring-0 shadow-sm"
-          :ui="{ body: 'p-0' }"
+          class="overflow-hidden rounded-[16px] border-0 ring-0 shadow-none"
+          :ui="{ body: 'p-0!' }"
         >
           <div class="h-48 w-full relative">
             <img
@@ -446,22 +499,24 @@ const handleDelete = async () => {
             <div class="absolute inset-0 bg-black/20" />
           </div>
 
-          <div class="px-8 pb-8 -mt-12 relative">
+          <div class="px-2 md:px-8 pb-8 -mt-2 md:-mt-12 relative">
             <div class="flex items-end gap-6 mb-6">
               <UAvatar
                 :src="lawyer.profilePicture || 'https://i.pravatar.cc/150?u=1'"
                 size="3xl"
-                class="size-32 rounded-full border-4 border-white shadow-md"
+                class="size-20 md:size-32 rounded-full border-4 border-white shadow-md"
               />
               <div class="pb-2">
                 <div class="flex items-center gap-2 mb-1">
-                  <h1 class="text-2xl font-bold text-gray-900">
+                  <h1 class="text-md lg:text-2xl font-bold text-gray-900">
                     {{ lawyer.name }}
                   </h1>
-                  <UIcon
-                    name="i-lucide-check-circle"
-                    class="text-blue-500 size-5"
-                  />
+                  <img
+                    v-if="lawyer.verificationStatus == 'approved'"
+                    src="/images/icons/verified-badge.png"
+                    alt="Verified"
+                    class="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] md:w-[22px] md:h-[22px] ml-2 inline-block"
+                  >
                 </div>
                 <UBadge
                   color="success"
@@ -505,8 +560,6 @@ const handleDelete = async () => {
           v-if="lawyer.documents?.length"
           class="rounded-[24px] border-0 ring-0 shadow-sm"
         >
-
-
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -526,6 +579,7 @@ const handleDelete = async () => {
               v-for="doc in lawyer.documents"
               :key="doc.title"
               class="border border-gray-100 rounded-2xl p-4 flex flex-col gap-4 group cursor-pointer hover:border-gray-200 transition-colors"
+              @click="openDocPreview(doc)"
             >
               <div
                 class="h-24 w-full flex items-center justify-center rounded-xl"
@@ -571,42 +625,63 @@ const handleDelete = async () => {
           </div>
         </UCard>
 
-        <UCard
-          v-if="lawyer.workExperience?.length"
-          class="rounded-[24px] border-0 ring-0 shadow-sm"
-        >
-          <template #header>
-            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
-              Experience
-            </h3>
-          </template>
+        <!-- Experience -->
+        <section class="bg-white rounded-[16px] border-0 ring-0 p-4 sm:p-[24px]">
+          <h2 class="text-[17px] font-bold text-gray-900 mb-8">
+            Experience
+          </h2>
 
-          <div class="space-y-8">
+          <div
+            v-if="lawyer.workExperience && lawyer.workExperience.length > 0"
+            class="space-y-[24px]"
+          >
             <div
-              v-for="(exp, index) in lawyer.workExperience"
+              v-for="(work, index) in lawyer.workExperience"
               :key="index"
-              class="relative pl-6 border-l-2 border-gray-100"
+              class="relative pl-[24px] pt-1 border-l-2 border-primary pb-[24px]"
             >
-              <div class="absolute left-[-9px] top-0 size-4 rounded-full border-2 border-gray-100 bg-white" />
-              <div class="flex items-center justify-between mb-1">
-                <h4 class="text-[15px] font-bold text-gray-900">
-                  {{ exp.role }}
-                </h4>
-                <span class="text-[12px] font-medium text-gray-400">{{ exp.period }}</span>
+              <div class="flex flex-col md:flex-row md:justify-between mb-2 md:items-center">
+                <div class="w-full">
+                  <div class="flex items-center justify-between gap-2 w-full mb-1">
+                    <p class="text-[14px] text-gray-500 font-medium">
+                      {{ work.company }}
+                    </p>
+                    <p class="text-[12px] text-gray-500 font-medium mt-1 md:mt-0">{{ work.start_year }} - {{ work.end_year }}</p>
+                  </div>
+                  <p class="text-[14px] text-gray-500 font-medium">
+                    {{ work.job_title }}
+                  </p>
+                </div>
               </div>
-              <p class="text-[13px] font-medium text-gray-400 mb-3">
-                {{ exp.company }}
-              </p>
-              <p class="text-[13px] text-gray-600 leading-relaxed">
-                {{ exp.description }}
+              <p class="text-[15px] text-gray-600 font-medium mt-1 line-clamp-3">
+                {{ work.description }}
               </p>
             </div>
           </div>
-        </UCard>
+
+          <!-- Empty State -->
+          <div
+            v-else
+            class="flex flex-col items-center justify-center py-12 px-4 text-center"
+          >
+            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+              <UIcon
+                name="i-lucide-briefcase"
+                class="w-8 h-8 text-primary opacity-60"
+              />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">
+              No experience listed yet
+            </h3>
+            <p class="text-gray-500 max-w-xs mx-auto text-sm leading-relaxed">
+              This legal professional hasn't updated their work history details yet.
+            </p>
+          </div>
+        </section>
 
         <UCard
           v-if="lawyer.reviews?.length"
-          class="rounded-[24px] border-0 ring-0 shadow-sm"
+          class="rounded-[16px] border-0 ring-0"
         >
           <template #header>
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
@@ -618,20 +693,20 @@ const handleDelete = async () => {
             <div
               v-for="(review, index) in lawyer.reviews"
               :key="index"
-              class="py-6 first:pt-0 last:pb-0"
+              class="py-4 border-b border-[#E8E8E8] first:pt-0 last:pb-0"
             >
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-[14px] font-bold text-gray-900">
-                  {{ review.name }}
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[16px] font-medium text-gray-900">
+                  {{ review.client.full_name }}
                 </h4>
-                <span class="text-xs text-gray-400">{{ review.date }}</span>
+                <span class="text-xs text-gray-400">{{ formatRelativeDate(review.created_at) }}</span>
               </div>
 
-              <div class="flex items-center gap-0.5 mb-3">
+              <div class="flex items-center gap-0.5 mb-1">
                 <UIcon
                   v-for="i in 5"
                   :key="i"
-                  name="i-lucide-star"
+                  :name="(review.rating ?? 0) ? 'tabler:star-filled' : 'tabler:star-outline'"
                   class="size-4"
                   :class="i <= (review.rating ?? 0) ? 'text-orange-400 fill-orange-400' : 'text-gray-200'"
                 />
@@ -646,7 +721,7 @@ const handleDelete = async () => {
       </div>
 
       <div class="lg:col-span-4 space-y-6">
-        <UCard class="rounded-[24px] border-0 ring-0 shadow-sm p-2">
+        <UCard class="rounded-[16px] border-0 ring-0 shadow-sm p-2">
           <div class="space-y-6">
             <section>
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
@@ -717,13 +792,13 @@ const handleDelete = async () => {
               </UButton> -->
 
               <UButton
-                v-if="!isSuspended"
+                v-if="lawyer.verificationStatus != 'suspended'"
                 block
                 variant="outline"
                 color="neutral"
                 class="bg-white text-gray-900 border-gray-200 font-bold rounded-xl py-3 hover:bg-gray-50"
                 :disabled="isMutating"
-@click="() => { suspendReason = suspendReasons[0] ?? 'Abuse / misconduct'; isSuspendDialogOpen = true }"
+                @click="() => { suspendReason = suspendReasons[0] ?? 'Abuse / misconduct'; isSuspendDialogOpen = true }"
               >
                 Suspend account
               </UButton>
@@ -866,5 +941,69 @@ const handleDelete = async () => {
       :show-close="false"
       @complete="isDeleteSuccessOpen = false"
     />
+
+    <!-- Document Preview Modal -->
+    <SharedBaseModal
+      v-model="showDocPreview"
+      :title="previewDoc?.name || 'Document Preview'"
+      max-width="max-w-[600px]"
+    >
+      <div
+        v-if="previewDoc"
+        class="mt-4"
+      >
+        <!-- Preview Area -->
+        <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50">
+          <div
+            v-if="isImageDoc(previewDoc.type)"
+            class="flex items-center justify-center p-4 min-h-[300px]"
+          >
+            <img
+              :src="previewDoc.url"
+              :alt="previewDoc.name"
+              class="max-w-full max-h-[400px] object-contain rounded-lg"
+            >
+          </div>
+          <div
+            v-else
+            class="flex flex-col items-center justify-center py-16 px-4"
+          >
+            <UIcon
+              :name="getDocIcon(previewDoc.type)"
+              class="w-20 h-20 mb-4"
+              :class="getDocIconColor(previewDoc.url, true)"
+            />
+            <p class="text-sm font-medium text-gray-900">
+              {{ previewDoc.name }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ previewDoc.type }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3">
+          <UButton
+            block
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-external-link"
+            class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px]"
+            @click="openInNewTab"
+          >
+            Open in new tab
+          </UButton>
+          <UButton
+            block
+            icon="i-heroicons-arrow-down-tray"
+            class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px]"
+            @click="downloadDocument(previewDoc)"
+          >
+            Download
+          </UButton>
+        </div>
+      </div>
+    </SharedBaseModal>
   </div>
 </template>
