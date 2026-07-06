@@ -1,4 +1,4 @@
-import { isAbortError, extractErrorMessage, resolveApiError } from '~/util/apiHelper'
+import { isAbortError, resolveApiError } from '~/util/apiHelper'
 
 type NotificationQuery = Record<string, string | number | boolean | null | undefined>
 
@@ -77,9 +77,9 @@ export const useNotification = () => {
 
     updating.value = true
     try {
-      response = await $fetch(getApiUrl(), {
-        method: 'POST',
-        body: { id },
+      response = await $fetch(getApiUrl(`/${id}`), {
+        method: 'PUT',
+        body: { id, read: true },
         signal: mutationController.value.signal
       })
 
@@ -118,12 +118,32 @@ export const useNotification = () => {
     }
   }
 
+  const deleteNotification = async (id: string | number) => {
+    mutationController.value?.abort()
+    mutationController.value = new AbortController()
+
+    updating.value = true
+    try {
+      const data = await $fetch(getApiUrl(`/${id}`), {
+        method: 'DELETE',
+        signal: mutationController.value.signal
+      })
+      return { success: true, data }
+    } catch (error) {
+      if (isAbortError(error)) return { success: false, aborted: true }
+      return { success: false, ...resolveApiError(error, 'Failed to delete notification.') }
+    } finally {
+      updating.value = false
+    }
+  }
+
   return {
     loading,
     updating,
     getNotifications,
     getNotification,
     markAsRead,
+    deleteNotification,
     getNotificationStats
   }
 }

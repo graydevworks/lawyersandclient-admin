@@ -86,8 +86,11 @@ const fetchList = async ({ append }: { append: boolean }) => {
     })
 
     if (!result?.success) {
-      listError.value = displayApiError(result, 'Failed to fetch reports.')
-      if (!append) submissions.value = []
+      const errorResult = result as { error?: unknown; validationMessages?: string[] } | null | undefined
+      listError.value = displayApiError(errorResult, 'Failed to fetch reports.')
+      if (!append) {
+        submissions.value = []
+      }
       return
     }
 
@@ -105,13 +108,18 @@ const fetchList = async ({ append }: { append: boolean }) => {
 
     const reports = Array.isArray(dataFromApi) ? dataFromApi : (dataFromApi?.reports ?? [])
 
-    const mapped: ReportListItem[] = reports.map((report: any) => ({
-      id: report.id,
-      title: report.subject ?? report.title ?? 'Untitled report',
-      reporter: report.reporter?.name ?? report.reporter_name ?? 'Unknown',
-      time: report.created_at ? formatRelativeDate(report.created_at) : '',
-      status: report.status
-    }))
+    const mapped: ReportListItem[] = reports.map((report: Record<string, unknown>) => {
+      const reporter = report.reporter as Record<string, unknown> | undefined
+      const reporterName = typeof reporter?.name === 'string' ? reporter.name : undefined
+
+      return {
+        id: report.id as number | string,
+        title: (report.subject as string) ?? (report.title as string) ?? 'Untitled report',
+        reporter: reporterName ?? (typeof report.reporter_name === 'string' ? report.reporter_name : undefined) ?? 'Unknown',
+        time: report.created_at ? formatRelativeDate(report.created_at as string) : '',
+        status: report.status as string
+      }
+    })
 
     submissions.value = append ? [...submissions.value, ...mapped] : mapped
 
@@ -234,6 +242,8 @@ onUnmounted(() => {
               icon="i-lucide-file-text"
               title="No reports"
               description="There are no reports to show for the current filter."
+              action-label="Refresh"
+              @action="fetchList({ append: false })"
             />
             <template v-else-if="submissions.length === 0 && isFetching">
               <div

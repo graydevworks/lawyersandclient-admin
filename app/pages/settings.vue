@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
-import { id } from 'zod/locales'
 import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
+const { logout } = useAuth()
 
 const activeTab = ref('General')
 
@@ -787,7 +787,7 @@ onMounted(() => {
                 </button>
 
                 <div class="px-2 py-4">
-                  <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors">
+                  <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors" @click="logout">
                     <UIcon
                       name="i-lucide-log-out"
                       class="w-5 h-5"

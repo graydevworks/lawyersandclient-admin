@@ -13,7 +13,7 @@ const {
 
 const skeleton = ref(true)
 const currentPage = ref(1)
-const perPage = ref(10)
+const perPage = ref(20)
 const totalItems = ref(0)
 const totalPages = ref(1)
 

@@ -2,13 +2,15 @@ export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
   const auth_token = getCookie(event, 'auth_token')
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
+  const id = event.context.params?.id
 
   try {
-    const response = await $fetch(`${apiBase}/admin/notifications/${event.context.params?.id}`, {
-      method: 'GET',
+    const response = await $fetch(`${apiBase}/admin/notifications/${id}`, {
+      method: 'DELETE',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         'User-Agent': 'Nuxt-Nitro-Server',
         'Connection': 'keep-alive',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -21,10 +23,10 @@ export default defineEventHandler(async (event) => {
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Notification details fetched successfully',
+      message: (responseData.message as string) || 'Notification deleted successfully',
       data: response
     }
   } catch (error) {
-    throwApiError(error, 'Failed to fetch notification details')
+    throwApiError(error, 'Failed to delete notification')
   }
 })

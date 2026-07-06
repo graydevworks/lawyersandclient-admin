@@ -1,4 +1,5 @@
-import { extractErrorMessage, resolveApiError } from '~/util/apiHelper'
+import { resolveApiError } from '~/util/apiHelper'
+import type { UpdateReportPayload } from '~/types/reports'
 
 type ReportQuery = Record<string, string | number | boolean | null | undefined>
 
@@ -30,7 +31,7 @@ export const useReports = () => {
     }
   }
 
-  const updateReport = async (id: string | number, body: Record<string, unknown>) => {
+  const updateReport = async (id: string | number, body: UpdateReportPayload) => {
     updating.value = true
     try {
       const data = await $fetch(`/api/report/${id}`, { method: 'PUT', body })

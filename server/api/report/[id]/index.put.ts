@@ -6,8 +6,6 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
 
-    console.log(body)
-
     const response = await $fetch(`${apiBase}/admin/reports/${event.context.params?.id}`, {
       method: 'PUT',
       headers: {

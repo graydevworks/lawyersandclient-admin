@@ -534,6 +534,8 @@ const submitNotification = async () => {
             icon="i-lucide-bell"
             title="No notifications"
             description="You have no recent notifications."
+            action-label="Refresh"
+            @action="fetchList({ reset: true })"
           />
         </div>
       </template>

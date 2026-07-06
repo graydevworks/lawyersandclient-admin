@@ -6,8 +6,6 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
 
-    console.log(body, 'sbbsdkhjds')
-
     const response = await $fetch(`${apiBase}/admin/notifications`, {
       method: 'POST',
       headers: {
