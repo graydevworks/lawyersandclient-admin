@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
     })
 
     const responseData = response as Record<string, unknown>
+    console.log(formData)
 
     return {
       status: 200,
@@ -37,6 +38,3 @@ export default defineEventHandler(async (event) => {
     throwApiError(error, 'Failed to update admin account')
   }
 })
-
-
-
