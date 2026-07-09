@@ -1,3 +1,5 @@
+import { getErrorStatusCode, extractErrorMessage } from "~/util/apiHelper"
+
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
   const auth_token = getCookie(event, 'auth_token')
@@ -6,7 +8,7 @@ export default defineEventHandler(async (event) => {
   try {
     const formData = await readFormData(event)
 
-    const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/suspend`, {
+    const response = await $fetch(`${apiBase}/admin/lawyers/${event.context.params?.id}/suspend`, {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -30,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     const statusCode = getErrorStatusCode(error, 400)
-    const message = extractErrorMessage(error, 'Failed to update profile')
+    const message = extractErrorMessage(error, 'Failed to suspend profile')
 
     return {
       status: statusCode,

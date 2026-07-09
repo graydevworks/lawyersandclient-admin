@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // Set the user session with the response data
-      const userData = response.lawyer || response.client || response.admin || null
+      const userData = response.user || response.lawyer || response.client || response.admin || null
       await setUserSession(event, {
         user: {
           email: body.email,

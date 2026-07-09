@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { z } from 'zod'
-import { computed, onMounted, ref } from 'vue'
+import * as v from 'valibot'
+import { computed, onMounted, ref, watch } from 'vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -26,19 +26,32 @@ const stats = ref({
 })
 
 // ---- Schema + form state (matching your requested enums) ----
-const notificationSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  message: z.string().min(1, 'Message is required'),
-  type: z.enum(['announcement', 'platform_update', 'promotion', 'security_alert']),
-  target: z.enum(['all', 'clients', 'lawyers'])
+const notificationSchema = v.object({
+  title: v.pipe(v.string(), v.minLength(1, 'Title is required')),
+  message: v.pipe(v.string(), v.minLength(1, 'Message is required')),
+  type: v.picklist(['announcement', 'platform_update', 'promotion', 'security_alert'], 'Please select a notification type'),
+  target: v.picklist(['all', 'clients', 'lawyers'], 'Please select a target audience')
 })
 
-type NotificationForm = z.infer<typeof notificationSchema>
+type NotificationForm = v.InferOutput<typeof notificationSchema>
 
 const notificationTitle = ref('')
 const notificationMessage = ref('')
 const notificationType = ref<NotificationForm['type']>('announcement')
 const notificationTarget = ref<NotificationForm['target']>('all')
+
+// Form error state
+const formErrors = ref<Record<string, string>>({})
+
+// Success modal state
+const showSuccessModal = ref(false)
+const successModalTitle = ref('Success')
+const successModalDescription = ref('')
+
+// Error modal state
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 // ---- Recent list filters (search q= + type=) ----
 const searchQuery = ref('')
@@ -185,23 +198,66 @@ watch([searchQuery, selectedTypeTab], async () => {
   // Keeping it minimal: user calls applySearch/onTypeTabChange.
 })
 
+// Clear errors when user starts typing/changing form fields
+watch(notificationTitle, () => {
+  if (formErrors.value.title) {
+    const newErrors = { ...formErrors.value }
+    delete newErrors.title
+    formErrors.value = newErrors
+  }
+})
+
+watch(notificationMessage, () => {
+  if (formErrors.value.message) {
+    const newErrors = { ...formErrors.value }
+    delete newErrors.message
+    formErrors.value = newErrors
+  }
+})
+
+watch(notificationType, () => {
+  if (formErrors.value.type) {
+    const newErrors = { ...formErrors.value }
+    delete newErrors.type
+    formErrors.value = newErrors
+  }
+})
+
+watch(notificationTarget, () => {
+  if (formErrors.value.target) {
+    const newErrors = { ...formErrors.value }
+    delete newErrors.target
+    formErrors.value = newErrors
+  }
+})
+
 // ---- Submit notification ----
 const submitNotification = async () => {
-  const parse = notificationSchema.safeParse({
+  // Clear previous errors
+  formErrors.value = {}
+
+  const result = v.safeParse(notificationSchema, {
     title: notificationTitle.value,
     message: notificationMessage.value,
     type: notificationType.value,
     target: notificationTarget.value
   })
 
-  if (!parse.success) {
-    console.error('Invalid notification payload:', parse.error.flatten())
+  if (!result.success) {
+    // Map valibot errors to form fields
+    const errors: Record<string, string> = {}
+    for (const issue of result.issues) {
+      const field = issue.path?.[0]?.key || 'general'
+      errors[field] = issue.message
+    }
+    formErrors.value = errors
+    console.error('Invalid notification payload:', result.issues)
     return
   }
 
   isSubmitting.value = true
   try {
-    const payload = parse.data
+    const payload = result.output
     const response = await $fetch('/api/notifications', {
       method: 'POST',
       body: payload
@@ -212,12 +268,22 @@ const submitNotification = async () => {
     // success: refetch list with current filters
     await fetchList({ reset: true })
 
+    // Show success modal
+    successModalTitle.value = 'Notification Sent!'
+    successModalDescription.value = `Your notification has been successfully sent to ${notificationTarget.value === 'all' ? 'all users' : notificationTarget.value}.`
+    showSuccessModal.value = true
+
+    // Reset form
     notificationTitle.value = ''
     notificationMessage.value = ''
     notificationType.value = 'announcement'
     notificationTarget.value = 'all'
+    formErrors.value = {}
   } catch (err) {
-    console.error('[Notification] create failed:', err)
+    const errorMessage = (err as any)?.data?.message || (err as any)?.message || 'Failed to send notification'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   } finally {
     isSubmitting.value = false
   }
@@ -256,7 +322,11 @@ const submitNotification = async () => {
                 <UInput
                   v-model="notificationTitle"
                   placeholder="e.g Platform update - new search filters"
+                  :class="{ 'ring-2 ring-red-500': formErrors.title }"
                 />
+                <p v-if="formErrors.title" class="text-xs text-red-600 mt-1">
+                  {{ formErrors.title }}
+                </p>
               </div>
 
               <div class="flex flex-col space-y-1.5">
@@ -265,7 +335,11 @@ const submitNotification = async () => {
                   v-model="notificationMessage"
                   placeholder="e.g Platform update - new search filters"
                   :rows="5"
+                  :class="{ 'ring-2 ring-red-500': formErrors.message }"
                 />
+                <p v-if="formErrors.message" class="text-xs text-red-600 mt-1">
+                  {{ formErrors.message }}
+                </p>
               </div>
 
               <div class="flex flex-col space-y-1.5">
@@ -273,34 +347,53 @@ const submitNotification = async () => {
                 <USelect
                   v-model="notificationType"
                   :items="['announcement', 'platform_update', 'promotion', 'security_alert']"
+                  :class="{ 'ring-2 ring-red-500': formErrors.type }"
                 />
+                <p v-if="formErrors.type" class="text-xs text-red-600 mt-1">
+                  {{ formErrors.type }}
+                </p>
               </div>
 
               <div class="space-y-3 pt-2">
                 <label class="text-sm font-medium text-gray-700">Target</label>
                 <div class="flex flex-wrap gap-2 mt-2 pb-6">
                   <button
+                    type="button"
                     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border"
-                    :class="notificationTarget === 'all' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-50'"
+                    :class="[
+                      notificationTarget === 'all' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : 'bg-transparent text-gray-600 border-transparent hover:bg-gray-50',
+                      { 'ring-2 ring-red-500': formErrors.target }
+                    ]"
                     @click="notificationTarget = 'all'"
                   >
                     All
                   </button>
                   <button
+                    type="button"
                     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-transparent hover:bg-gray-50 text-gray-600"
-                    :class="notificationTarget === 'clients' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : ''"
+                    :class="[
+                      notificationTarget === 'clients' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : '',
+                      { 'ring-2 ring-red-500': formErrors.target }
+                    ]"
                     @click="notificationTarget = 'clients'"
                   >
                     Clients
                   </button>
                   <button
+                    type="button"
                     class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors border border-transparent hover:bg-gray-50 text-gray-600"
-                    :class="notificationTarget === 'lawyers' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : ''"
+                    :class="[
+                      notificationTarget === 'lawyers' ? 'bg-[#EFF6FF] text-[#003357] border-[#003357]/20' : '',
+                      { 'ring-2 ring-red-500': formErrors.target }
+                    ]"
                     @click="notificationTarget = 'lawyers'"
                   >
                     Lawyers
                   </button>
                 </div>
+                <p v-if="formErrors.target" class="text-xs text-red-600 mt-1">
+                  {{ formErrors.target }}
+                </p>
               </div>
             </div>
 
@@ -540,5 +633,23 @@ const submitNotification = async () => {
         </div>
       </template>
     </UCard>
+
+    <!-- Success Modal -->
+    <SharedSuccessModal
+      v-model="showSuccessModal"
+      :title="successModalTitle"
+      :description="successModalDescription"
+      button-text="Continue"
+      @complete="showSuccessModal = false"
+    />
+
+    <!-- Error Modal -->
+    <SharedErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+      @complete="showErrorModal = false"
+    />
   </div>
 </template>

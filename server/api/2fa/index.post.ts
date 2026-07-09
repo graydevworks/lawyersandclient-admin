@@ -1,3 +1,5 @@
+import { extractErrorMessage, getErrorStatusCode } from '~/util/apiHelper'
+
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
   const auth_token = getCookie(event, 'auth_token')
@@ -29,6 +31,12 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
-    throwApiError(error, 'Failed to complete 2FA verification')
+    const statusCode = getErrorStatusCode(error, 500)
+    const message = extractErrorMessage(error, 'Failed to complete 2FA verification')
+
+    return {
+      status: statusCode,
+      message: message
+    }
   }
 })

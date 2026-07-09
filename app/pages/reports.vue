@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
 import { displayApiError } from '~/util/apiHelper'
+import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -48,6 +49,11 @@ const meta = ref({
 const hasMore = computed(() => meta.value.current_page < meta.value.last_page)
 
 const isSaving = ref(false)
+
+// Error modal state
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
 
 const loadDetail = async (id: number | string) => {
   const result = await getReport(id)
@@ -162,10 +168,18 @@ const onSaveResolution = async () => {
 
   isSaving.value = true
   try {
-    await updateReport(selectedReportId.value, {
+    const result = await updateReport(selectedReportId.value, {
       status: resolutionStatus.value,
       resolution_note: resolutionNote.value
     })
+
+    if (!result?.success) {
+      const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to save resolution note'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
+      return
+    }
 
     await loadDetail(selectedReportId.value)
   } finally {
@@ -379,7 +393,7 @@ onUnmounted(() => {
                 :disabled="isSaving || !selectedReportId"
                 color="neutral"
                 variant="solid"
-                class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white"
+                class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white disabled:bg-gray-50!"
                 @click="onSaveResolution"
               >
                 Save note
@@ -389,5 +403,13 @@ onUnmounted(() => {
         </UCard>
       </div>
     </div>
+
+    <!-- Error Modal -->
+    <SharedErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+    />
   </div>
 </template>

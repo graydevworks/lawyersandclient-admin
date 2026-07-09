@@ -4,9 +4,8 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const body = await readBody(event)
-
-    const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reinstate`, {
+    console.log('[API] Reinstating lawyer:', event.context.params?.id)
+    const response = await $fetch(`${apiBase}/admin/lawyers/${event.context.params?.id}/reinstate`, {
       method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -16,8 +15,7 @@ export default defineEventHandler(async (event) => {
         'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
-      },
-      body
+      }
     })
 
     const responseData = response as Record<string, unknown>

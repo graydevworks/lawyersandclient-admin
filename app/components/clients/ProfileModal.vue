@@ -82,7 +82,7 @@ const confirmResetPassword = async () => {
     successButtonText.value = 'Complete'
     showSuccessModal.value = true
   } else {
-    errorMessage.value = displayApiError(result, 'Failed to send password reset link.')
+    errorMessage.value = displayApiError(result.validationMessages[0], 'Failed to send password reset link.')
     showErrorModal.value = true
   }
 }
@@ -104,7 +104,7 @@ const confirmSuspend = async () => {
     showSuccessModal.value = true
     emit('action-complete')
   } else {
-    errorMessage.value = displayApiError(result, 'Failed to suspend account.')
+    errorMessage.value = displayApiError(result.validationMessages[0], 'Failed to suspend account.')
     showErrorModal.value = true
   }
 }
@@ -125,7 +125,7 @@ const confirmReinstate = async () => {
     showSuccessModal.value = true
     emit('action-complete')
   } else {
-    errorMessage.value = displayApiError(result, 'Failed to reinstate account.')
+    errorMessage.value = displayApiError(result.validationMessages[0], 'Failed to reinstate account.')
     showErrorModal.value = true
   }
 }
@@ -275,7 +275,7 @@ const handleSuccessComplete = () => {
     <USelect
       v-model="suspendReason"
       :items="suspendReasons"
-      class="w-full z-[999999]"
+      class="w-full z-999999"
     />
   </SharedConfirmationModal>
 

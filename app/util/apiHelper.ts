@@ -244,3 +244,32 @@ export function extractErrorMessage(error: unknown, fallback = 'Something went w
 
   return fallback
 }
+
+export function getErrorStatusCode(error: unknown, defaultStatus = 500): number {
+  if (error && typeof error === 'object') {
+    const err = error as Record<string, any>
+    const code = err.statusCode || err.status
+    if (typeof code === 'number') {
+      return code
+    }
+    if (typeof code === 'string') {
+      const parsed = parseInt(code, 10)
+      if (!isNaN(parsed)) return parsed
+    }
+
+    // Connection/network/offline or DNS resolution errors
+    const errMessage = String(err.message || '')
+    if (
+      !code
+      && (errMessage.includes('fetch failed')
+        || errMessage.includes('connect')
+        || errMessage.includes('ECONNREFUSED')
+        || errMessage.includes('network')
+        || errMessage.includes('unreachable')
+        || errMessage.includes('ENOTFOUND'))
+    ) {
+      return 503 // Service Unavailable
+    }
+  }
+  return defaultStatus
+}

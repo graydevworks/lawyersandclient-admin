@@ -24,6 +24,9 @@ type Lawyer = {
   bio?: string
   practiceAreas?: string[]
   verificationStatus?: string
+  joinedAt?: string
+  lastActiveAt?: string
+  isAvailable?: boolean
   activity?: {
     totalChats?: number
     reportsFiled?: number
@@ -152,6 +155,8 @@ const loadLawyer = async () => {
         profile_photo_url?: string
         verification_status?: string
         work_experiences?: Lawyer['workExperience']
+        joined_at?: string
+        last_active_at?: string
       }
 
       if (!d.full_name) return
@@ -165,6 +170,7 @@ const loadLawyer = async () => {
         rating: d.average_rating,
         experience: d.years_of_experience,
         status: d.status,
+        isAvailable: d.is_available,
         languages: ['English'],
         bio: d.bio,
         practiceAreas: d.practice_areas && d.practice_areas.length ? d.practice_areas.map((pa: { name?: string }) => pa.name) : ['N/A'],
@@ -174,7 +180,9 @@ const loadLawyer = async () => {
         banner: d.banner_photo_url,
         profilePicture: d.profile_photo_url,
         verificationStatus: d.verification_status,
-        workExperience: d.work_experiences
+        workExperience: d.work_experiences,
+        joinedAt: d.joined_at ? formatRelativeDate(d.joined_at) : 'N/A',
+        lastActiveAt: d.last_active_at ? formatRelativeDate(d.last_active_at) : 'N/A'
       }
 
       console.log(lawyer.value)
@@ -199,6 +207,12 @@ watch(
 
 const handleResetPassword = async () => {
   isMutating.value = true
+  // Reset all modal states
+  isResetSuccessOpen.value = false
+  isSuspendSuccessOpen.value = false
+  isReinstateSuccessOpen.value = false
+  isDeleteSuccessOpen.value = false
+
   try {
     const result = await resetLawyerPassword(id)
     if (result.success) {
@@ -219,13 +233,19 @@ const handleSuspend = async () => {
   if (!suspendReason.value.trim()) return
 
   isMutating.value = true
+  // Reset all modal states
+  isSuspendSuccessOpen.value = false
+  isReinstateSuccessOpen.value = false
+  isResetSuccessOpen.value = false
+  isDeleteSuccessOpen.value = false
+
   try {
     const res = await suspendLawyer(id, suspendReason.value.trim())
     if (res?.success) {
       isSuspendDialogOpen.value = false
       suspendReason.value = ''
-      isSuspended.value = true
-      lawyer.value.status = 'Suspended'
+      // Refetch lawyer data to get updated status
+      await loadLawyer()
       isSuspendSuccessOpen.value = true
     } else {
       const errorMessage = (res as any).validationMessages?.[0] || (res as any).error || 'Failed to suspend account'
@@ -240,11 +260,18 @@ const handleSuspend = async () => {
 
 const handleReinstate = async () => {
   isMutating.value = true
+  // Reset all modal states
+  isReinstateSuccessOpen.value = false
+  isSuspendSuccessOpen.value = false
+  isResetSuccessOpen.value = false
+  isDeleteSuccessOpen.value = false
+
   try {
     const res = await reinstateLawyer(id)
     if (res?.success) {
       isReinstateConfirmOpen.value = false
-      isSuspended.value = false
+      // Refetch lawyer data to get updated status
+      await loadLawyer()
       isReinstateSuccessOpen.value = true
     } else {
       const errorMessage = (res as any).validationMessages?.[0] || (res as any).error || 'Failed to reinstate account'
@@ -259,6 +286,12 @@ const handleReinstate = async () => {
 
 const handleDelete = async () => {
   isMutating.value = true
+  // Reset all modal states
+  isDeleteSuccessOpen.value = false
+  isResetSuccessOpen.value = false
+  isSuspendSuccessOpen.value = false
+  isReinstateSuccessOpen.value = false
+
   try {
     const res = await deleteLawyer(id)
     if (res?.success) {
@@ -490,19 +523,23 @@ const openInNewTab = () => {
           class="overflow-hidden rounded-[16px] border-0 ring-0 shadow-none"
           :ui="{ body: 'p-0!' }"
         >
-          <div class="h-48 w-full relative">
+          <div class="h-48 w-full relative" v-if="lawyer.banner">
             <img
-              :src="lawyer.banner || 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=2070&auto=format&fit=crop'"
+              :src="lawyer.banner || 'https://.cc?q=80&w=2070&auto=format&fit=crop&u='+lawyer.name"
               class="w-full h-full object-cover"
               alt="Banner"
             >
+            <div class="absolute inset-0 bg-black/20" />
+          </div>
+          <div class="h-48 w-full relative flex justify-center items-center" v-else>
+            <p>{{ lawyer.name }}</p>
             <div class="absolute inset-0 bg-black/20" />
           </div>
 
           <div class="px-2 md:px-8 pb-8 -mt-2 md:-mt-12 relative">
             <div class="flex items-end gap-6 mb-6">
               <UAvatar
-                :src="lawyer.profilePicture || 'https://i.pravatar.cc/150?u=1'"
+                :src="lawyer.profilePicture || 'https://.cc/150?name='+lawyer.name"
                 size="3xl"
                 class="size-20 md:size-32 rounded-full border-4 border-white shadow-md"
               />
@@ -522,8 +559,9 @@ const openInNewTab = () => {
                   color="success"
                   variant="subtle"
                   class="rounded-full px-3 py-1 text-xs font-medium"
+                  :class="{ 'bg-green-500/10 text-green-500': lawyer.isAvailable, 'bg-gray-200 text-black': !lawyer.isAvailable }"
                 >
-                  {{ lawyer.isAvailable ? 'Active' : 'Inactive' }}
+                  {{ lawyer.isAvailable ? 'Available' : 'Unavailable' }}
                 </UBadge>
               </div>
             </div>
@@ -774,6 +812,36 @@ const openInNewTab = () => {
                       class="px-3 py-1 bg-gray-50 text-[12px] font-medium text-gray-600 rounded-full border border-gray-100"
                     >
                       {{ lang }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] text-gray-500">Last Active</span>
+                  <div class="flex gap-2">
+                    <span
+                      class="text-[12px] font-medium text-gray-600 rounded-full border border-gray-100"
+                    >
+                      {{ lawyer.lastActiveAt }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] text-gray-500">Joined In</span>
+                  <div class="flex gap-2">
+                    <span
+                      class="text-[12px] font-medium text-gray-600 rounded-full border border-gray-100"
+                    >
+                      {{ lawyer.joinedAt }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] text-gray-500">Status</span>
+                  <div class="flex gap-2">
+                    <span
+                      class="text-[12px] font-medium text-gray-600 rounded-full border border-gray-100"
+                    >
+                      {{ lawyer.verificationStatus }}
                     </span>
                   </div>
                 </div>

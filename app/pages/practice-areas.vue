@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
+import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -147,6 +148,11 @@ const isToggleConfirmOpen = ref(false)
 const toggleItemId = ref<number | null>(null)
 const toggleItemState = ref(false)
 
+// Error modal state
+const showErrorModal = ref(false)
+const errorModalTitle = ref('Error')
+const errorModalDescription = ref('')
+
 const handleSavePracticeArea = async (name: string) => {
   console.log('[Practice Area] New area:', name)
   const result = await createPracticeArea({ name })
@@ -155,6 +161,11 @@ const handleSavePracticeArea = async (name: string) => {
     isAddModalOpen.value = false
     isSuccessModalOpen.value = true
     await fetchPracticeAreas(currentPage.value)
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to create practice area'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -174,6 +185,11 @@ const confirmDelete = async () => {
     isDeleteConfirmOpen.value = false
     deleteItemId.value = null
     await fetchPracticeAreas(currentPage.value)
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to delete practice area'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
   }
 }
 
@@ -197,6 +213,12 @@ const confirmToggle = async () => {
     isToggleConfirmOpen.value = false
     toggleItemId.value = null
     await fetchPracticeAreas(currentPage.value)
+  } else {
+    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to toggle practice area status'
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
+    closeToggleConfirm()
   }
 }
 
@@ -555,5 +577,13 @@ const goToPage = (page: number) => {
         </UCard>
       </template>
     </UModal>
+
+    <!-- Error Modal -->
+    <SharedErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
+      button-text="Dismiss"
+    />
   </div>
 </template>

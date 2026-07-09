@@ -39,6 +39,7 @@ export const useTwoFactor = () => {
       const data = await $fetch('/api/2fa/verify/disable', { method: 'POST', body: formData })
       return { success: true, data }
     } catch (error: unknown) {
+      console.log(error, '=>>')
       return { success: false, ...resolveApiError(error, 'Failed to disable 2FA') }
     } finally {
       loading.value = false

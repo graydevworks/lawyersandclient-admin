@@ -5,6 +5,8 @@
 @theme static {
   --font-sans: 'Figtree', sans-serif;
 
+  --color-primary: #003357;
+
   --color-green-50: #EFFDF5;
   --color-green-100: #D9FBE8;
   --color-green-200: #B3F5D1;

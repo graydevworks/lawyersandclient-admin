@@ -323,6 +323,7 @@ onMounted(() => {
                 label-key="label"
                 placeholder="Filter status"
                 class="rounded-[36px] h-full text-[14px] py-[10px] ring-[0.5px]"
+                :content="{ class: 'z-[999999]! important', strategy: 'fixed' }"
               />
             </div>
           </div>

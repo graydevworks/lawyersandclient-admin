@@ -234,6 +234,7 @@ const confirmApprove = async () => {
   if (!selectedSubmission.value) return
   showApproveConfirm.value = false
   const result = await approveVerification(selectedSubmission.value.id)
+  console.log('[Verification] Approve result:', result)
   if (result.success) {
     successTitle.value = 'Verification approved'
     successDescription.value = `${selectedSubmission.value.name}'s account has been verified successfully.`
@@ -241,10 +242,10 @@ const confirmApprove = async () => {
     // Silent refetch
     fetchQueue()
   } else {
-    const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to approve verification'
+    const errorMessage = (result as any).validationMessages?.[1] + '(' + (result as any).validationMessages?.[0] + ')' || (result as any).error || 'Failed to approve verification'
+    showErrorModal.value = true
     errorModalTitle.value = 'Error'
     errorModalDescription.value = String(errorMessage)
-    showErrorModal.value = true
   }
 }
 
@@ -990,11 +991,12 @@ onMounted(() => start())
     </SharedBaseModal>
 
     <!-- Error Modal -->
-    <ErrorModal
+    <SharedErrorModal
       v-model="showErrorModal"
       :title="errorModalTitle"
       :description="errorModalDescription"
       button-text="Dismiss"
+      @complete="showErrorModal = false"
     />
 
     <!-- Success Modal (always on top) -->

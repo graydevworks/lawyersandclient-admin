@@ -196,8 +196,8 @@ const fetchCases = async (page: number = currentPage.value) => {
   listError.value = ''
 
   const params: Record<string, string | number | undefined> = {
-    from: fromDate.value || undefined,
-    to: toDate.value || undefined,
+    date_from: fromDate.value || undefined,
+    date_to: toDate.value || undefined,
     page,
     per_page: perPage.value
   }

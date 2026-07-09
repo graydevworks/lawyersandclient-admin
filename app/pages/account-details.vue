@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { adminSchema, adminUpdateSchema } from '~/schemas/adminSchema'
 import type { AdminFormData } from '~/schemas/adminSchema'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import SuccessModal from '~/components/shared/SuccessModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -196,7 +197,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-12 px-4">
+  <div class="min-h-screen py-12 px-4">
     <ErrorModal
       v-model="showErrorModal"
       :title="errorModalTitle"
@@ -207,7 +208,7 @@ const handleSubmit = async () => {
     <div class="max-w-2xl mx-auto">
       <NuxtLink
         to="/settings"
-        class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors font-medium"
+        class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors font-medium border border-[#D8D8D8] px-4 py-1 rounded-full"
       >
         <UIcon
           name="i-lucide-arrow-left"
@@ -217,15 +218,15 @@ const handleSubmit = async () => {
       </NuxtLink>
 
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          {{ isEditMode ? 'Edit admin account' : 'Create admin account' }}
+        <h1 class="text-[28px] font-medium text-black">
+          {{ isEditMode ? 'Account details' : 'Account details' }}
         </h1>
-        <p class="text-sm text-gray-500 font-medium">
-          {{ isEditMode ? 'Update admin account details' : 'Basic information for the new admin account' }}
+        <p class="text-[16px] text-[#919191] font-medium">
+          {{ isEditMode ? 'Basic information for the admin account' : 'Basic information for the new admin account' }}
         </p>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div class="rounded-2xl p-8">
         <div v-if="isEditMode && isLoadingAdmin" class="space-y-6">
           <USkeleton class="h-10 w-full rounded-xl" />
           <USkeleton class="h-10 w-full rounded-xl" />
@@ -241,9 +242,9 @@ const handleSubmit = async () => {
           @submit.prevent="handleSubmit"
         >
           <UFormField
-            label="Name"
+            label="Full Name"
             name="name"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :ui="{ label: 'text-[#A8A8A8] font-semibold text-sm block' }"
             :error="formErrors.name"
           >
             <UInput
@@ -253,7 +254,7 @@ const handleSubmit = async () => {
               class="w-full"
               icon="i-lucide-user"
               :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px]',
                 placeholder: 'text-gray-400'
               }"
             />
@@ -262,7 +263,7 @@ const handleSubmit = async () => {
           <UFormField
             label="Email address"
             name="email"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :ui="{ label: 'text-[#A8A8A8] font-semibold text-sm block' }"
             :error="formErrors.email"
           >
             <UInput
@@ -273,7 +274,7 @@ const handleSubmit = async () => {
               icon="i-lucide-mail"
               :disabled="isEditMode"
               :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
               }"
             />
@@ -282,18 +283,18 @@ const handleSubmit = async () => {
           <UFormField
             label="Role"
             name="role"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :ui="{ label: 'text-[#A8A8A8] font-semibold text-sm block' }"
             :error="formErrors.role"
           >
-            <USelectMenu
+            <USelect
               v-model="formData.role"
-              :options="roles"
+              :items="roles"
               option-attribute="value"
               size="lg"
               class="w-full"
               icon="i-lucide-shield"
               :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
               }"
             />
@@ -302,7 +303,7 @@ const handleSubmit = async () => {
           <UFormField
             label="Password"
             name="password"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :ui="{ label: 'text-[#A8A8A8] font-semibold text-sm block' }"
             :error="formErrors.password"
           >
             <UInput
@@ -313,7 +314,7 @@ const handleSubmit = async () => {
               class="w-full"
               icon="i-lucide-lock"
               :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
               }"
             />
@@ -325,7 +326,7 @@ const handleSubmit = async () => {
           <UFormField
             label="Confirm Password"
             name="password_confirmation"
-            :ui="{ label: 'text-gray-700 font-semibold text-sm mb-2 block' }"
+            :ui="{ label: 'text-[#A8A8A8] font-semibold text-sm block' }"
             :error="formErrors.password_confirmation"
           >
             <UInput
@@ -336,7 +337,7 @@ const handleSubmit = async () => {
               class="w-full"
               icon="i-lucide-lock"
               :ui="{
-                base: 'rounded-xl border-gray-200 shadow-sm focus:ring-2 focus:ring-[#003357] focus:border-transparent transition-all duration-200',
+                base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
               }"
             />

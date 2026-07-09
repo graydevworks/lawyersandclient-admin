@@ -1,3 +1,5 @@
+import { extractErrorMessage, getErrorStatusCode } from "~/util/apiHelper"
+
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
   const auth_token = getCookie(event, 'auth_token')
@@ -30,6 +32,20 @@ export default defineEventHandler(async (event) => {
       data: response
     }
   } catch (error) {
-    throwApiError(error, 'Failed to disable 2FA')
+
+    const statusCode = getErrorStatusCode(error, 400)
+    const message = extractErrorMessage(error, 'Failed to disable 2FA')
+
+    console.log({ statusCode, message })
+
+    throwApiError({
+      status: statusCode,
+      message: message
+    }, 'Failed to disable 2FA')
+
+    // return {
+    //   status: statusCode,
+    //   message: message
+    // }
   }
 })

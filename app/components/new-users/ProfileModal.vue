@@ -182,7 +182,7 @@ const handleSuccessComplete = () => {
             <UBadge
               :color="statusBadgeColor"
               variant="subtle"
-              class="rounded-full px-3 py-0.5 font-bold text-[12px]"
+              class="rounded-full px-3 py-0.5 font-bold text-[12px] capitalize py-1.5"
             >
               {{ user.status }}
             </UBadge>

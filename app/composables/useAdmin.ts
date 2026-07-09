@@ -66,8 +66,7 @@ export const useAdmin = () => {
   const getAdminAccounts = async (params: AdminQuery = {}) => {
     loading.value = true
     try {
-      const data = await $fetch('/api/admin/accounts', { query: params })
-      console.log('[useAdmin] getAdminAccounts response:', data)
+      const data = await $fetch('/api/admin', { query: params })
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to load admin accounts.') }
@@ -94,7 +93,7 @@ export const useAdmin = () => {
   const updateAdminAccount = async (id: number, formData: FormData) => {
     updating.value = true
     try {
-      const data = await $fetch(`/api/admin/${id}`, { method: 'put', body: formData })
+      const data = await $fetch(`/api/admin/${id}`, { method: 'PUT', body: formData })
       console.log('[useAdmin] updateAdminAccount response:', data)
       return { success: true, data }
     } catch (error) {
