@@ -787,7 +787,10 @@ onMounted(() => {
                 </button>
 
                 <div class="px-2 py-4">
-                  <button class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors" @click="logout">
+                  <button
+                    class="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+                    @click="logout"
+                  >
                     <UIcon
                       name="i-lucide-log-out"
                       class="w-5 h-5"
@@ -1494,7 +1497,7 @@ onMounted(() => {
                 icon="i-lucide-plus"
                 color="primary"
                 class="bg-[#003357] h-[34px] text-[12px] hover:bg-[#002244] rounded-[8px]"
-                :ui="{leadingIcon: 'size-[14px]'}"
+                :ui="{ leadingIcon: 'size-[14px]' }"
                 @click="navigateTo('/account-details')"
               >
                 Create admin
@@ -1534,13 +1537,20 @@ onMounted(() => {
                     <p class="text-[12px] text-gray-400">
                       {{ admin.email }}
                     </p>
+                    <UBadge
+                      :color="admin.color"
+                      variant="subtle"
+                      class="rounded-full px-3 py-1 font-medium block md:hidden capitalize mt-1.5 text-[13px]"
+                    >
+                      {{ admin.role }}
+                    </UBadge>
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
                   <UBadge
                     :color="admin.color"
                     variant="subtle"
-                    class="rounded-full px-3 py-1.5 font-medium hidden sm:block capitalize"
+                    class="rounded-full px-3 py-1.5 font-medium hidden md:block capitalize"
                   >
                     {{ admin.role }}
                   </UBadge>
