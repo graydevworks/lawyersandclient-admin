@@ -3,10 +3,12 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
 import { displayApiError } from '~/util/apiHelper'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import { useSearch } from '~/composables/useSearch'
 
 definePageMeta({ middleware: 'auth' })
 
 const { getTickets, getTicket, updateTicket, addResolutionNote, getTicketStats } = useTickets()
+const { debounceSearch, cancelDebounce } = useSearch()
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
@@ -22,6 +24,8 @@ const submissions = ref<TicketListItem[]>([])
 
 const selectedTicketId = ref<number | string | null>(null)
 const selectedTicket = ref<Record<string, any> | null>(null)
+const ticketDetailsRef = ref<HTMLElement | null>(null)
+const ticketListRef = ref<HTMLElement | null>(null)
 
 const activeTab = ref<'all' | TicketStatus>('all')
 
@@ -36,6 +40,7 @@ const tabs = [
 const searchQuery = ref('')
 const isFetching = ref(false)
 const listError = ref('')
+const isSearchError = ref(false)
 
 const ticketStatus = ref<TicketStatus>('open')
 const resolutionNote = ref('')
@@ -100,15 +105,16 @@ const loadDetail = async (id: number | string) => {
   const result = await getTicket(id)
 
   const payload = (result as any)?.data?.data ?? (result as any)?.data
+  console.log(payload)
   if ((result as any)?.success && payload) {
-    selectedTicket.value = payload.data.ticket ?? payload.data ?? payload
-
+    selectedTicket.value = payload.ticket ?? payload.data ?? payload
+    console.log('hey')
     const s = selectedTicket.value.status
     if (s === 'open' || s === 'in_progress' || s === 'resolved' || s === 'closed') {
       ticketStatus.value = s
     }
 
-    resolutionNote.value = ''
+    resolutionNote.value = selectedTicket.value.resolution_note || ''
 
     // Load images if available
     if (selectedTicket.value.images && Array.isArray(selectedTicket.value.images)) {
@@ -153,7 +159,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
     })
 
     if (!result?.success) {
-      const errorResult = result as { error?: unknown; validationMessages?: string[] } | null | undefined
+      const errorResult = result as { error?: unknown, validationMessages?: string[] } | null | undefined
       listError.value = result.validationMessages[0]
       if (!append) {
         submissions.value = []
@@ -176,7 +182,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
     const tickets = Array.isArray(dataFromApi) ? dataFromApi : (dataFromApi?.tickets ?? [])
 
     const mapped: TicketListItem[] = tickets.map((ticket: Record<string, unknown>) => {
-      const reporter = ticket.reporter as Record<string, unknown> | undefined
+      const reporter = ticket.submitted_by as Record<string, unknown> | undefined
       const reporterName = typeof reporter?.name === 'string' ? reporter.name : undefined
 
       return {
@@ -207,13 +213,14 @@ const setupInfiniteScroll = () => {
   if (!sentinelEl.value) return
   observer?.disconnect()
 
+  const rootElement = ticketListRef.value || null
   observer = new IntersectionObserver(async (entries) => {
     const [entry] = entries
     if (entry?.isIntersecting && hasMore.value && !isFetching.value) {
       meta.value.current_page += 1
       await fetchList({ append: true })
     }
-  }, { root: null, threshold: 0.1 })
+  }, { root: rootElement, threshold: 0.1 })
 
   observer.observe(sentinelEl.value)
 }
@@ -221,6 +228,12 @@ const setupInfiniteScroll = () => {
 const onSelectTicket = async (id: number | string) => {
   selectedTicketId.value = id
   await loadDetail(id)
+
+  // Auto-scroll to ticket details on mobile
+  if (ticketDetailsRef.value && typeof window !== 'undefined' && window.innerWidth < 1024) {
+    await nextTick()
+    ticketDetailsRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 const onSaveResolution = async () => {
@@ -321,14 +334,28 @@ const getAttachmentIcon = (type: string) => {
   return 'i-lucide-file'
 }
 
-watch([activeTab, searchQuery], async () => {
+// Watch for tab changes - immediate execution
+watch(activeTab, async () => {
+  isSearchError.value = false
   resetListState()
   await fetchList({ append: false })
   await nextTick()
   setupInfiniteScroll()
 })
 
+// Watch for search query changes - debounced execution
+watch(searchQuery, async () => {
+  isSearchError.value = true
+  await debounceSearch(async () => {
+    resetListState()
+    await fetchList({ append: false })
+    await nextTick()
+    setupInfiniteScroll()
+  }, 350)
+})
+
 onMounted(async () => {
+  isSearchError.value = false
   await loadStats()
   await fetchList({ append: false })
   await nextTick()
@@ -336,6 +363,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  cancelDebounce()
   observer?.disconnect()
 })
 </script>
@@ -355,324 +383,398 @@ onUnmounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <UCard class="border-0 ring-0">
         <div class="space-y-1">
-          <p class="text-xs font-medium text-gray-500">Total Tickets</p>
-          <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
+          <p class="text-xs font-medium text-gray-500">
+            Total Tickets
+          </p>
+          <p class="text-2xl font-bold text-gray-900">
+            {{ stats.total }}
+          </p>
         </div>
       </UCard>
       <UCard class="border-0 ring-0">
         <div class="space-y-1">
-          <p class="text-xs font-medium text-gray-500">Open</p>
-          <p class="text-2xl font-bold text-blue-600">{{ stats.open }}</p>
+          <p class="text-xs font-medium text-gray-500">
+            Open
+          </p>
+          <p class="text-2xl font-bold text-blue-600">
+            {{ stats.open }}
+          </p>
         </div>
       </UCard>
       <UCard class="border-0 ring-0">
         <div class="space-y-1">
-          <p class="text-xs font-medium text-gray-500">In Progress</p>
-          <p class="text-2xl font-bold text-yellow-600">{{ stats.in_progress }}</p>
+          <p class="text-xs font-medium text-gray-500">
+            In Progress
+          </p>
+          <p class="text-2xl font-bold text-yellow-600">
+            {{ stats.in_progress }}
+          </p>
         </div>
       </UCard>
       <UCard class="border-0 ring-0">
         <div class="space-y-1">
-          <p class="text-xs font-medium text-gray-500">Resolved</p>
-          <p class="text-2xl font-bold text-green-600">{{ stats.resolved }}</p>
+          <p class="text-xs font-medium text-gray-500">
+            Resolved
+          </p>
+          <p class="text-2xl font-bold text-green-600">
+            {{ stats.resolved }}
+          </p>
         </div>
       </UCard>
       <UCard class="border-0 ring-0">
         <div class="space-y-1">
-          <p class="text-xs font-medium text-gray-500">Closed</p>
-          <p class="text-2xl font-bold text-gray-600">{{ stats.closed }}</p>
+          <p class="text-xs font-medium text-gray-500">
+            Closed
+          </p>
+          <p class="text-2xl font-bold text-gray-600">
+            {{ stats.closed }}
+          </p>
         </div>
       </UCard>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-6 items-start">
-      <UCard class="lg:w-[400px] flex-shrink-0" :ui="{body: 'p-0!'}">
-        <div class="p-4 sm:p-4">
-          <h2 class="font-medium text-gray-900 text-lg mb-4">
-            Submissions
-          </h2>
+    <div class="flex flex-col lg:flex-row gap-6 items-start lg:max-h-[calc(90dvh)]">
+      <div
+        ref="ticketListRef"
+        class="w-full lg:w-[400px] max-h-[600px] lg:max-h-[80dvh] overflow-y-auto"
+      >
+        <UCard :ui="{ body: 'p-0! w-full' }">
+          <div class="p-4 sm:p-4 w-full">
+            <h2 class="font-medium text-gray-900 text-lg mb-4">
+              Submissions
+            </h2>
 
-          <UInput
-            v-model="searchQuery"
-            icon="i-lucide-search"
-            placeholder="Search tickets..."
-            class="mb-6 w-full"
-            :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
-          />
-
-          <div
-            v-if="listError"
-            class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ listError }}
-          </div>
-
-          <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2 overflow-x-auto">
-            <button
-              v-for="t in tabs"
-              :key="t.value"
-              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
-              :class="activeTab === t.value ? 'bg-[#EFF6FF] text-[#003357] border-b-0 border-[#013355]!' : 'text-gray-500 hover:text-gray-900'"
-              @click="activeTab = t.value"
-            >
-              {{ t.label }}
-            </button>
-          </div>
-
-          <div class="space-y-1 -mx-4">
-            <SharedEmptyState
-              v-if="submissions.length === 0 && !isFetching"
-              icon="i-lucide-file-text"
-              title="No tickets"
-              description="There are no tickets to show for the current filter."
-              action-label="Refresh"
-              @action="fetchList({ append: false })"
+            <UInput
+              v-model="searchQuery"
+              icon="i-lucide-search"
+              placeholder="Search tickets..."
+              class="mb-6 w-full"
+              :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
             />
-            <template v-else-if="submissions.length === 0 && isFetching">
-              <div
-                v-for="i in 5"
-                :key="i"
-                class="w-full text-left p-4 border-l-2 border-transparent bg-white rounded-md"
+
+            <div
+              v-if="listError && !isSearchError"
+              class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {{ listError }}
+            </div>
+
+            <div class="inline-block sm:flex flex-nowrap w-full overflow-x-auto mb-4 border-b border-gray-100 pb-2">
+              <button
+                v-for="t in tabs"
+                :key="t.value"
+                class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors text-nowrap"
+                :class="activeTab === t.value ? 'bg-[#EFF6FF] text-[#003357] border-b-0 border-[#013355]!' : 'text-gray-500 hover:text-gray-900'"
+                @click="activeTab = t.value"
               >
-                <div class="space-y-3">
-                  <USkeleton class="h-4 w-4/5" />
-                  <USkeleton class="h-3 w-2/3" />
-                  <USkeleton class="h-3 w-1/2" />
+                {{ t.label }}
+              </button>
+            </div>
+
+            <div class="space-y-1 -mx-4">
+              <SharedEmptyState
+                v-if="submissions.length === 0 && !isFetching"
+                icon="i-lucide-file-text"
+                title="No tickets"
+                description="There are no tickets to show for the current filter."
+                action-label="Refresh"
+                @action="fetchList({ append: false })"
+              />
+              <template v-else-if="submissions.length === 0 && isFetching">
+                <div
+                  v-for="i in 5"
+                  :key="i"
+                  class="w-full text-left p-4 border-l-2 border-transparent bg-white rounded-md"
+                >
+                  <div class="space-y-3">
+                    <USkeleton class="h-4 w-4/5" />
+                    <USkeleton class="h-3 w-2/3" />
+                    <USkeleton class="h-3 w-1/2" />
+                  </div>
+                </div>
+              </template>
+
+              <button
+                v-for="sub in submissions"
+                v-else
+                :key="sub.id"
+                class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
+                :class="sub.id === selectedTicketId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
+                @click="onSelectTicket(sub.id)"
+              >
+                <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
+                  {{ sub.subject }}
+                </h3>
+                <p class="text-xs text-gray-500 mt-1 line-clamp-1">
+                  Reported by {{ sub.reporter }}
+                </p>
+                <p class="text-xs text-gray-400 mt-2">
+                  {{ sub.time }}
+                </p>
+              </button>
+            </div>
+
+            <div
+              ref="sentinelEl"
+              class="h-1"
+            />
+            <div
+              v-if="isFetching && submissions.length > 0"
+              class="py-3 flex justify-center"
+            >
+              <div class="flex flex-col items-center gap-2 text-xs text-gray-500">
+                <div class="flex items-center gap-2">
+                  <UIcon
+                    name="i-lucide-loader"
+                    class="animate-spin"
+                  />
+                  <span>Loading…</span>
                 </div>
               </div>
-            </template>
-
-            <button
-              v-for="sub in submissions"
-              v-else
-              :key="sub.id"
-              class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-              :class="sub.id === selectedTicketId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-              @click="onSelectTicket(sub.id)"
-            >
-              <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
-                {{ sub.subject }}
-              </h3>
-              <p class="text-xs text-gray-500 mt-1 line-clamp-1">
-                Reported by {{ sub.reporter }}
-              </p>
-              <p class="text-xs text-gray-400 mt-2">
-                {{ sub.time }}
-              </p>
-            </button>
-          </div>
-
-          <div ref="sentinelEl" class="h-1" />
-          <div v-if="isFetching && submissions.length > 0" class="py-3 flex justify-center">
-            <div class="flex flex-col items-center gap-2 text-xs text-gray-500">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-loader" class="animate-spin" />
-                <span>Loading…</span>
-              </div>
             </div>
+            <div
+              v-else-if="hasMore"
+              class="py-3 h-6"
+            />
           </div>
-          <div v-else-if="hasMore" class="py-3 h-6" />
-        </div>
-      </UCard>
+        </UCard>
+      </div>
 
       <div class="flex-1 w-full space-y-6">
         <UCard class="w-full lg:sticky lg:top-6 self-start">
-          <div v-if="selectedTicket" class="pb-6 border-b border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900">
-              {{ selectedTicket.subject || 'Select a ticket' }}
-            </h2>
-            <p class="text-sm text-gray-500 mt-1">
-              {{ selectedTicket.id ? `TKT-${selectedTicket.id}` : '' }}
-            </p>
-          </div>
+          <div ref="ticketDetailsRef">
+            <div
+              v-if="selectedTicket"
+              class="pb-6 border-b border-gray-100"
+            >
+              <h2 class="text-xl font-bold text-gray-900">
+                {{ selectedTicket.subject || 'Select a ticket' }}
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">
+                {{ selectedTicket.id ? `TKT-${selectedTicket.id}` : '' }}
+              </p>
+            </div>
 
-          <div v-if="selectedTicket" class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100">
-            <div class="space-y-4">
-              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Reporter
-              </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.name || selectedTicket.reporter?.name || '—' }}</span>
+            <div
+              v-if="selectedTicket"
+              class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100"
+            >
+              <div class="space-y-4">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Reporter
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Name</span>
+                    <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.name || selectedTicket.reporter?.name || '—' }}</span>
+                  </div>
+                  <div
+                    v-if="selectedTicket.submitted_by?.email || selectedTicket.reporter?.email"
+                    class="flex justify-between items-center text-sm"
+                  >
+                    <span class="text-gray-500">Email</span>
+                    <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.email || selectedTicket.reporter?.email }}</span>
+                  </div>
+                  <div
+                    v-if="selectedTicket.submitted_by?.role"
+                    class="flex justify-between items-center text-sm"
+                  >
+                    <span class="text-gray-500">Role</span>
+                    <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.submitted_by?.role }}</span>
+                  </div>
                 </div>
-                <div v-if="selectedTicket.submitted_by?.email || selectedTicket.reporter?.email" class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Email</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.email || selectedTicket.reporter?.email }}</span>
-                </div>
-                <div v-if="selectedTicket.submitted_by?.role" class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Role</span>
-                  <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.submitted_by?.role }}</span>
+              </div>
+
+              <div class="space-y-4">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Ticket Info
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Status</span>
+                    <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.status || '—' }}</span>
+                  </div>
+                  <div
+                    v-if="selectedTicket.assigned_to"
+                    class="flex justify-between items-center text-sm"
+                  >
+                    <span class="text-gray-500">Assigned To</span>
+                    <span class="font-medium text-gray-900">{{ selectedTicket.assigned_to.name }}</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Submitted</span>
+                    <span class="font-medium text-gray-900">{{ selectedTicket.created_at ? formatRelativeDate(selectedTicket.created_at) : '—' }}</span>
+                  </div>
+                  <div
+                    v-if="selectedTicket.updated_at"
+                    class="flex justify-between items-center text-sm"
+                  >
+                    <span class="text-gray-500">Last Updated</span>
+                    <span class="font-medium text-gray-900">{{ formatRelativeDate(selectedTicket.updated_at) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-4">
+            <div
+              v-if="selectedTicket"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Ticket Info
+                Description
               </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Status</span>
-                  <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.status || '—' }}</span>
-                </div>
-                <div v-if="selectedTicket.assigned_to" class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Assigned To</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.assigned_to.name }}</span>
-                </div>
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Submitted</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.created_at ? formatRelativeDate(selectedTicket.created_at) : '—' }}</span>
-                </div>
-                <div v-if="selectedTicket.updated_at" class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Last Updated</span>
-                  <span class="font-medium text-gray-900">{{ formatRelativeDate(selectedTicket.updated_at) }}</span>
-                </div>
-              </div>
+              <p class="text-sm font-medium text-gray-900 leading-relaxed">
+                {{ selectedTicket.message || selectedTicket.description || '—' }}
+              </p>
             </div>
-          </div>
 
-          <div v-if="selectedTicket" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Description
-            </h3>
-            <p class="text-sm font-medium text-gray-900 leading-relaxed">
-              {{ selectedTicket.message || selectedTicket.description || '—' }}
-            </p>
-          </div>
-
-          <!-- Attachment Section -->
-          <div v-if="selectedTicket?.attachment_url" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Attachment
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div
-                class="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
-                @click="openAttachmentPreview(selectedTicket.attachment_url)"
-              >
-                <img
-                  v-if="isImageAttachment(selectedTicket.attachment_url)"
-                  :src="selectedTicket.attachment_url"
-                  alt="Attachment"
-                  class="w-full h-full object-cover"
-                />
+            <!-- Attachment Section -->
+            <div
+              v-if="selectedTicket?.attachment_url"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Attachment
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div
-                  v-else
-                  class="w-full h-full flex items-center justify-center bg-gray-50"
+                  class="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                  @click="openAttachmentPreview(selectedTicket.attachment_url)"
                 >
-                  <UIcon
-                    :name="getAttachmentIcon(previewAttachment?.type || 'file')"
-                    class="w-12 h-12 text-gray-400"
-                  />
-                </div>
-                <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <UIcon
-                    name="i-lucide-zoom-in"
-                    class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
-                  />
+                  <img
+                    v-if="isImageAttachment(selectedTicket.attachment_url)"
+                    :src="selectedTicket.attachment_url"
+                    alt="Attachment"
+                    class="w-full h-full object-cover"
+                  >
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center bg-gray-50"
+                  >
+                    <UIcon
+                      :name="getAttachmentIcon(previewAttachment?.type || 'file')"
+                      class="w-12 h-12 text-gray-400"
+                    />
+                  </div>
+                  <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <UIcon
+                      name="i-lucide-zoom-in"
+                      class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Images Section -->
-          <div v-if="ticketImages.length > 0" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Uploaded Images
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Images Section -->
+            <div
+              v-if="ticketImages.length > 0"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Uploaded Images
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div
+                  v-for="(image, index) in ticketImages"
+                  :key="index"
+                  class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                  @click="openImagePreview(image)"
+                >
+                  <img
+                    :src="image.url"
+                    :alt="image.name"
+                    class="w-full h-full object-cover"
+                  >
+                  <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <UIcon
+                      name="i-lucide-zoom-in"
+                      class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="selectedTicket && selectedTicket.resolution_notes && selectedTicket.resolution_notes.length > 0"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Resolution Notes
+              </h3>
+              <div class="space-y-3">
+                <div
+                  v-for="note in selectedTicket.resolution_notes"
+                  :key="note.id"
+                  class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-3"
+                >
+                  <p class="text-gray-900">
+                    {{ note.note }}
+                  </p>
+                  <p class="text-gray-500 mt-1 text-[10px]">
+                    {{ note.created_by?.name || 'System' }} • {{ formatRelativeDate(note.created_at) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-6 space-y-4">
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Update Ticket
+              </h3>
+
               <div
-                v-for="(image, index) in ticketImages"
-                :key="index"
-                class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
-                @click="openImagePreview(image)"
+                v-if="selectedTicket"
+                class="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
-                <img
-                  :src="image.url"
-                  :alt="image.name"
-                  class="w-full h-full object-cover"
-                />
-                <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <UIcon
-                    name="i-lucide-zoom-in"
-                    class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                <div class="w-full col-span-2">
+                  <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
+                  <USelect
+                    v-model="ticketStatus"
+                    :items="[
+                      { label: 'Open', value: 'open' },
+                      { label: 'In Progress', value: 'in_progress' },
+                      { label: 'Resolved', value: 'resolved' },
+                      { label: 'Closed', value: 'closed' }
+                    ]"
+                    class="mt-2 w-full"
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Resolution note</label>
+                  <UTextarea
+                    v-model="resolutionNote"
+                    class="w-full mt-2"
+                    placeholder="Enter resolution note..."
+                    :rows="3"
                   />
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div v-if="selectedTicket && selectedTicket.resolution_notes && selectedTicket.resolution_notes.length > 0" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Resolution Notes
-            </h3>
-            <div class="space-y-3">
-              <div
-                v-for="note in selectedTicket.resolution_notes"
-                :key="note.id"
-                class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-3"
-              >
-                <p class="text-gray-900">{{ note.note }}</p>
-                <p class="text-gray-500 mt-1 text-[10px]">
-                  {{ note.created_by?.name || 'System' }} • {{ formatRelativeDate(note.created_at) }}
-                </p>
+              <div class="flex justify-end gap-2 pt-2">
+                <!-- <UButton
+                  :loading="isSaving"
+                  :disabled="isSaving || !selectedTicketId"
+                  color="neutral"
+                  variant="solid"
+                  class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white disabled:bg-gray-50!"
+                  @click="onAddResolutionNote"
+                >
+                  Add Note
+                </UButton> -->
+                <UButton
+                  :loading="isSaving"
+                  :disabled="isSaving || !selectedTicketId"
+                  color="primary"
+                  variant="solid"
+                  class="shadow-sm"
+                  @click="onSaveResolution"
+                >
+                  Save Changes
+                </UButton>
               </div>
-            </div>
-          </div>
-
-          <div class="pt-6 space-y-4">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Update Ticket
-            </h3>
-
-            <div v-if="selectedTicket" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
-                <USelect
-                  v-model="ticketStatus"
-                  :items="[
-                    { label: 'Open', value: 'open' },
-                    { label: 'In Progress', value: 'in_progress' },
-                    { label: 'Resolved', value: 'resolved' },
-                    { label: 'Closed', value: 'closed' }
-                  ]"
-                  class="mt-2 w-full"
-                />
-              </div>
-
-              <div class="md:col-span-2">
-                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Resolution note</label>
-                <UTextarea
-                  v-model="resolutionNote"
-                  class="w-full mt-2"
-                  placeholder="Enter resolution note..."
-                  :rows="3"
-                />
-              </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-              <UButton
-                :loading="isSaving"
-                :disabled="isSaving || !selectedTicketId"
-                color="neutral"
-                variant="solid"
-                class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white disabled:bg-gray-50!"
-                @click="onAddResolutionNote"
-              >
-                Add Note
-              </UButton>
-              <UButton
-                :loading="isSaving"
-                :disabled="isSaving || !selectedTicketId"
-                color="primary"
-                variant="solid"
-                class="shadow-sm"
-                @click="onSaveResolution"
-              >
-                Save Changes
-              </UButton>
             </div>
           </div>
         </UCard>
@@ -695,7 +797,7 @@ onUnmounted(() => {
             :src="previewImage.url"
             :alt="previewImage.name"
             class="max-w-full max-h-[500px] object-contain"
-          />
+          >
         </div>
 
         <!-- Action Buttons -->
@@ -739,7 +841,7 @@ onUnmounted(() => {
             :src="previewAttachment.url"
             :alt="previewAttachment.name"
             class="max-w-full max-h-[500px] object-contain"
-          />
+          >
           <div
             v-else
             class="flex flex-col items-center justify-center py-16 px-4"

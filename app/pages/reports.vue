@@ -3,10 +3,12 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
 import { displayApiError } from '~/util/apiHelper'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import { useSearch } from '~/composables/useSearch'
 
 definePageMeta({ middleware: 'auth' })
 
 const { getReports, getReport, updateReport } = useReports()
+const { debounceSearch, cancelDebounce } = useSearch()
 
 type ReportStatus = 'pending' | 'reviewed' | 'resolved'
 
@@ -21,6 +23,7 @@ type ReportListItem = {
 const submissions = ref<ReportListItem[]>([])
 
 const selectedReportId = ref<number | string | null>(null)
+const selectedReportImage = ref('')
 const selectedReport = ref<Record<string, any> | null>(null)
 
 const activeTab = ref<'all' | ReportStatus>('all')
@@ -35,13 +38,14 @@ const tabs = [
 const searchQuery = ref('')
 const isFetching = ref(false)
 const listError = ref('')
+const isSearchError = ref(false)
 
 const resolutionStatus = ref<ReportStatus>('pending')
 const resolutionNote = ref('')
 
 const meta = ref({
   current_page: 1,
-  per_page: 15,
+  per_page: 7,
   total: 0,
   last_page: 1
 })
@@ -49,6 +53,7 @@ const meta = ref({
 const hasMore = computed(() => meta.value.current_page < meta.value.last_page)
 
 const isSaving = ref(false)
+const detailLoading = ref(false)
 
 // Error modal state
 const showErrorModal = ref(false)
@@ -64,41 +69,48 @@ const reportImages = ref<Array<{ url: string, name: string, type: string }>>([])
 const showAttachmentPreview = ref(false)
 const previewAttachment = ref<{ url: string, name: string, type: string } | null>(null)
 
-const loadDetail = async (id: number | string) => {
-  const result = await getReport(id)
+const loadDetail = async (id: number | string, image?: string) => {
+  detailLoading.value = true
+  try {
+    const result = await getReport(id)
 
-  const payload = (result as any)?.data?.data ?? (result as any)?.data
-  if ((result as any)?.success && payload) {
-    selectedReport.value = payload.data.report as Record<string, any>
+    const payload = (result as any)?.data?.data ?? (result as any)?.data
+    if ((result as any)?.success && payload) {
+      selectedReport.value = payload.data.report as Record<string, any>
 
-    const s = selectedReport.value.status ?? selectedReport.value.resolution_status
-    if (s === 'pending' || s === 'reviewed' || s === 'resolved') resolutionStatus.value = s
+      if (image) {
+        selectedReport.value.attachment_url = image
+      }
 
-    resolutionNote.value = selectedReport.value.resolution_note ?? selectedReport.value.note ?? ''
+      const s = selectedReport.value.status ?? selectedReport.value.resolution_status
+      if (s === 'pending' || s === 'reviewed' || s === 'resolved') resolutionStatus.value = s
 
-    // Load images if available
-    if (selectedReport.value.images && Array.isArray(selectedReport.value.images)) {
-      reportImages.value = selectedReport.value.images.map((img: any) => ({
-        url: img.url || img.image_url || img.path,
-        name: img.name || img.filename || 'Image',
-        type: img.type || img.mime_type || 'image'
-      }))
-    } else if (selectedReport.value.image_url) {
-      reportImages.value = [{
-        url: selectedReport.value.image_url,
-        name: 'Report Image',
-        type: 'image'
-      }]
-    } else {
-      reportImages.value = []
+      resolutionNote.value = selectedReport.value.resolution_note ?? selectedReport.value.note ?? ''
+
+      // Load images if available
+      if (selectedReport.value.images && Array.isArray(selectedReport.value.images)) {
+        reportImages.value = selectedReport.value.images.map((img: any) => ({
+          url: img.url || img.image_url || img.path,
+          name: img.name || img.filename || 'Image',
+          type: img.type || img.mime_type || 'image'
+        }))
+      } else if (selectedReport.value.image_url) {
+        reportImages.value = [{
+          url: selectedReport.value.image_url,
+          name: 'Report Image',
+          type: 'image'
+        }]
+      } else {
+        reportImages.value = []
+      }
     }
-
-    console.log('Selected Report:', selectedReport.value)
+  } finally {
+    detailLoading.value = false
   }
 }
 
 const resetListState = () => {
-  meta.value = { current_page: 1, per_page: 15, total: 0, last_page: 1 }
+  meta.value = { current_page: 1, per_page: 7, total: 0, last_page: 1 }
   submissions.value = []
   isFetching.value = false
 }
@@ -118,7 +130,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
     })
 
     if (!result?.success) {
-      const errorResult = result as { error?: unknown; validationMessages?: string[] } | null | undefined
+      const errorResult = result as { error?: unknown, validationMessages?: string[] } | null | undefined
       listError.value = result.validationMessages[0]
       if (!append) {
         submissions.value = []
@@ -147,6 +159,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
       return {
         id: report.id as number | string,
         title: (report.subject as string) ?? (report.title as string) ?? 'Untitled report',
+        attachment_url: report.attachment_url as string | undefined,
         reporter: reporterName ?? (typeof report.reporter_name === 'string' ? report.reporter_name : undefined) ?? 'Unknown',
         time: report.created_at ? formatRelativeDate(report.created_at as string) : '',
         status: report.status as string
@@ -157,8 +170,10 @@ const fetchList = async ({ append }: { append: boolean }) => {
 
     if (!selectedReportId.value && submissions.value.length > 0) {
       selectedReportId.value = submissions.value[0].id
+      selectedReportImage.value = submissions.value[0].attachment_url
+
       await nextTick()
-      await loadDetail(submissions.value[0].id)
+      await loadDetail(submissions.value[0].id, selectedReportImage.value)
     }
   } finally {
     isFetching.value = false
@@ -167,6 +182,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
 
 let observer: IntersectionObserver | null = null
 const sentinelEl = ref<HTMLElement | null>(null)
+const detailPanelRef = ref<HTMLElement | null>(null)
 
 const setupInfiniteScroll = () => {
   if (!sentinelEl.value) return
@@ -183,9 +199,19 @@ const setupInfiniteScroll = () => {
   observer.observe(sentinelEl.value)
 }
 
-const onSelectReport = async (id: number | string) => {
+const onSelectReport = async (id: number | string, image?: string) => {
   selectedReportId.value = id
-  await loadDetail(id)
+  selectedReportImage.value = image
+  await loadDetail(id, image)
+
+  // Auto-scroll to detail panel on mobile/tablet
+  if (window.innerWidth < 1024 && detailPanelRef.value) {
+    await nextTick()
+    const panelElement = (detailPanelRef.value as any).$el || detailPanelRef.value
+    if (panelElement && typeof panelElement.scrollIntoView === 'function') {
+      panelElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 }
 
 const onSaveResolution = async () => {
@@ -260,20 +286,35 @@ const getAttachmentIcon = (type: string) => {
   return 'i-lucide-file'
 }
 
-watch([activeTab, searchQuery], async () => {
+// Watch for tab changes - immediate execution
+watch(activeTab, async () => {
+  isSearchError.value = false
   resetListState()
   await fetchList({ append: false })
   await nextTick()
   setupInfiniteScroll()
 })
 
+// Watch for search query changes - debounced execution
+watch(searchQuery, async () => {
+  isSearchError.value = true
+  await debounceSearch(async () => {
+    resetListState()
+    await fetchList({ append: false })
+    await nextTick()
+    setupInfiniteScroll()
+  }, 350)
+})
+
 onMounted(async () => {
+  isSearchError.value = false
   await fetchList({ append: false })
   await nextTick()
   setupInfiniteScroll()
 })
 
 onUnmounted(() => {
+  cancelDebounce()
   observer?.disconnect()
 })
 </script>
@@ -290,8 +331,11 @@ onUnmounted(() => {
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 items-start">
-      <UCard class="lg:w-[400px] flex-shrink-0" :ui="{body: 'p-0!'}">
-        <div class="p-4 sm:p-4">
+      <UCard
+        class="lg:w-[400px] flex-shrink-0"
+        :ui="{ body: 'p-0!' }"
+      >
+        <div class="p-4 sm:p-4 max-h-[60dvh] lg:max-h-[calc(100vh-200px)] overflow-y-auto">
           <h2 class="font-medium text-gray-900 text-lg mb-4">
             Submissions
           </h2>
@@ -305,13 +349,13 @@ onUnmounted(() => {
           />
 
           <div
-            v-if="listError"
+            v-if="listError && !isSearchError"
             class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
           >
             {{ listError }}
           </div>
 
-          <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
+          <div class="inline-block sm:flex w-full overflow-x-auto mb-4 border-b border-gray-100 pb-2">
             <button
               v-for="t in tabs"
               :key="t.value"
@@ -352,7 +396,7 @@ onUnmounted(() => {
               :key="sub.id"
               class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
               :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-              @click="onSelectReport(sub.id)"
+              @click="onSelectReport(sub.id, sub.attachment_url)""
             >
               <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
                 {{ sub.title }}
@@ -366,139 +410,199 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div ref="sentinelEl" class="h-1" />
-          <div v-if="isFetching && submissions.length > 0" class="py-3 flex justify-center">
+          <div
+            ref="sentinelEl"
+            class="h-1"
+          />
+          <div
+            v-if="isFetching && submissions.length > 0"
+            class="py-3 flex justify-center"
+          >
             <div class="flex flex-col items-center gap-2 text-xs text-gray-500">
               <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-loader" class="animate-spin" />
+                <UIcon
+                  name="i-lucide-loader"
+                  class="animate-spin"
+                />
                 <span>Loading…</span>
               </div>
             </div>
           </div>
-          <div v-else-if="hasMore" class="py-3 h-6" />
+          <div
+            v-else-if="hasMore"
+            class="py-3 h-6"
+          />
         </div>
       </UCard>
 
-      <div class="flex-1 w-full space-y-6">
+      <div ref="detailPanelRef" class="flex-1 w-full space-y-6">
         <UCard class="w-full lg:sticky lg:top-6 self-start">
-          <div class="pb-6 border-b border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900">
-              {{ selectedReport?.subject || 'Select a report' }}
-            </h2>
-            <p class="text-sm text-gray-500 mt-1">
-              {{ selectedReport?.id ? `RPT-${selectedReport.id}` : '' }}
-            </p>
+          <!-- Skeleton Loader -->
+          <div v-if="detailLoading || !selectedReport" class="p-6 space-y-6">
+            <div class="space-y-3">
+              <USkeleton class="h-6 w-3/4" />
+              <USkeleton class="h-4 w-1/2" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100">
+              <div class="space-y-3">
+                <USkeleton class="h-4 w-20" />
+                <USkeleton class="h-4 w-full" />
+              </div>
+              <div class="space-y-3">
+                <USkeleton class="h-4 w-20" />
+                <USkeleton class="h-4 w-full" />
+              </div>
+            </div>
+            <div class="py-6 space-y-3 border-b border-gray-100">
+              <USkeleton class="h-4 w-24" />
+              <USkeleton class="h-4 w-full" />
+              <USkeleton class="h-4 w-full" />
+              <USkeleton class="h-4 w-2/3" />
+            </div>
+            <div class="py-6 space-y-3 border-b border-gray-100">
+              <USkeleton class="h-4 w-24" />
+              <USkeleton class="h-20 w-full" />
+            </div>
           </div>
 
-          <div v-if="selectedReport" class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100">
-            <div class="space-y-4">
-              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Reporter
-              </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedReport.reporter?.name || '—' }}</span>
+          <!-- Actual Content -->
+          <template v-else>
+            <div class="pb-6 border-b border-gray-100">
+              <h2 class="text-xl font-bold text-gray-900">
+                {{ selectedReport?.subject || 'Select a report' }}
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">
+                {{ selectedReport?.id ? `RPT-${selectedReport.id}` : '' }}
+              </p>
+            </div>
+
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100"
+            >
+              <div class="space-y-4">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Reporter
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Name</span>
+                    <span class="font-medium text-gray-900">{{ selectedReport.reporter?.name || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Applicant
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-500">Name</span>
+                    <span class="font-medium text-gray-900">{{ selectedReport.reported?.name || '—' }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-4">
+            <div
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Applicant
+                Description
               </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedReport.reported?.name || '—' }}</span>
-                </div>
-              </div>
+              <p class="text-sm font-medium text-gray-900 leading-relaxed">
+                {{ selectedReport.description || selectedReport.details || '—' }}
+              </p>
             </div>
-          </div>
 
-          <div v-if="selectedReport" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Description
-            </h3>
-            <p class="text-sm font-medium text-gray-900 leading-relaxed">
-              {{ selectedReport.description || selectedReport.details || '—' }}
-            </p>
-          </div>
-
-          <!-- Attachment Section -->
-          <div v-if="selectedReport?.attachment_url" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Attachment
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div
-                class="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
-                @click="openAttachmentPreview(selectedReport.attachment_url)"
-              >
-                <img
-                  v-if="isImageAttachment(selectedReport.attachment_url)"
-                  :src="selectedReport.attachment_url"
-                  alt="Attachment"
-                  class="w-full h-full object-cover"
-                />
+            <!-- Attachment Section -->
+            <div
+              v-if="selectedReport?.attachment_url"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Attachment
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div
-                  v-else
-                  class="w-full h-full flex items-center justify-center bg-gray-50"
+                  class="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                  @click="openAttachmentPreview(selectedReport.attachment_url)"
                 >
-                  <UIcon
-                    :name="getAttachmentIcon(previewAttachment?.type || 'file')"
-                    class="w-12 h-12 text-gray-400"
-                  />
-                </div>
-                <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <UIcon
-                    name="i-lucide-zoom-in"
-                    class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Images Section -->
-          <div v-if="reportImages.length > 0" class="py-6 space-y-4 border-b border-gray-100">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Uploaded Images
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div
-                v-for="(image, index) in reportImages"
-                :key="index"
-                class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
-                @click="openImagePreview(image)"
-              >
-                <img
-                  :src="image.url"
-                  :alt="image.name"
-                  class="w-full h-full object-cover"
-                />
-                <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <UIcon
-                    name="i-lucide-zoom-in"
-                    class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
-                  />
+                  <img
+                    v-if="isImageAttachment(selectedReport.attachment_url)"
+                    :src="selectedReport.attachment_url"
+                    alt="Attachment"
+                    class="w-full h-full object-cover"
+                  >
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center bg-gray-50"
+                  >
+                    <UIcon
+                      :name="getAttachmentIcon(previewAttachment?.type || 'file')"
+                      class="w-12 h-12 text-gray-400"
+                    />
+                  </div>
+                  <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <UIcon
+                      name="i-lucide-zoom-in"
+                      class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
+            <!-- Images Section -->
+            <div
+              v-if="reportImages.length > 0"
+              class="py-6 space-y-4 border-b border-gray-100"
+            >
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Uploaded Images
+              </h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div
+                  v-for="(image, index) in reportImages"
+                  :key="index"
+                  class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                  @click="openImagePreview(image)"
+                >
+                  <img
+                    :src="image.url"
+                    :alt="image.name"
+                    class="w-full h-full object-cover"
+                  >
+                  <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <UIcon
+                      name="i-lucide-zoom-in"
+                      class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </UCard>
+
+        <UCard v-if="selectedReport && !detailLoading" class="w-full">
           <div class="pt-6 space-y-4">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Resolution notes
             </h3>
 
-            <div class="flex flex-col gap-2" v-if="resolutionNote">
-              <div class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-2">
-                <h2>{{ resolutionNote }}</h2>
+            <div class="flex flex-col gap-2">
+              <div>
+                <UTextarea
+                  v-model="resolutionNote"
+                  class="w-full mt-2"
+                  placeholder="Enter resolution note..."
+                  :rows="3"
+                />
               </div>
             </div>
 
-            <div v-if="selectedReport" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="gap-4">
               <div>
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
                 <USelect
@@ -509,16 +613,6 @@ onUnmounted(() => {
                     { label: 'Resolved', value: 'resolved' }
                   ]"
                   class="mt-2 w-full"
-                />
-              </div>
-
-              <div class="md:col-span-2">
-                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Resolution note</label>
-                <UTextarea
-                  v-model="resolutionNote"
-                  class="w-full mt-2"
-                  placeholder="Enter resolution note..."
-                  :rows="3"
                 />
               </div>
             </div>
@@ -550,16 +644,14 @@ onUnmounted(() => {
         v-if="previewImage"
         class="mt-4"
       >
-        <!-- Image Preview Area -->
         <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center">
           <img
             :src="previewImage.url"
             :alt="previewImage.name"
             class="max-w-full max-h-[500px] object-contain"
-          />
+          >
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex gap-3">
           <UButton
             block
@@ -593,14 +685,13 @@ onUnmounted(() => {
         v-if="previewAttachment"
         class="mt-4"
       >
-        <!-- Attachment Preview Area -->
         <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center">
           <img
             v-if="isImageAttachment(previewAttachment.url)"
             :src="previewAttachment.url"
             :alt="previewAttachment.name"
             class="max-w-full max-h-[500px] object-contain"
-          />
+          >
           <div
             v-else
             class="flex flex-col items-center justify-center py-16 px-4"
@@ -618,7 +709,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex gap-3">
           <UButton
             block

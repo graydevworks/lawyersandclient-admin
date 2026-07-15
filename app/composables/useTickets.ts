@@ -35,7 +35,7 @@ export const useTickets = () => {
   const updateTicket = async (id: string | number, body: UpdateTicketPayload) => {
     updating.value = true
     try {
-      const data = await $fetch(`/api/admin/tickets/${id}`, { method: 'PUT', body })
+      const data = await $fetch(`/api/admin/ticket/${id}`, { method: 'PUT', body })
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to update ticket') }

@@ -7,6 +7,8 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     const body = await readBody(event)
 
+    console.log('Updating ticket', id, body)
+
     const response = await $fetch(`${apiBase}/admin/tickets/${id}`, {
       method: 'PUT',
       headers: {
