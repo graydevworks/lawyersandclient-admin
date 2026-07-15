@@ -25,7 +25,8 @@ export const useReports = () => {
       const data = await $fetch(`/api/report/${id}`, { method: 'GET' })
       return { success: true, data }
     } catch (error) {
-      return { success: false, ...resolveApiError(error, 'Failed to fetch report details') }
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to fetch report')
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

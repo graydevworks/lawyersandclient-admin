@@ -20,7 +20,8 @@ const navGroups = [
     label: 'INSIGHTS',
     items: [
       { label: 'Analytics', icon: 'f7:chart-bar-square', to: '/analytics' },
-      { label: 'Reports', icon: 'akar-icons:reciept', to: '/reports' }
+      { label: 'Reports', icon: 'akar-icons:reciept', to: '/reports' },
+      { label: 'Help Center', icon: 'i-lucide-life-buoy', to: '/help-center' }
     ]
   },
   {

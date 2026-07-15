@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SelectItem } from '@nuxt/ui'
 import { formatCompactNumber, formatRelativeDate } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -173,6 +174,7 @@ const rows = ref([
 ])
 
 const searchQuery = ref('')
+const listError = ref('')
 const fromDate = ref('')
 const toDate = ref('')
 
@@ -191,8 +193,15 @@ const fetchUsers = async (page: number = 1) => {
     params.q = searchQuery.value.trim()
   }
 
+  listError.value = ''
+
   const result = await getUsers(params)
   // Map real API data when available
+
+  if (!result?.success) {
+    listError.value = displayApiError(result, 'Failed to fetch users')
+    return
+  }
 
   if (result && result.data && result.data.user && result.data.user.data && result.data.user.data.success) {
     const userList = result.data.user.data.data
@@ -331,6 +340,7 @@ watch(searchQuery, () => {
   const page = 1
   if (activeTab.value === 'clients') clientsCurrentPage.value = page
   else lawyersCurrentPage.value = page
+  listError.value = ''
   debounceSearch(() => fetchUsers(page))
 })
 
@@ -358,6 +368,14 @@ onMounted(() => start())
       <h1 class="text-[16px] font-semibold text-gray-900 leading-tight">
         New Users
       </h1>
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Skeleton Loading -->

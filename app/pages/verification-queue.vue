@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { formatRelativeDate, formatTimestamp } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -47,6 +48,7 @@ const submissions = ref<Submission[]>([])
 const selectedSubmission = ref<Submission | null>(null)
 const reviewNote = ref('')
 const searchQuery = ref('')
+const listError = ref('')
 
 // Modal state
 const showApproveConfirm = ref(false)
@@ -93,7 +95,17 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
     params.search = searchQuery.value
   }
 
+  listError.value = ''
+
   const result = await getVerificationQueue(params)
+  if (!result?.success) {
+    listError.value = result.validationMessages[0]
+    if (!append) {
+      submissions.value = []
+    }
+    return
+  }
+
   if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
     const data = (result.data as any).data.data
     const submissionList = data.submissions || []
@@ -296,9 +308,21 @@ const handleSuccessComplete = () => {
 }
 
 // --- Document actions ---
-const isImageDoc = (type: string) => {
+const isImageDoc = (type: string, url?: string) => {
+  // Check type field
   const t = (type || '').toLowerCase()
-  return t.includes('image') || t.includes('jpg') || t.includes('jpeg') || t.includes('png') || t.includes('gif') || t.includes('webp')
+  if (t.includes('image') || t.includes('jpg') || t.includes('jpeg') || t.includes('png') || t.includes('gif') || t.includes('webp')) {
+    return true
+  }
+
+  // Check URL extension as fallback
+  if (url) {
+    const urlLower = url.toLowerCase()
+    return urlLower.includes('.jpg') || urlLower.includes('.jpeg') || urlLower.includes('.png') ||
+           urlLower.includes('.gif') || urlLower.includes('.webp') || urlLower.includes('.image')
+  }
+
+  return false
 }
 
 const getDocIcon = (type: string) => {
@@ -315,27 +339,53 @@ const getDocIconColor = (name: string, uploaded: boolean) => {
   return 'text-[#185FA5]'
 }
 
-const downloadDocument = (doc: { name: string, url: string }) => {
-  if (!doc.url) return
-  const personName = selectedSubmission.value?.name?.replace(/\s+/g, '_') || 'user'
-  const fileName = `${personName}_${doc.name.replace(/\s+/g, '_')}`
-  const link = window.document.createElement('a')
-  link.href = doc.url
-  link.download = fileName
-  link.target = '_blank'
-  window.document.body.appendChild(link)
-  link.click()
-  window.document.body.removeChild(link)
+// Helper to get the actual URL from document (checks multiple possible fields)
+const getDocUrl = (doc: any): string | undefined => {
+  return doc.url || doc.file_url || doc.document_url
 }
 
-const downloadAllDocs = () => {
+const downloadDocument = (doc: { name: string, url: string }) => {
+  const docUrl = getDocUrl(doc)
+  if (!docUrl) return
+
+  const personName = selectedSubmission.value?.name?.replace(/\s+/g, '_') || 'user'
+  const fileName = `${personName}_${doc.name.replace(/\s+/g, '_')}`
+
+  // Use backend proxy to download (avoids CORS issues)
+  const downloadUrl = `/api/download?url=${encodeURIComponent(docUrl)}&filename=${encodeURIComponent(fileName)}`
+
+  // Create hidden iframe to trigger download without opening new tab
+  const iframe = document.createElement('iframe')
+  iframe.style.display = 'none'
+  iframe.src = downloadUrl
+  document.body.appendChild(iframe)
+
+  // Clean up after a delay
+  setTimeout(() => {
+    if (document.body.contains(iframe)) {
+      document.body.removeChild(iframe)
+    }
+  }, 5000)
+}
+
+const downloadAllDocs = async () => {
   if (!selectedSubmission.value?.documents) return
-  selectedSubmission.value.documents.filter(d => d.uploaded).forEach(doc => downloadDocument(doc))
+  const uploadedDocs = selectedSubmission.value.documents.filter(d => d.uploaded)
+
+  // Download each file with a delay to avoid browser blocking
+  for (let i = 0; i < uploadedDocs.length; i++) {
+    await downloadDocument(uploadedDocs[i])
+    // Add delay between downloads (except for the last one)
+    if (i < uploadedDocs.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  }
 }
 
 const openDocPreview = (doc: { name: string, type: string, url: string, uploaded: boolean }) => {
-  if (!doc.uploaded || !doc.url) return
-  previewDoc.value = { name: doc.name, type: doc.type, url: doc.url }
+  const docUrl = getDocUrl(doc)
+  if (!doc.uploaded || !docUrl) return
+  previewDoc.value = { name: doc.name, type: doc.type, url: docUrl }
   showDocPreview.value = true
 }
 
@@ -403,6 +453,7 @@ onMounted(async () => {
 watch(searchQuery, () => {
   currentPage.value = 1
   hasMoreSubmissions.value = true
+  listError.value = ''
   fetchQueue(1, false)
 })
 
@@ -425,6 +476,14 @@ onMounted(() => start())
       <p class="text-[14px] text-gray-500 mt-1">
         {{ pending }} pending &middot; {{ urgent }} need urgent attention
       </p>
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Main Content Split -->
@@ -728,10 +787,17 @@ onMounted(() => start())
                 @click="openDocPreview(doc)"
               >
                 <div
-                  class="h-28 flex items-center justify-center shrink-0"
+                  class="h-28 flex items-center justify-center shrink-0 overflow-hidden"
                   :class="doc.uploaded ? doc.name == 'Government ID' ? 'bg-[#EEEDFE]' : 'bg-[#EBF3FC]' : 'bg-gray-50/50'"
                 >
+                  <img
+                    v-if="doc.uploaded && getDocUrl(doc) && isImageDoc(doc.type, getDocUrl(doc))"
+                    :src="getDocUrl(doc)"
+                    :alt="doc.name"
+                    class="w-full h-full object-cover"
+                  />
                   <UIcon
+                    v-else
                     :name="doc.uploaded ? getDocIcon(doc.type) : 'i-heroicons-document'"
                     class="w-12 h-12"
                     :class="getDocIconColor(doc.name, doc.uploaded)"
@@ -867,7 +933,7 @@ onMounted(() => start())
         <!-- Preview Area -->
         <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50">
           <div
-            v-if="isImageDoc(previewDoc.type)"
+            v-if="isImageDoc(previewDoc.type, previewDoc.url)"
             class="flex items-center justify-center p-4 min-h-[300px]"
           >
             <img

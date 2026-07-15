@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatRelativeDate } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -44,6 +45,7 @@ const clients = ref<{
 }[]>([])
 
 const searchQuery = ref('')
+const listError = ref('')
 const statusFilter = ref<string | undefined>(undefined)
 const statusOptions = [
   { label: 'All statuses', value: undefined },
@@ -101,6 +103,8 @@ const fetchClients = async (page: number = 1) => {
     params.status = statusFilter.value
   }
 
+  listError.value = ''
+
   let result
 
   if (searchQuery.value.trim()) {
@@ -109,7 +113,10 @@ const fetchClients = async (page: number = 1) => {
     result = await getClients(params)
   }
 
-  if (!result?.success) return
+  if (!result?.success) {
+    listError.value = result.validationMessages[0]
+    return
+  }
 
   const raw = (result as { data?: unknown }).data as Record<string, unknown> | undefined
   const nested = (raw?.data ?? raw) as { success?: boolean, data?: { clients?: unknown[], stats?: Record<string, string> }, meta?: Record<string, number> } | undefined
@@ -206,16 +213,19 @@ onMounted(async () => {
 
 watch(statusFilter, () => {
   currentPage.value = 1
+  listError.value = ''
   fetchClients(1)
 })
 
 watch(searchQuery, () => {
   currentPage.value = 1
+  listError.value = ''
   debounceSearch(() => fetchClients(1))
 })
 
 const applyDateFilter = () => {
   currentPage.value = 1
+  listError.value = ''
   fetchClients(1)
 }
 
@@ -223,6 +233,7 @@ const clearDateFilter = () => {
   fromDate.value = ''
   toDate.value = ''
   currentPage.value = 1
+  listError.value = ''
   fetchClients(1)
 }
 
@@ -252,6 +263,14 @@ onMounted(() => {
         @apply="applyDateFilter"
         @clear="clearDateFilter"
       />
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Skeleton Loading -->

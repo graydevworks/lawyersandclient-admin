@@ -6,37 +6,38 @@ import ErrorModal from '~/components/shared/ErrorModal.vue'
 
 definePageMeta({ middleware: 'auth' })
 
-const { getReports, getReport, updateReport } = useReports()
+const { getTickets, getTicket, updateTicket, addResolutionNote, getTicketStats } = useTickets()
 
-type ReportStatus = 'pending' | 'reviewed' | 'resolved'
+type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 
-type ReportListItem = {
+type TicketListItem = {
   id: number | string
-  title: string
+  subject: string
   reporter: string
   time: string
-  status?: ReportStatus | string
+  status?: TicketStatus | string
 }
 
-const submissions = ref<ReportListItem[]>([])
+const submissions = ref<TicketListItem[]>([])
 
-const selectedReportId = ref<number | string | null>(null)
-const selectedReport = ref<Record<string, any> | null>(null)
+const selectedTicketId = ref<number | string | null>(null)
+const selectedTicket = ref<Record<string, any> | null>(null)
 
-const activeTab = ref<'all' | ReportStatus>('all')
+const activeTab = ref<'all' | TicketStatus>('all')
 
 const tabs = [
   { label: 'All', value: 'all' as const },
-  { label: 'Pending', value: 'pending' as const },
-  { label: 'Reviewed', value: 'reviewed' as const },
-  { label: 'Resolved', value: 'resolved' as const }
+  { label: 'Open', value: 'open' as const },
+  { label: 'In Progress', value: 'in_progress' as const },
+  { label: 'Resolved', value: 'resolved' as const },
+  { label: 'Closed', value: 'closed' as const }
 ] as const
 
 const searchQuery = ref('')
 const isFetching = ref(false)
 const listError = ref('')
 
-const resolutionStatus = ref<ReportStatus>('pending')
+const ticketStatus = ref<TicketStatus>('open')
 const resolutionNote = ref('')
 
 const meta = ref({
@@ -50,6 +51,16 @@ const hasMore = computed(() => meta.value.current_page < meta.value.last_page)
 
 const isSaving = ref(false)
 
+// Stats
+const stats = ref({
+  total: 0,
+  open: 0,
+  in_progress: 0,
+  resolved: 0,
+  closed: 0
+})
+const statsLoading = ref(false)
+
 // Error modal state
 const showErrorModal = ref(false)
 const errorModalTitle = ref('Error')
@@ -58,38 +69,61 @@ const errorModalDescription = ref('')
 // Image preview state
 const showImagePreview = ref(false)
 const previewImage = ref<{ url: string, name: string } | null>(null)
-const reportImages = ref<Array<{ url: string, name: string, type: string }>>([])
+const ticketImages = ref<Array<{ url: string, name: string, type: string }>>([])
+
+const loadStats = async () => {
+  statsLoading.value = true
+  try {
+    const result = await getTicketStats()
+    if (result?.success && (result as any).data?.data) {
+      const data = (result as any).data.data
+      stats.value = {
+        total: data.total || 0,
+        open: data.open || 0,
+        in_progress: data.in_progress || 0,
+        resolved: data.resolved || 0,
+        closed: data.closed || 0
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load stats:', error)
+  } finally {
+    statsLoading.value = false
+  }
+}
 
 const loadDetail = async (id: number | string) => {
-  const result = await getReport(id)
+  const result = await getTicket(id)
 
   const payload = (result as any)?.data?.data ?? (result as any)?.data
   if ((result as any)?.success && payload) {
-    selectedReport.value = payload.data.report as Record<string, any>
+    selectedTicket.value = payload.data.ticket ?? payload.data ?? payload
 
-    const s = selectedReport.value.status ?? selectedReport.value.resolution_status
-    if (s === 'pending' || s === 'reviewed' || s === 'resolved') resolutionStatus.value = s
+    const s = selectedTicket.value.status
+    if (s === 'open' || s === 'in_progress' || s === 'resolved' || s === 'closed') {
+      ticketStatus.value = s
+    }
 
-    resolutionNote.value = selectedReport.value.resolution_note ?? selectedReport.value.note ?? ''
+    resolutionNote.value = ''
 
     // Load images if available
-    if (selectedReport.value.images && Array.isArray(selectedReport.value.images)) {
-      reportImages.value = selectedReport.value.images.map((img: any) => ({
+    if (selectedTicket.value.images && Array.isArray(selectedTicket.value.images)) {
+      ticketImages.value = selectedTicket.value.images.map((img: any) => ({
         url: img.url || img.image_url || img.path,
         name: img.name || img.filename || 'Image',
         type: img.type || img.mime_type || 'image'
       }))
-    } else if (selectedReport.value.image_url) {
-      reportImages.value = [{
-        url: selectedReport.value.image_url,
-        name: 'Report Image',
+    } else if (selectedTicket.value.image_url) {
+      ticketImages.value = [{
+        url: selectedTicket.value.image_url,
+        name: 'Ticket Image',
         type: 'image'
       }]
     } else {
-      reportImages.value = []
+      ticketImages.value = []
     }
 
-    console.log('Selected Report:', selectedReport.value)
+    console.log('Selected Ticket:', selectedTicket.value)
   }
 }
 
@@ -107,10 +141,11 @@ const fetchList = async ({ append }: { append: boolean }) => {
   }
 
   try {
-    const result = await getReports({
+    const result = await getTickets({
       ...(activeTab.value !== 'all' ? { status: activeTab.value } : {}),
       ...(searchQuery.value.trim() ? { q: searchQuery.value.trim() } : {}),
-      page: meta.value.current_page
+      page: meta.value.current_page,
+      per_page: 15
     })
 
     if (!result?.success) {
@@ -123,7 +158,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
     }
 
     const metaFromApi = result?.data?.data?.meta ?? result?.data?.meta
-    const dataFromApi = result?.data?.data?.data ?? result?.data?.data?.reports ?? result?.data?.data
+    const dataFromApi = result?.data?.data?.data ?? result?.data?.data?.tickets ?? result?.data?.data
 
     if (metaFromApi) {
       meta.value = {
@@ -134,25 +169,25 @@ const fetchList = async ({ append }: { append: boolean }) => {
       }
     }
 
-    const reports = Array.isArray(dataFromApi) ? dataFromApi : (dataFromApi?.reports ?? [])
+    const tickets = Array.isArray(dataFromApi) ? dataFromApi : (dataFromApi?.tickets ?? [])
 
-    const mapped: ReportListItem[] = reports.map((report: Record<string, unknown>) => {
-      const reporter = report.reporter as Record<string, unknown> | undefined
+    const mapped: TicketListItem[] = tickets.map((ticket: Record<string, unknown>) => {
+      const reporter = ticket.reporter as Record<string, unknown> | undefined
       const reporterName = typeof reporter?.name === 'string' ? reporter.name : undefined
 
       return {
-        id: report.id as number | string,
-        title: (report.subject as string) ?? (report.title as string) ?? 'Untitled report',
-        reporter: reporterName ?? (typeof report.reporter_name === 'string' ? report.reporter_name : undefined) ?? 'Unknown',
-        time: report.created_at ? formatRelativeDate(report.created_at as string) : '',
-        status: report.status as string
+        id: ticket.id as number | string,
+        subject: (ticket.subject as string) ?? (ticket.title as string) ?? 'Untitled ticket',
+        reporter: reporterName ?? (typeof ticket.reporter_name === 'string' ? ticket.reporter_name : undefined) ?? 'Unknown',
+        time: ticket.created_at ? formatRelativeDate(ticket.created_at as string) : '',
+        status: ticket.status as string
       }
     })
 
     submissions.value = append ? [...submissions.value, ...mapped] : mapped
 
-    if (!selectedReportId.value && submissions.value.length > 0) {
-      selectedReportId.value = submissions.value[0].id
+    if (!selectedTicketId.value && submissions.value.length > 0) {
+      selectedTicketId.value = submissions.value[0].id
       await nextTick()
       await loadDetail(submissions.value[0].id)
     }
@@ -179,19 +214,19 @@ const setupInfiniteScroll = () => {
   observer.observe(sentinelEl.value)
 }
 
-const onSelectReport = async (id: number | string) => {
-  selectedReportId.value = id
+const onSelectTicket = async (id: number | string) => {
+  selectedTicketId.value = id
   await loadDetail(id)
 }
 
 const onSaveResolution = async () => {
-  if (!selectedReportId.value) return
+  if (!selectedTicketId.value) return
   if (isSaving.value) return
 
   isSaving.value = true
   try {
-    const result = await updateReport(selectedReportId.value, {
-      status: resolutionStatus.value,
+    const result = await updateTicket(selectedTicketId.value, {
+      status: ticketStatus.value,
       resolution_note: resolutionNote.value
     })
 
@@ -203,7 +238,33 @@ const onSaveResolution = async () => {
       return
     }
 
-    await loadDetail(selectedReportId.value)
+    await loadDetail(selectedTicketId.value)
+    await loadStats()
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const onAddResolutionNote = async () => {
+  if (!selectedTicketId.value || !resolutionNote.value.trim()) return
+  if (isSaving.value) return
+
+  isSaving.value = true
+  try {
+    const result = await addResolutionNote(selectedTicketId.value, {
+      note: resolutionNote.value.trim()
+    })
+
+    if (!result?.success) {
+      const errorMessage = (result as any).validationMessages?.[0] || (result as any).error || 'Failed to add resolution note'
+      errorModalTitle.value = 'Error'
+      errorModalDescription.value = String(errorMessage)
+      showErrorModal.value = true
+      return
+    }
+
+    resolutionNote.value = ''
+    await loadDetail(selectedTicketId.value)
   } finally {
     isSaving.value = false
   }
@@ -234,6 +295,7 @@ watch([activeTab, searchQuery], async () => {
 })
 
 onMounted(async () => {
+  await loadStats()
   await fetchList({ append: false })
   await nextTick()
   setupInfiniteScroll()
@@ -248,11 +310,45 @@ onUnmounted(() => {
   <div class="space-y-6">
     <div>
       <h1 class="text-[16px] font-bold text-gray-900 leading-tight">
-        Reports & Disputes
+        Help Center
       </h1>
       <p class="text-[14px] text-gray-500">
-        Reports
+        Tickets
       </p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <UCard class="border-0 ring-0">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-gray-500">Total Tickets</p>
+          <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
+        </div>
+      </UCard>
+      <UCard class="border-0 ring-0">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-gray-500">Open</p>
+          <p class="text-2xl font-bold text-blue-600">{{ stats.open }}</p>
+        </div>
+      </UCard>
+      <UCard class="border-0 ring-0">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-gray-500">In Progress</p>
+          <p class="text-2xl font-bold text-yellow-600">{{ stats.in_progress }}</p>
+        </div>
+      </UCard>
+      <UCard class="border-0 ring-0">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-gray-500">Resolved</p>
+          <p class="text-2xl font-bold text-green-600">{{ stats.resolved }}</p>
+        </div>
+      </UCard>
+      <UCard class="border-0 ring-0">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-gray-500">Closed</p>
+          <p class="text-2xl font-bold text-gray-600">{{ stats.closed }}</p>
+        </div>
+      </UCard>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 items-start">
@@ -265,7 +361,7 @@ onUnmounted(() => {
           <UInput
             v-model="searchQuery"
             icon="i-lucide-search"
-            placeholder="Search reports..."
+            placeholder="Search tickets..."
             class="mb-6 w-full"
             :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
           />
@@ -277,11 +373,11 @@ onUnmounted(() => {
             {{ listError }}
           </div>
 
-          <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
+          <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2 overflow-x-auto">
             <button
               v-for="t in tabs"
               :key="t.value"
-              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+              class="px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
               :class="activeTab === t.value ? 'bg-[#EFF6FF] text-[#003357] border-b-0 border-[#013355]!' : 'text-gray-500 hover:text-gray-900'"
               @click="activeTab = t.value"
             >
@@ -293,8 +389,8 @@ onUnmounted(() => {
             <SharedEmptyState
               v-if="submissions.length === 0 && !isFetching"
               icon="i-lucide-file-text"
-              title="No reports"
-              description="There are no reports to show for the current filter."
+              title="No tickets"
+              description="There are no tickets to show for the current filter."
               action-label="Refresh"
               @action="fetchList({ append: false })"
             />
@@ -317,11 +413,11 @@ onUnmounted(() => {
               v-else
               :key="sub.id"
               class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
-              :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-              @click="onSelectReport(sub.id)"
+              :class="sub.id === selectedTicketId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
+              @click="onSelectTicket(sub.id)"
             >
               <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
-                {{ sub.title }}
+                {{ sub.subject }}
               </h3>
               <p class="text-xs text-gray-500 mt-1 line-clamp-1">
                 Reported by {{ sub.reporter }}
@@ -347,16 +443,16 @@ onUnmounted(() => {
 
       <div class="flex-1 w-full space-y-6">
         <UCard class="w-full lg:sticky lg:top-6 self-start">
-          <div class="pb-6 border-b border-gray-100">
+          <div v-if="selectedTicket" class="pb-6 border-b border-gray-100">
             <h2 class="text-xl font-bold text-gray-900">
-              {{ selectedReport?.subject || 'Select a report' }}
+              {{ selectedTicket.subject || 'Select a ticket' }}
             </h2>
             <p class="text-sm text-gray-500 mt-1">
-              {{ selectedReport?.id ? `RPT-${selectedReport.id}` : '' }}
+              {{ selectedTicket.id ? `TKT-${selectedTicket.id}` : '' }}
             </p>
           </div>
 
-          <div v-if="selectedReport" class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100">
+          <div v-if="selectedTicket" class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-gray-100">
             <div class="space-y-4">
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Reporter
@@ -364,41 +460,49 @@ onUnmounted(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedReport.reporter?.name || '—' }}</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.reporter?.name || '—' }}</span>
+                </div>
+                <div v-if="selectedTicket.reporter?.email" class="flex justify-between items-center text-sm">
+                  <span class="text-gray-500">Email</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.reporter.email }}</span>
                 </div>
               </div>
             </div>
 
             <div class="space-y-4">
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Applicant
+                Ticket Info
               </h3>
               <div class="space-y-3">
                 <div class="flex justify-between items-center text-sm">
-                  <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedReport.reported?.name || '—' }}</span>
+                  <span class="text-gray-500">Status</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.status || '—' }}</span>
+                </div>
+                <div v-if="selectedTicket.assigned_to" class="flex justify-between items-center text-sm">
+                  <span class="text-gray-500">Assigned To</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.assigned_to.name }}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-if="selectedReport" class="py-6 space-y-4 border-b border-gray-100">
+          <div v-if="selectedTicket" class="py-6 space-y-4 border-b border-gray-100">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Description
             </h3>
             <p class="text-sm font-medium text-gray-900 leading-relaxed">
-              {{ selectedReport.description || selectedReport.details || '—' }}
+              {{ selectedTicket.description || '—' }}
             </p>
           </div>
 
           <!-- Images Section -->
-          <div v-if="reportImages.length > 0" class="py-6 space-y-4 border-b border-gray-100">
+          <div v-if="ticketImages.length > 0" class="py-6 space-y-4 border-b border-gray-100">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Uploaded Images
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div
-                v-for="(image, index) in reportImages"
+                v-for="(image, index) in ticketImages"
                 :key="index"
                 class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
                 @click="openImagePreview(image)"
@@ -418,26 +522,39 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="pt-6 space-y-4">
+          <div v-if="selectedTicket && selectedTicket.resolution_notes && selectedTicket.resolution_notes.length > 0" class="py-6 space-y-4 border-b border-gray-100">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Resolution notes
+              Resolution Notes
             </h3>
-
-            <div class="flex flex-col gap-2" v-if="resolutionNote">
-              <div class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-2">
-                <h2>{{ resolutionNote }}</h2>
+            <div class="space-y-3">
+              <div
+                v-for="note in selectedTicket.resolution_notes"
+                :key="note.id"
+                class="rounded-sm border-l-2 border-primary bg-neutral-100 text-xs p-3"
+              >
+                <p class="text-gray-900">{{ note.note }}</p>
+                <p class="text-gray-500 mt-1 text-[10px]">
+                  {{ note.created_by?.name || 'System' }} • {{ formatRelativeDate(note.created_at) }}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div v-if="selectedReport" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="pt-6 space-y-4">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Update Ticket
+            </h3>
+
+            <div v-if="selectedTicket" class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</label>
                 <USelect
-                  v-model="resolutionStatus"
+                  v-model="ticketStatus"
                   :items="[
-                    { label: 'Pending', value: 'pending' },
-                    { label: 'Reviewed', value: 'reviewed' },
-                    { label: 'Resolved', value: 'resolved' }
+                    { label: 'Open', value: 'open' },
+                    { label: 'In Progress', value: 'in_progress' },
+                    { label: 'Resolved', value: 'resolved' },
+                    { label: 'Closed', value: 'closed' }
                   ]"
                   class="mt-2 w-full"
                 />
@@ -453,16 +570,26 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="flex justify-end pt-2">
+            <div class="flex justify-end gap-2 pt-2">
               <UButton
                 :loading="isSaving"
-                :disabled="isSaving || !selectedReportId"
+                :disabled="isSaving || !selectedTicketId"
                 color="neutral"
                 variant="solid"
                 class="shadow-sm border border-[#003357] text-[#003357] hover:bg-[#EEF6FF] bg-white disabled:bg-gray-50!"
+                @click="onAddResolutionNote"
+              >
+                Add Note
+              </UButton>
+              <UButton
+                :loading="isSaving"
+                :disabled="isSaving || !selectedTicketId"
+                color="primary"
+                variant="solid"
+                class="shadow-sm"
                 @click="onSaveResolution"
               >
-                Save note
+                Save Changes
               </UButton>
             </div>
           </div>

@@ -70,21 +70,24 @@ export const useAuth = () => {
           color: 'error',
           duration: 4000
         })
+
+        console.log('[useAuth] Login error: ------->', response.message)
         return { success: false, error: errorMsg }
       }
     } catch (error) {
-      const { error: message } = resolveApiError(error, 'Unable to connect to the server. Please check your internet connection and try again.')
+      const { error: message, validationMessages } = resolveApiError(error, 'Unable to connect to the server. Please check your internet connection and try again.')
+
+      console.log(message, 'hello')
 
       toast.add({
         title: 'Login failed',
-        description: message,
+        description: validationMessages[0] || message,
         icon: 'i-lucide-wifi-off',
         color: 'error',
         duration: 4000
       })
 
-      console.error('[useAuth] Login error:', error)
-      return { success: false, error: message }
+      return { success: false, error: validationMessages[0] || message }
     }
   }
 

@@ -185,7 +185,8 @@ const loadLawyer = async () => {
         lastActiveAt: d.last_active_at ? formatRelativeDate(d.last_active_at) : 'N/A'
       }
 
-      console.log(lawyer.value)
+      // DEBUG: Log documents to see what we're working with
+      console.log('Lawyer documents:', JSON.stringify(lawyer.value.documents, null, 2))
     }
   } catch (e) {
     console.log('[Lawyers Details] loadLawyer error:', e)
@@ -311,9 +312,21 @@ const handleDelete = async () => {
 }
 
 // --- Document actions ---
-const isImageDoc = (type: string) => {
+const isImageDoc = (type: string, url?: string) => {
+  // Check type field
   const t = (type || '').toLowerCase()
-  return t.includes('image') || t.includes('jpg') || t.includes('jpeg') || t.includes('png') || t.includes('gif') || t.includes('webp')
+  if (t.includes('image') || t.includes('jpg') || t.includes('jpeg') || t.includes('png') || t.includes('gif') || t.includes('webp')) {
+    return true
+  }
+
+  // Check URL extension as fallback
+  if (url) {
+    const urlLower = url.toLowerCase()
+    return urlLower.includes('.jpg') || urlLower.includes('.jpeg') || urlLower.includes('.png') ||
+           urlLower.includes('.gif') || urlLower.includes('.webp') || urlLower.includes('.image')
+  }
+
+  return false
 }
 
 const getDocIcon = (type: string) => {
@@ -330,22 +343,66 @@ const getDocIconColor = (name: string, uploaded: boolean) => {
   return 'text-[#185FA5]'
 }
 
-const downloadDocument = (doc: { name: string, url: string }) => {
-  if (!doc.url) return
-  const personName = lawyer.value.name?.replace(/\s+/g, '_') || 'user'
-  const fileName = `${personName}_${doc.name.replace(/\s+/g, '_')}`
-  const link = window.document.createElement('a')
-  link.href = doc.url
-  link.download = fileName
-  link.target = '_blank'
-  window.document.body.appendChild(link)
-  link.click()
-  window.document.body.removeChild(link)
+// Helper to get the actual URL from document (checks multiple possible fields)
+const getDocUrl = (doc: any): string | undefined => {
+  return doc.url || doc.file_url || doc.document_url
 }
 
-const openDocPreview = (doc: { title: string, type: string, url: string }) => {
-  if (!doc.url) return
-  previewDoc.value = { name: doc.title, type: doc.type, url: doc.url }
+const downloadDocument = async (doc: { title: string, url: string }) => {
+  const docUrl = getDocUrl(doc)
+  if (!docUrl) return
+
+  const personName = lawyer.value?.name?.replace(/\s+/g, '_') || 'user'
+  const fileName = `${personName}_${doc.title.replace(/\s+/g, '_')}`
+
+  try {
+    // Use backend proxy to download (avoids CORS issues)
+    const downloadUrl = `/api/download?url=${encodeURIComponent(docUrl)}&filename=${encodeURIComponent(fileName)}`
+
+    // Create a temporary iframe to download without navigating away
+    const iframe = document.createElement('iframe')
+    iframe.style.display = 'none'
+    iframe.src = downloadUrl
+    document.body.appendChild(iframe)
+
+    // Remove iframe after a delay
+    setTimeout(() => {
+      document.body.removeChild(iframe)
+    }, 5000)
+  } catch (error) {
+    console.error('Download failed:', error)
+    // Fallback: open in new tab
+    window.open(docUrl, '_blank')
+  }
+}
+
+const downloadAllDocs = async () => {
+  if (!lawyer.value.documents) return
+  const validDocs = lawyer.value.documents.filter(doc => getDocUrl(doc) && !doc.isMissing)
+
+  // Download each file with a delay to avoid browser blocking
+  for (let i = 0; i < validDocs.length; i++) {
+    await downloadDocument(validDocs[i])
+    // Add delay between downloads (except for the last one)
+    if (i < validDocs.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  }
+}
+
+const openDocPreview = (doc: { title: string, type: string, url: string, isMissing?: boolean }) => {
+  const docUrl = getDocUrl(doc)
+  if (!docUrl || doc.isMissing) return
+
+  // DEBUG: Log what we're setting for preview
+  console.log('Opening preview:', {
+    title: doc.title,
+    type: doc.type,
+    url: docUrl,
+    isImage: isImageDoc(doc.type, docUrl)
+  })
+
+  previewDoc.value = { name: doc.title, type: doc.type, url: docUrl }
   showDocPreview.value = true
 }
 
@@ -603,7 +660,10 @@ const openInNewTab = () => {
               <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">
                 Documents
               </h3>
-              <button class="text-[#003357] text-[13px] font-bold flex items-center gap-1 hover:underline">
+              <button
+                class="text-[#003357] text-[13px] font-bold flex items-center gap-1 hover:underline"
+                @click="downloadAllDocs"
+              >
                 Download all <UIcon
                   name="i-lucide-download"
                   class="size-4"
@@ -620,13 +680,24 @@ const openInNewTab = () => {
               @click="openDocPreview(doc)"
             >
               <div
-                class="h-24 w-full flex items-center justify-center rounded-xl"
+                class="h-24 w-full flex items-center justify-center rounded-xl overflow-hidden"
                 :class="[
                   doc.color === 'blue' ? 'bg-blue-50'
                   : doc.color === 'purple' ? 'bg-purple-50' : 'bg-gray-50'
                 ]"
               >
+                <!-- DEBUG: Log document data -->
+                <div v-if="false" style="position: absolute; font-size: 8px; z-index: 1000;">
+                  {{ doc.type }} | {{ getDocUrl(doc)?.substring(0, 30) }}
+                </div>
+                <img
+                  v-if="getDocUrl(doc) && isImageDoc(doc.type, getDocUrl(doc))"
+                  :src="getDocUrl(doc)"
+                  :alt="doc.title"
+                  class="w-full h-full object-cover"
+                />
                 <UIcon
+                  v-else
                   :name="doc.icon"
                   class="size-10"
                   :class="[
@@ -1023,7 +1094,7 @@ const openInNewTab = () => {
         <!-- Preview Area -->
         <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50">
           <div
-            v-if="isImageDoc(previewDoc.type)"
+            v-if="isImageDoc(previewDoc.type, previewDoc.url)"
             class="flex items-center justify-center p-4 min-h-[300px]"
           >
             <img

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatRelativeDate, formatCompactNumber } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -34,6 +35,7 @@ const swap = (x: number, y: number) => {
 console.log(swap(1, 2)) // Output: [2, 1]
 
 const stats = ref<StatItem[]>([])
+const listError = ref('')
 
 const headerFromDate = ref('')
 const headerToDate = ref('')
@@ -173,8 +175,16 @@ const fetchDashboardData = async () => {
     date_to: toDate.value || undefined
   }
 
+  listError.value = ''
+
   // Backend accepts query params; keep typing loose to avoid casting errors in UI.
   const [result, queue] = await Promise.all([getDashboard(query), getVerificationQueue()])
+
+  if (!result?.success) {
+    console.log(result)
+    listError.value = result.validationMessages[0]
+    return
+  }
 
   if (result && result.data && result.data.data && result.data.data.success) {
     // stats
@@ -294,6 +304,14 @@ onMounted(() => start())
         @apply="applyHeaderDateFilter"
         @clear="clearHeaderDateFilter"
       />
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Skeleton Loading -->

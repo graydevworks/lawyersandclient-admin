@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { formatCompactNumber } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -8,6 +9,7 @@ definePageMeta({ middleware: 'auth' })
 const { getAnalytics } = useAnalytics()
 
 const skeleton = ref(true)
+const listError = ref('')
 
 const showDatePicker = ref(false)
 
@@ -193,7 +195,14 @@ const fetchAnalytics = async () => {
     params.period = '30_days'
   }
 
+  listError.value = ''
+
   const result = await getAnalytics(params)
+
+  if (!result?.success) {
+    listError.value = result.validationMessages[0]
+    return
+  }
 
   if (result && result.data && (result.data as any).data && (result.data as any).data.success) { // eslint-disable-line @typescript-eslint/no-explicit-any
     const data = (result.data as any).data.data // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -327,6 +336,14 @@ onMounted(() => start())
           @clear="() => { selectedDateFrom = ''; selectedDateTo = ''; fetchAnalytics() }"
         />
       </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Skeleton Loading -->

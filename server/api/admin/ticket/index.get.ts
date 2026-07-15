@@ -1,5 +1,3 @@
-import { getErrorStatusCode, extractErrorMessage } from "~/util/apiHelper"
-
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
   const auth_token = getCookie(event, 'auth_token')
@@ -7,13 +5,21 @@ export default defineEventHandler(async (event) => {
 
   try {
     const query = getQuery(event)
-    const response = await $fetch(`${apiBase}/admin/new-users`, {
+
+    const params = new URLSearchParams()
+
+    if (query.q) params.append('q', String(query.q))
+    if (query.status) params.append('status', String(query.status))
+    if (query.date_from) params.append('date_from', String(query.date_from))
+    if (query.date_to) params.append('date_to', String(query.date_to))
+    if (query.per_page) params.append('per_page', String(query.per_page))
+    if (query.page) params.append('page', String(query.page))
+
+    const response = await $fetch(`${apiBase}/admin/tickets?${params.toString()}`, {
       method: 'GET',
-      query,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
         'User-Agent': 'Nuxt-Nitro-Server',
         'Connection': 'keep-alive',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -22,20 +28,8 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    const responseData = response as Record<string, unknown>
-
-    return {
-      status: 200,
-      message: (responseData.message as string) || 'Users fetched successfully',
-      data: response
-    }
+    return response
   } catch (error) {
-    const statusCode = getErrorStatusCode(error, 400)
-    const message = extractErrorMessage(error, 'Failed to fetch users')
-
-    return {
-      status: statusCode,
-      message: message
-    }
+    throwApiError(error, 'Failed to fetch tickets')
   }
 })

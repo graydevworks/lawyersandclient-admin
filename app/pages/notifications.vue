@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as v from 'valibot'
 import { computed, onMounted, ref, watch } from 'vue'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -14,6 +15,7 @@ const isSubmitting = ref(false)
 const clientCount = ref(0)
 const lawyerCount = ref(0)
 const allCount = ref(0)
+const listError = ref('')
 const stats = ref({
   announcement: 0,
   platform_update: 0,
@@ -100,6 +102,7 @@ const fetchList = async (opts: { reset: boolean }) => {
     hasMore.value = true
     recentNotifications.value = []
     isLoadingList.value = true
+    listError.value = ''
   }
 
   if (!hasMore.value && !opts.reset) return
@@ -113,6 +116,14 @@ const fetchList = async (opts: { reset: boolean }) => {
 
   try {
     const res = await getNotifications(query)
+
+    if (!res?.success) {
+      listError.value = displayApiError(res, 'Failed to fetch notifications')
+      if (opts.reset) {
+        recentNotifications.value = []
+      }
+      return
+    }
 
     if (res && res.data && res.data.data && res.data.data.success) {
       const list = normalizeNotificationsList(res)
@@ -299,6 +310,14 @@ const submitNotification = async () => {
       <p class="text-[14px] text-gray-500">
         Send and track push notifications & broadcasts
       </p>
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

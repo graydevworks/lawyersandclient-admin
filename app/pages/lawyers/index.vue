@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatRelativeDate } from '~/util/helper'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -56,6 +57,7 @@ const cardFields = [
 ]
 
 const lawyers = ref([])
+const listError = ref('')
 
 const currentPage = ref(1)
 const perPage = ref(10)
@@ -138,7 +140,14 @@ const fetchLawyers = async (page: number = 1) => {
     params.status = statusFilter.value.toLowerCase()
   }
 
+  listError.value = ''
+
   const result = await getLawyers(params)
+
+  if (!result?.success) {
+    listError.value = result.validationMessages[0]
+    return
+  }
 
   if (result && result.data && result.data.lawyers && result.data.lawyers.data && result.data.lawyers.data.success) {
     const lawyerList = result.data.lawyers.data.data
@@ -225,6 +234,7 @@ const visiblePages = computed(() => {
 // --- Status filter watcher ---
 watch(statusFilter, () => {
   currentPage.value = 1
+  listError.value = ''
   fetchLawyers(1)
 })
 
@@ -263,6 +273,14 @@ onMounted(() => start())
         @apply="applyDateFilter"
         @clear="clearDateFilter"
       />
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Skeleton Loading -->

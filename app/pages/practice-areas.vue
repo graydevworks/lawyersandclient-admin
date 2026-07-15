@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import ErrorModal from '~/components/shared/ErrorModal.vue'
+import { displayApiError } from '~/util/apiHelper'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -49,10 +49,18 @@ type PracticeAreaCard = {
 }
 
 const practiceAreas = ref<PracticeAreaCard[]>([])
+const listError = ref('')
 
 // --- main list fetch ---
 const fetchPracticeAreas = async (page: number = 1) => {
+  listError.value = ''
+
   const result = await getPracticeArea({ page, per_page: perPage.value })
+
+  if (!result?.success) {
+    listError.value = result.validationMessages[0]
+    return
+  }
 
   console.log(result, 'result')
   if (result && result.data && result.data.data && result.data.data.success) {
@@ -356,6 +364,14 @@ const goToPage = (page: number) => {
       >
         Add Practice area
       </UButton>
+    </div>
+
+    <!-- Error Banner -->
+    <div
+      v-if="listError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {{ listError }}
     </div>
 
     <!-- Practice Areas Grid -->

@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     const endpoint = role === 'admin' ? 'admin/auth/login' : `${role}/auth/login`
     console.log(`${apiBase}/${endpoint}`)
 
+    console.log(body, 'body')
+
     try {
       const response: {
         access_token: string
