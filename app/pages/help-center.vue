@@ -71,6 +71,10 @@ const showImagePreview = ref(false)
 const previewImage = ref<{ url: string, name: string } | null>(null)
 const ticketImages = ref<Array<{ url: string, name: string, type: string }>>([])
 
+// Attachment preview state
+const showAttachmentPreview = ref(false)
+const previewAttachment = ref<{ url: string, name: string, type: string } | null>(null)
+
 const loadStats = async () => {
   statsLoading.value = true
   try {
@@ -287,6 +291,36 @@ const downloadImage = (image: { url: string, name: string }) => {
   window.document.body.removeChild(link)
 }
 
+// Attachment actions
+const openAttachmentPreview = (url: string) => {
+  const fileName = url.split('/').pop() || 'Attachment'
+  const fileType = url.includes('.pdf') ? 'pdf' : url.includes('.doc') || url.includes('.docx') ? 'document' : 'file'
+  previewAttachment.value = { url, name: fileName, type: fileType }
+  showAttachmentPreview.value = true
+}
+
+const downloadAttachment = () => {
+  if (!previewAttachment.value?.url) return
+  const link = window.document.createElement('a')
+  link.href = previewAttachment.value.url
+  link.download = previewAttachment.value.name
+  link.target = '_blank'
+  window.document.body.appendChild(link)
+  link.click()
+  window.document.body.removeChild(link)
+}
+
+const isImageAttachment = (url: string) => {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
+  return imageExtensions.some(ext => url.toLowerCase().includes(ext))
+}
+
+const getAttachmentIcon = (type: string) => {
+  if (type === 'pdf') return 'pepicons-pencil:file'
+  if (type === 'document') return 'pepicons-pencil:file'
+  return 'i-lucide-file'
+}
+
 watch([activeTab, searchQuery], async () => {
   resetListState()
   await fetchList({ append: false })
@@ -460,11 +494,15 @@ onUnmounted(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Name</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.reporter?.name || '—' }}</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.name || selectedTicket.reporter?.name || '—' }}</span>
                 </div>
-                <div v-if="selectedTicket.reporter?.email" class="flex justify-between items-center text-sm">
+                <div v-if="selectedTicket.submitted_by?.email || selectedTicket.reporter?.email" class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Email</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.reporter.email }}</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.submitted_by?.email || selectedTicket.reporter?.email }}</span>
+                </div>
+                <div v-if="selectedTicket.submitted_by?.role" class="flex justify-between items-center text-sm">
+                  <span class="text-gray-500">Role</span>
+                  <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.submitted_by?.role }}</span>
                 </div>
               </div>
             </div>
@@ -476,11 +514,19 @@ onUnmounted(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Status</span>
-                  <span class="font-medium text-gray-900">{{ selectedTicket.status || '—' }}</span>
+                  <span class="font-medium text-gray-900 capitalize">{{ selectedTicket.status || '—' }}</span>
                 </div>
                 <div v-if="selectedTicket.assigned_to" class="flex justify-between items-center text-sm">
                   <span class="text-gray-500">Assigned To</span>
                   <span class="font-medium text-gray-900">{{ selectedTicket.assigned_to.name }}</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-gray-500">Submitted</span>
+                  <span class="font-medium text-gray-900">{{ selectedTicket.created_at ? formatRelativeDate(selectedTicket.created_at) : '—' }}</span>
+                </div>
+                <div v-if="selectedTicket.updated_at" class="flex justify-between items-center text-sm">
+                  <span class="text-gray-500">Last Updated</span>
+                  <span class="font-medium text-gray-900">{{ formatRelativeDate(selectedTicket.updated_at) }}</span>
                 </div>
               </div>
             </div>
@@ -491,8 +537,43 @@ onUnmounted(() => {
               Description
             </h3>
             <p class="text-sm font-medium text-gray-900 leading-relaxed">
-              {{ selectedTicket.description || '—' }}
+              {{ selectedTicket.message || selectedTicket.description || '—' }}
             </p>
+          </div>
+
+          <!-- Attachment Section -->
+          <div v-if="selectedTicket?.attachment_url" class="py-6 space-y-4 border-b border-gray-100">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Attachment
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div
+                class="relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-gray-200 hover:border-gray-300 transition-colors"
+                @click="openAttachmentPreview(selectedTicket.attachment_url)"
+              >
+                <img
+                  v-if="isImageAttachment(selectedTicket.attachment_url)"
+                  :src="selectedTicket.attachment_url"
+                  alt="Attachment"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  v-else
+                  class="w-full h-full flex items-center justify-center bg-gray-50"
+                >
+                  <UIcon
+                    :name="getAttachmentIcon(previewAttachment?.type || 'file')"
+                    class="w-12 h-12 text-gray-400"
+                  />
+                </div>
+                <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                  <UIcon
+                    name="i-lucide-zoom-in"
+                    class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity drop-shadow-lg"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Images Section -->
@@ -560,12 +641,13 @@ onUnmounted(() => {
                 />
               </div>
 
-              <div>
+              <div class="md:col-span-2">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Resolution note</label>
-                <UInput
+                <UTextarea
                   v-model="resolutionNote"
                   class="w-full mt-2"
                   placeholder="Enter resolution note..."
+                  :rows="3"
                 />
               </div>
             </div>
@@ -633,6 +715,65 @@ onUnmounted(() => {
             icon="i-heroicons-arrow-down-tray"
             class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px]"
             @click="downloadImage(previewImage)"
+          >
+            Download
+          </UButton>
+        </div>
+      </div>
+    </SharedBaseModal>
+
+    <!-- Attachment Preview Modal -->
+    <SharedBaseModal
+      v-model="showAttachmentPreview"
+      :title="previewAttachment?.name || 'Attachment Preview'"
+      max-width="max-w-[800px]"
+    >
+      <div
+        v-if="previewAttachment"
+        class="mt-4"
+      >
+        <!-- Attachment Preview Area -->
+        <div class="rounded-xl border border-gray-200 overflow-hidden mb-6 bg-gray-50 flex items-center justify-center">
+          <img
+            v-if="isImageAttachment(previewAttachment.url)"
+            :src="previewAttachment.url"
+            :alt="previewAttachment.name"
+            class="max-w-full max-h-[500px] object-contain"
+          />
+          <div
+            v-else
+            class="flex flex-col items-center justify-center py-16 px-4"
+          >
+            <UIcon
+              :name="getAttachmentIcon(previewAttachment.type)"
+              class="w-20 h-20 mb-4 text-gray-400"
+            />
+            <p class="text-sm font-medium text-gray-900">
+              {{ previewAttachment.name }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ previewAttachment.type }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3">
+          <UButton
+            block
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-external-link"
+            class="border border-[#E5E7EB] text-gray-900 font-semibold py-3 rounded-[8px]"
+            @click="() => window.open(previewAttachment?.url, '_blank')"
+          >
+            Open in new tab
+          </UButton>
+          <UButton
+            block
+            icon="i-heroicons-arrow-down-tray"
+            class="bg-[#003357] hover:bg-[#004474] text-white font-semibold py-3 rounded-[8px]"
+            @click="downloadAttachment"
           >
             Download
           </UButton>

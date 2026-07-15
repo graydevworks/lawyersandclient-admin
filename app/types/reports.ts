@@ -19,6 +19,7 @@ export interface Report {
   reported: Reported
   created_at?: string
   resolution_note?: string
+  attachment_url?: string
 }
 
 export interface ReportMeta {

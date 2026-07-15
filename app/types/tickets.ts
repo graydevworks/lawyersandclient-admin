@@ -30,6 +30,7 @@ export interface Ticket {
     id: number | string
     name: string
   }
+  attachment_url?: string
 }
 
 export interface TicketMeta {
