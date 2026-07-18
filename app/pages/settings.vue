@@ -20,6 +20,16 @@ const activeContentTab = ref('Featured lawyers')
 const showContentMenu = ref(false)
 const toast = useToast()
 
+// Error state for admin section
+const listError = ref('')
+const hasFetchError = ref(false)
+
+// Error state for banners and featured lawyers sections
+const bannersListError = ref('')
+const hasBannersFetchError = ref(false)
+const featuredListError = ref('')
+const hasFeaturedFetchError = ref(false)
+
 const {
   getGeneralSettings
   // getSecuritySettings,
@@ -273,12 +283,12 @@ const loadFeatured = async () => {
   const result = await getFeaturedLawyers()
   console.log('[Featured lawyers] API response:', result)
 
+  featuredListError.value = ''
+  hasFeaturedFetchError.value = false
+
   if (!result?.success) {
-    toast.add({
-      title: 'Could not load featured lawyers',
-      description: displayApiError(result, 'Please try again.'),
-      color: 'error'
-    })
+    featuredListError.value = result.validationMessages[0]
+    hasFeaturedFetchError.value = true
     return
   }
 
@@ -329,7 +339,7 @@ const loadFeaturedSearch = async () => {
   if (!result?.success) {
     toast.add({
       title: 'Could not search featured lawyers',
-      description: displayApiError(result, 'Please try again.'),
+      description: result.validationMessages[0],
       color: 'error'
     })
     featuredSearchResults.value = []
@@ -471,6 +481,12 @@ const bannerFileInputKey = ref(0)
 const bannerFormError = ref('')
 const draggingBannerIndex = ref<number | null>(null)
 
+// Banner delete confirmation state
+const isDeleteConfirmOpen = ref(false)
+const bannerToDelete = ref<AppBanner | null>(null)
+const isSuccessModalOpen = ref(false)
+const successModalMessage = ref('')
+
 // Error modal state
 const showErrorModal = ref(false)
 const errorModalTitle = ref('Error')
@@ -525,14 +541,14 @@ const fetchAppBanners = async () => {
   const result = await getBanners()
   console.log('[App banners] API response:', result)
 
+  bannersListError.value = ''
+  hasBannersFetchError.value = false
+
   if (responseSucceeded(result)) {
     appBanners.value = extractBannerList(result).map(normalizeBanner).filter(banner => Number.isFinite(banner.id))
   } else {
-    toast.add({
-      title: 'Could not load banners',
-      description: result?.data?.message || 'Please try again.',
-      color: 'error'
-    })
+    bannersListError.value = result.validationMessages[0] || 'Failed to load banners'
+    hasBannersFetchError.value = true
   }
 }
 
@@ -683,25 +699,35 @@ const handleBannerDrop = async (toIndex: number) => {
   await moveBanner(fromIndex, toIndex)
 }
 
-const removeBanner = async (banner: AppBanner) => {
+const initiateBannerDelete = (banner: AppBanner) => {
+  bannerToDelete.value = banner
+  isDeleteConfirmOpen.value = true
+}
+
+const confirmBannerDelete = async () => {
+  if (!bannerToDelete.value) return
+
+  const banner = bannerToDelete.value
   const previousBanners = [...appBanners.value]
+
+  // Optimistic UI update
   appBanners.value = appBanners.value.filter(item => item.id !== banner.id)
+  isDeleteConfirmOpen.value = false
 
   const result = await deleteBanner(banner.id)
+
   if (!responseSucceeded(result)) {
+    // Restore on failure
     appBanners.value = previousBanners
-    toast.add({
-      title: 'Delete failed',
-      description: responseMessage(result, 'The banner was restored.'),
-      color: 'error'
-    })
+    errorModalTitle.value = 'Delete Failed'
+    errorModalDescription.value = responseMessage(result, 'Could not delete banner.')
+    showErrorModal.value = true
     return
   }
 
-  toast.add({
-    title: 'Banner removed',
-    color: 'success'
-  })
+  // Show success modal
+  successModalMessage.value = `"${banner.title || 'Banner'}" has been removed successfully.`
+  isSuccessModalOpen.value = true
 }
 
 const adminAccounts = ref<Array<{ id: number, name: string, email: string, role: string, color: 'primary' | 'success' | 'neutral' }>>([])
@@ -712,9 +738,13 @@ const permissions = [
   { title: 'Support Admin — view chat logs', description: 'Limited to flagged conversations only' },
   { title: 'Support Admin — send notifications', description: 'Allow Support Admin to broadcast messages' }
 ]
+
 // Load admin settings data
 const loadAdminSettings = async () => {
   console.log('[Settings] Loading admin settings...')
+
+  listError.value = ''
+  hasFetchError.value = false
 
   const [generalSettings] = await Promise.all([
     getGeneralSettings()
@@ -732,6 +762,9 @@ const loadAdminSettings = async () => {
       role: acc.role || '',
       color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'success' as const : 'neutral' as const
     }))
+  } else {
+    listError.value = generalSettings.validationMessages[0]
+    hasFetchError.value = true
   }
 }
 
@@ -854,6 +887,12 @@ onMounted(() => {
               v-if="activeContentTab === 'Featured lawyers'"
               class="p-6 md:p-8 space-y-6"
             >
+              <!-- Error Banner -->
+              <SharedErrorBanner
+                v-if="hasFeaturedFetchError"
+                :message="featuredListError"
+              />
+
               <div>
                 <h2 class="text-lg font-bold text-gray-900">
                   Featured lawyers
@@ -1250,6 +1289,12 @@ onMounted(() => {
               v-if="activeContentTab === 'App banners'"
               class="p-6 md:p-8 space-y-6"
             >
+              <!-- Error Banner -->
+              <SharedErrorBanner
+                v-if="hasBannersFetchError"
+                :message="bannersListError"
+              />
+
               <div class="flex flex-col xl:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <h2 class="text-lg font-bold text-gray-900">
@@ -1396,7 +1441,7 @@ onMounted(() => {
                             size="sm"
                             class="px-4 font-bold"
                             :loading="bannersUpdating"
-                            @click="removeBanner(banner)"
+                            @click="initiateBannerDelete(banner)"
                           >
                             Remove
                           </UButton>
@@ -1483,6 +1528,12 @@ onMounted(() => {
           v-if="activeTab === 'Admin accounts'"
           class="p-6 md:p-[16px] space-y-8"
         >
+          <!-- Error Banner -->
+          <SharedErrorBanner
+            v-if="hasFetchError"
+            :message="listError"
+          />
+
           <div class="bg-white rounded-[8px]">
             <div class="flex items-start justify-between border-b border-[#F0F1F3] p-6 md:p-[16px]">
               <div>
@@ -1675,6 +1726,59 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Banner Delete Confirmation Modal -->
+    <UModal
+      :open="isDeleteConfirmOpen"
+      @update:open="() => isDeleteConfirmOpen = false"
+    >
+      <template #content>
+        <UCard class="rounded-xl">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">
+                Delete Banner
+              </h3>
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark-20-solid"
+                class="-my-1"
+                @click="isDeleteConfirmOpen = false"
+              />
+            </div>
+          </template>
+          <div class="space-y-4">
+            <p class="text-gray-600">
+              Are you sure you want to delete "{{ bannerToDelete?.title || 'this banner' }}"? This action cannot be undone.
+            </p>
+          </div>
+          <template #footer>
+            <div class="flex gap-3">
+              <UButton
+                color="gray"
+                @click="isDeleteConfirmOpen = false"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                color="red"
+                @click="confirmBannerDelete"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
+    <!-- Banner Delete Success Modal -->
+    <SharedSuccessModal
+      v-model="isSuccessModalOpen"
+      title="Banner Deleted"
+      :description="successModalMessage"
+    />
 
     <SharedBaseModal
       v-model="isBannerModalOpen"

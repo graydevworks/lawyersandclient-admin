@@ -10,6 +10,7 @@ const { getAnalytics } = useAnalytics()
 
 const skeleton = ref(true)
 const listError = ref('')
+const hasFetchError = ref(false)
 
 const showDatePicker = ref(false)
 
@@ -196,11 +197,13 @@ const fetchAnalytics = async () => {
   }
 
   listError.value = ''
+  hasFetchError.value = false
 
   const result = await getAnalytics(params)
 
   if (!result?.success) {
     listError.value = result.validationMessages[0]
+    hasFetchError.value = true
     return
   }
 
@@ -339,12 +342,10 @@ onMounted(() => start())
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="skeleton">
@@ -440,7 +441,7 @@ onMounted(() => start())
                     class="w-2 h-2 rounded-full"
                   />
                   <span>{{ label }}</span>
-                  <span class="text-green-500 font-bold ml-1">(+12)</span>
+                  <!-- <span class="text-green-500 font-bold ml-1">(+12)</span> -->
                 </div>
                 <div class="flex-1 border-b border-dotted mx-2 border-gray-200" />
                 <span class="text-gray-900 font-bold">{{ practiceAreaSeries[i] }}%</span>

@@ -19,7 +19,7 @@ const displayName = computed(() => {
 const userAvatar = computed(() => {
   const u = currentUser.value as Record<string, unknown> | undefined
   const data = u?.data as Record<string, unknown> | undefined
-  return data?.profile_photo_url || data?.avatar || 'https://i.pravatar.cc/150?u=admin'
+  return data?.profile_photo_url || data?.avatar || 'https://i.p/150?u=admin'
 })
 
 const userRole = computed(() => {

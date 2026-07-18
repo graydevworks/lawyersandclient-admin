@@ -16,6 +16,7 @@ const clientCount = ref(0)
 const lawyerCount = ref(0)
 const allCount = ref(0)
 const listError = ref('')
+const hasFetchError = ref(false)
 const stats = ref({
   announcement: 0,
   platform_update: 0,
@@ -103,6 +104,7 @@ const fetchList = async (opts: { reset: boolean }) => {
     recentNotifications.value = []
     isLoadingList.value = true
     listError.value = ''
+    hasFetchError.value = false
   }
 
   if (!hasMore.value && !opts.reset) return
@@ -119,6 +121,7 @@ const fetchList = async (opts: { reset: boolean }) => {
 
     if (!res?.success) {
       listError.value = displayApiError(res, 'Failed to fetch notifications')
+      hasFetchError.value = true
       if (opts.reset) {
         recentNotifications.value = []
       }
@@ -313,12 +316,10 @@ const submitNotification = async () => {
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Left Column: Compose & Recent -->

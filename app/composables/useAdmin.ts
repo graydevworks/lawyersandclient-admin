@@ -14,7 +14,8 @@ export const useAdmin = () => {
       console.log('[useAdmin] getGeneralSettings response:', data)
       return { success: true, data }
     } catch (error) {
-      return { success: false, ...resolveApiError(error, 'Failed to load general settings.') }
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load getGeneralSettings.')
+      return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false
     }

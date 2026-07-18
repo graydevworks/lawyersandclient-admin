@@ -28,13 +28,13 @@ export const usePracticeArea = () => {
       if (isAbortError(error)) return { success: false, aborted: true }
 
       const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load practice areas.')
-      toast.add({
-        title: 'Error',
-        description: errMsg,
-        icon: 'i-lucide-alert-circle',
-        color: 'error',
-        duration: 3000
-      })
+      // toast.add({
+      //   title: 'Error',
+      //   description: errMsg,
+      //   icon: 'i-lucide-alert-circle',
+      //   color: 'error',
+      //   duration: 3000
+      // })
       return { success: false, error: errMsg, validationMessages }
     } finally {
       loading.value = false

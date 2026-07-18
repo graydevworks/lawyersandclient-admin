@@ -50,15 +50,18 @@ type PracticeAreaCard = {
 
 const practiceAreas = ref<PracticeAreaCard[]>([])
 const listError = ref('')
+const hasFetchError = ref(false)
 
 // --- main list fetch ---
 const fetchPracticeAreas = async (page: number = 1) => {
   listError.value = ''
+  hasFetchError.value = false
 
   const result = await getPracticeArea({ page, per_page: perPage.value })
 
   if (!result?.success) {
     listError.value = result.validationMessages[0]
+    hasFetchError.value = true
     return
   }
 
@@ -367,12 +370,10 @@ const goToPage = (page: number) => {
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Practice Areas Grid -->
     <!-- Skeleton Loading -->

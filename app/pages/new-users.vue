@@ -175,6 +175,7 @@ const rows = ref([
 
 const searchQuery = ref('')
 const listError = ref('')
+const hasFetchError = ref(false)
 const fromDate = ref('')
 const toDate = ref('')
 
@@ -194,12 +195,14 @@ const fetchUsers = async (page: number = 1) => {
   }
 
   listError.value = ''
+  hasFetchError.value = false
 
   const result = await getUsers(params)
   // Map real API data when available
 
   if (!result?.success) {
     listError.value = displayApiError(result, 'Failed to fetch users')
+    hasFetchError.value = true
     return
   }
 
@@ -371,12 +374,10 @@ onMounted(() => start())
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="skeleton">

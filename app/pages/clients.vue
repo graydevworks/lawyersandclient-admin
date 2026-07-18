@@ -46,6 +46,7 @@ const clients = ref<{
 
 const searchQuery = ref('')
 const listError = ref('')
+const hasFetchError = ref(false)
 const statusFilter = ref<string | undefined>(undefined)
 const statusOptions = [
   { label: 'All statuses', value: undefined },
@@ -104,6 +105,7 @@ const fetchClients = async (page: number = 1) => {
   }
 
   listError.value = ''
+  hasFetchError.value = false
 
   let result
 
@@ -115,6 +117,7 @@ const fetchClients = async (page: number = 1) => {
 
   if (!result?.success) {
     listError.value = result.validationMessages[0]
+    hasFetchError.value = true
     return
   }
 
@@ -266,12 +269,10 @@ onMounted(() => {
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="skeleton">

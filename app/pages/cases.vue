@@ -11,6 +11,7 @@ const { debounceSearch } = useSearch()
 
 const skeleton = ref(true)
 const listError = ref('')
+const hasFetchError = ref(false)
 const searchQuery = ref('')
 
 interface CaseRow {
@@ -194,6 +195,7 @@ const visiblePages = computed((): number[] => {
 
 const fetchCases = async (page: number = currentPage.value) => {
   listError.value = ''
+  hasFetchError.value = false
 
   const params: Record<string, string | number | undefined> = {
     date_from: fromDate.value || undefined,
@@ -217,7 +219,8 @@ const fetchCases = async (page: number = currentPage.value) => {
   if (result?.aborted) return
 
   if (!result?.success) {
-    listError.value = displayApiError(result, 'Failed to load cases.')
+    listError.value = result.validationMessages[0]
+    hasFetchError.value = true
     cases.value = []
     return
   }
@@ -225,6 +228,7 @@ const fetchCases = async (page: number = currentPage.value) => {
   const payload = extractCasesPayload(result, searching ? 'search' : 'list')
   if (!payload) {
     listError.value = displayApiError(result, 'Failed to load cases.')
+    hasFetchError.value = true
     cases.value = []
     return
   }
@@ -339,6 +343,12 @@ onMounted(() => start())
         @clear="clearDateFilter"
       />
     </div>
+
+    <!-- Error Banner -->
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="skeleton">

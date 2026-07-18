@@ -36,6 +36,7 @@ console.log(swap(1, 2)) // Output: [2, 1]
 
 const stats = ref<StatItem[]>([])
 const listError = ref('')
+const hasFetchError = ref(false)
 
 const headerFromDate = ref('')
 const headerToDate = ref('')
@@ -176,13 +177,15 @@ const fetchDashboardData = async () => {
   }
 
   listError.value = ''
+  hasFetchError.value = false
 
   // Backend accepts query params; keep typing loose to avoid casting errors in UI.
   const [result, queue] = await Promise.all([getDashboard(query), getVerificationQueue()])
 
   if (!result?.success) {
     console.log(result)
-    listError.value = result.validationMessages[0]
+    listError.value = displayApiError(result, 'Failed to load dashboard data.')
+    hasFetchError.value = true
     return
   }
 
@@ -307,12 +310,10 @@ onMounted(() => start())
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="skeleton">

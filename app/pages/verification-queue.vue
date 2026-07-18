@@ -49,6 +49,7 @@ const selectedSubmission = ref<Submission | null>(null)
 const reviewNote = ref('')
 const searchQuery = ref('')
 const listError = ref('')
+const hasFetchError = ref(false)
 
 // Modal state
 const showApproveConfirm = ref(false)
@@ -96,10 +97,12 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
   }
 
   listError.value = ''
+  hasFetchError.value = false
 
   const result = await getVerificationQueue(params)
   if (!result?.success) {
     listError.value = result.validationMessages[0]
+    hasFetchError.value = true
     if (!append) {
       submissions.value = []
     }
@@ -479,12 +482,10 @@ onMounted(() => start())
     </div>
 
     <!-- Error Banner -->
-    <div
-      v-if="listError"
-      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-    >
-      {{ listError }}
-    </div>
+    <SharedErrorBanner
+      v-if="hasFetchError"
+      :message="listError"
+    />
 
     <!-- Main Content Split -->
     <div class="flex-1 flex flex-col lg:flex-row min-h-0 mb-10">

@@ -38,6 +38,7 @@ const tabs = [
 const searchQuery = ref('')
 const isFetching = ref(false)
 const listError = ref('')
+const hasFetchError = ref(false)
 const isSearchError = ref(false)
 
 const resolutionStatus = ref<ReportStatus>('pending')
@@ -120,6 +121,7 @@ const fetchList = async ({ append }: { append: boolean }) => {
   if (!append) {
     isFetching.value = true
     listError.value = ''
+    hasFetchError.value = false
   }
 
   try {
@@ -130,8 +132,8 @@ const fetchList = async ({ append }: { append: boolean }) => {
     })
 
     if (!result?.success) {
-      const errorResult = result as { error?: unknown, validationMessages?: string[] } | null | undefined
-      listError.value = result.validationMessages[0]
+      listError.value = displayApiError(result, 'Failed to fetch reports')
+      hasFetchError.value = true
       if (!append) {
         submissions.value = []
       }
@@ -158,8 +160,9 @@ const fetchList = async ({ append }: { append: boolean }) => {
 
       return {
         id: report.id as number | string,
-        title: (report.subject as string) ?? (report.title as string) ?? 'Untitled report',
+        title: (report.subject as string) ?? (report.report_code as string) ?? 'Untitled report',
         attachment_url: report.attachment_url as string | undefined,
+        description: report.reason as string | undefined,
         reporter: reporterName ?? (typeof report.reporter_name === 'string' ? report.reporter_name : undefined) ?? 'Unknown',
         time: report.created_at ? formatRelativeDate(report.created_at as string) : '',
         status: report.status as string
@@ -348,12 +351,10 @@ onUnmounted(() => {
             :ui="{ base: 'rounded-[36px] text-[14px] py-[3px] h-[38px] text-[14px] bg-[#F8F8F8] ring-0 border-0', leadingIcon: 'size-[16px] translate-x-[5px]' }"
           />
 
-          <div
-            v-if="listError && !isSearchError"
-            class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {{ listError }}
-          </div>
+          <SharedErrorBanner
+            v-if="hasFetchError"
+            :message="listError"
+          />
 
           <div class="inline-block sm:flex w-full overflow-x-auto mb-4 border-b border-gray-100 pb-2">
             <button
@@ -511,7 +512,7 @@ onUnmounted(() => {
                 Description
               </h3>
               <p class="text-sm font-medium text-gray-900 leading-relaxed">
-                {{ selectedReport.description || selectedReport.details || '—' }}
+                {{ selectedReport.reason || selectedReport.details || '—' }}
               </p>
             </div>
 
