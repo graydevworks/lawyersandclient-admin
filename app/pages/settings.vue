@@ -8,6 +8,14 @@ definePageMeta({ middleware: 'auth' })
 const route = useRoute()
 const { logout } = useAuth()
 
+const { currentUser } = useAuth()
+
+const userRole = computed(() => {
+  const u = currentUser.value as Record<string, unknown> | undefined
+  const data = u?.data as Record<string, unknown> | undefined
+  return data?.role || u?.role || 'Admin'
+})
+
 const activeTab = ref('General')
 
 // Set active tab from query parameter on mount
@@ -655,10 +663,8 @@ const submitBannerForm = async () => {
     return
   }
 
-  toast.add({
-    title: editingBanner.value ? 'Banner updated' : 'Banner created',
-    color: 'success'
-  })
+  successModalMessage.value = editingBanner.value ? 'Banner updated successfully.' : 'Banner created successfully.'
+  isSuccessModalOpen.value = true
   closeBannerModal()
   await fetchAppBanners()
 }
@@ -1308,6 +1314,7 @@ onMounted(() => {
                   icon="i-lucide-plus"
                   class="bg-[#003357] hover:bg-[#004474] text-white rounded-lg px-4 font-bold"
                   @click="openCreateBannerModal"
+                  v-if="userRole == 'super_admin'"
                 >
                   Add banner
                 </UButton>
@@ -1333,7 +1340,7 @@ onMounted(() => {
                     icon="i-lucide-image"
                     title="No app banners"
                     description="Create the first app banner for the mobile app carousel."
-                    action-label="Add banner"
+                    :action-label="userRole == 'super_admin' ? 'Add banner' : ''"
                     @action="openCreateBannerModal"
                   />
                 </div>
@@ -1550,6 +1557,7 @@ onMounted(() => {
                 class="bg-[#003357] h-[34px] text-[12px] hover:bg-[#002244] rounded-[8px]"
                 :ui="{ leadingIcon: 'size-[14px]' }"
                 @click="navigateTo('/account-details')"
+                v-if="userRole == 'super_admin'"
               >
                 Create admin
               </UButton>
@@ -1564,7 +1572,7 @@ onMounted(() => {
                   icon="i-lucide-users"
                   title="No admin accounts"
                   description="Create the first admin account to manage platform access."
-                  action-label="Create admin"
+                  :action-label="userRole == 'super_admin' ? 'Create admin' : ''"
                   @action="navigateTo('/account-details')"
                 />
               </div>
@@ -1778,6 +1786,13 @@ onMounted(() => {
       v-model="isSuccessModalOpen"
       title="Banner Deleted"
       :description="successModalMessage"
+    />
+
+    <!-- Error Modal -->
+    <SharedErrorModal
+      v-model="showErrorModal"
+      :title="errorModalTitle"
+      :description="errorModalDescription"
     />
 
     <SharedBaseModal

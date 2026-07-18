@@ -71,6 +71,10 @@ const loadAdminData = async () => {
 
 onMounted(() => {
   if (isEditMode.value) loadAdminData()
+
+  if(route.query.admin === 'profile') {
+    // form
+  }
 })
 
 const handleSuccessComplete = () => {

@@ -4,6 +4,14 @@
  */
 import { displayApiError } from '~/util/apiHelper'
 
+const { currentUser } = useAuth()
+
+const userRole = computed(() => {
+  const u = currentUser.value as Record<string, unknown> | undefined
+  const data = u?.data as Record<string, unknown> | undefined
+  return data?.role || u?.role || 'Admin'
+})
+
 interface ClientInfo {
   id: string
   name: string
@@ -219,7 +227,7 @@ const handleSuccessComplete = () => {
         </div>
       </div>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-3" v-if="userRole == 'super_admin'">
         <!-- <UButton
           block
           :loading="updating"

@@ -41,6 +41,14 @@ const visiblePages = computed((): number[] => {
   return Array.from({ length: 5 }, (_, i) => start + i)
 })
 
+const { currentUser } = useAuth()
+
+const userRole = computed(() => {
+  const u = currentUser.value as Record<string, unknown> | undefined
+  const data = u?.data as Record<string, unknown> | undefined
+  return data?.role || u?.role || 'Admin'
+})
+
 type PracticeAreaCard = {
   id: number
   name: string
@@ -364,6 +372,7 @@ const goToPage = (page: number) => {
         class="bg-[#003357] hover:bg-[#004474] text-white px-5 py-[12.5px] rounded-lg text-[14px] font-semibold"
         icon="i-heroicons-plus"
         @click="isAddModalOpen = true"
+        v-if="userRole == 'super_admin'"
       >
         Add Practice area
       </UButton>
@@ -405,7 +414,7 @@ const goToPage = (page: number) => {
           icon="i-lucide-scale"
           title="No practice areas"
           description="There are no practice areas configured yet. Add one to get started."
-          action-label="Add Practice Area"
+          :action-label="userRole == 'super_admin' ? 'Add Practice Area' : ''"
           @action="isAddModalOpen = true"
         />
       </UCard>

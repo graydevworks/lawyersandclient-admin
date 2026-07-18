@@ -5,6 +5,14 @@ import { useLawyers } from '../../../composables/useLawyers'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
 import { formatRelativeDate } from '~/util/helper'
 
+const { currentUser } = useAuth()
+
+const userRole = computed(() => {
+  const u = currentUser.value as Record<string, unknown> | undefined
+  const data = u?.data as Record<string, unknown> | undefined
+  return data?.role || u?.role || 'Admin'
+})
+
 const route = useRoute()
 const router = useRouter()
 const id = route.params.id as string
@@ -919,7 +927,7 @@ const openInNewTab = () => {
               </div>
             </section>
 
-            <section class="pt-6 space-y-3">
+            <section class="pt-6 space-y-3" v-if="userRole == 'super_admin'">
               <!-- <UButton
                 block
                 color="neutral"
