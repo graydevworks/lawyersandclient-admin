@@ -12,6 +12,8 @@ const toast = useToast()
 
 const { createAdminAccount, updateAdminAccount, getAdminAccounts } = useAdmin()
 
+const { currentUser } = useAuth()
+
 // --- Route-driven mode ---
 const editAdminId = computed<number | null>(() => {
   const raw = route.query.id
@@ -72,8 +74,20 @@ const loadAdminData = async () => {
 onMounted(() => {
   if (isEditMode.value) loadAdminData()
 
-  if(route.query.admin === 'profile') {
-    // form
+  console.log(currentUser.value)
+
+  if (route.query.isAdmin == 'true') {
+    formData.name = currentUser.value.data.name
+    formData.email = currentUser.value.data.email
+    formData.role = currentUser.value.data.role
+  }
+})
+
+watch(route, () => {
+  if (route.query.isAdmin == 'true') {
+    formData.name = currentUser.value.data.name
+    formData.email = currentUser.value.data.email
+    formData.role = currentUser.value.data.role
   }
 })
 
@@ -231,7 +245,10 @@ const handleSubmit = async () => {
       </div>
 
       <div class="rounded-2xl p-8">
-        <div v-if="isEditMode && isLoadingAdmin" class="space-y-6">
+        <div
+          v-if="isEditMode && isLoadingAdmin"
+          class="space-y-6"
+        >
           <USkeleton class="h-10 w-full rounded-xl" />
           <USkeleton class="h-10 w-full rounded-xl" />
           <USkeleton class="h-10 w-full rounded-xl" />
@@ -257,6 +274,7 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-user"
+              :disabled="route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px]',
                 placeholder: 'text-gray-400'
@@ -276,7 +294,7 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-mail"
-              :disabled="isEditMode"
+              :disabled="route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
@@ -297,6 +315,7 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-shield"
+              :disabled="isEditMode || route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
@@ -317,6 +336,7 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-lock"
+              :disabled="route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
@@ -340,6 +360,7 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-lock"
+              :disabled="route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'
@@ -347,7 +368,7 @@ const handleSubmit = async () => {
             />
           </UFormField>
 
-          <div class="pt-6 flex justify-end">
+          <div class="pt-6 flex justify-end" v-if="route.query.isAdmin != 'true'">
             <UButton
               type="submit"
               size="lg"
@@ -370,4 +391,3 @@ const handleSubmit = async () => {
     />
   </div>
 </template>
-

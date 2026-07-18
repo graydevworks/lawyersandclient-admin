@@ -254,7 +254,7 @@ const closeDropdown = () => {
           </UButton>
         </NuxtLink>
 
-        <NuxtLink to="/account-details">
+        <NuxtLink to="/account-details?isAdmin=true">
           <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity w-[150px] h-full bg-[#F6F6F6] py-[4px] px-[4.5px] rounded-full">
             <UAvatar
               :src="userAvatar"
