@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
 import { displayApiError } from '~/util/apiHelper'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import SuccessModal from '~/components/shared/SuccessModal.vue'
 import { useSearch } from '~/composables/useSearch'
 
 definePageMeta({ middleware: 'auth' })
@@ -71,6 +72,10 @@ const statsLoading = ref(false)
 const showErrorModal = ref(false)
 const errorModalTitle = ref('Error')
 const errorModalDescription = ref('')
+
+// Success modal state
+const showSuccessModal = ref(false)
+const successModalMessage = ref('')
 
 // Image preview state
 const showImagePreview = ref(false)
@@ -257,6 +262,8 @@ const onSaveResolution = async () => {
       return
     }
 
+    successModalMessage.value = 'Ticket updated successfully.'
+    showSuccessModal.value = true
     await loadDetail(selectedTicketId.value)
     await loadStats()
   } finally {
@@ -882,6 +889,14 @@ onUnmounted(() => {
         </div>
       </div>
     </SharedBaseModal>
+
+    <!-- Success Modal -->
+    <SharedSuccessModal
+      v-model="showSuccessModal"
+      title="Success"
+      :description="successModalMessage"
+      @complete="showSuccessModal = false"
+    />
 
     <!-- Error Modal -->
     <SharedErrorModal

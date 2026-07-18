@@ -1002,7 +1002,7 @@ const openInNewTab = () => {
         v-model="suspendReason"
         :items="suspendReasons"
         class="w-full"
-        :content="{ class: 'z-[999999]! important', strategy: 'fixed' }"
+        :content="{ class: 'z-[100000]! important', strategy: 'fixed' }"
       />
     </SharedConfirmationModal>
 
@@ -1064,7 +1064,7 @@ const openInNewTab = () => {
         :items="deleteReasons"
         class="w-full mb-4"
         :portal="true"
-        :ui="{ content: 'z-[9999]' }"
+        :ui="{ content: 'z-[1000000]' }"
       />
       <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
         <UCheckbox v-model="deleteConfirmed" />

@@ -1770,7 +1770,9 @@ onMounted(() => {
                 Cancel
               </UButton>
               <UButton
-                color="red"
+                color="error"
+                variant="solid"
+                class="bg-red-600 hover:bg-red-700 text-white"
                 @click="confirmBannerDelete"
               >
                 Delete

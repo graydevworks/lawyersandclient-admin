@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatRelativeDate } from '~/util/helper'
 import { displayApiError } from '~/util/apiHelper'
 import ErrorModal from '~/components/shared/ErrorModal.vue'
+import SuccessModal from '~/components/shared/SuccessModal.vue'
 import { useSearch } from '~/composables/useSearch'
 
 definePageMeta({ middleware: 'auth' })
@@ -60,6 +61,10 @@ const detailLoading = ref(false)
 const showErrorModal = ref(false)
 const errorModalTitle = ref('Error')
 const errorModalDescription = ref('')
+
+// Success modal state
+const showSuccessModal = ref(false)
+const successModalMessage = ref('')
 
 // Image preview state
 const showImagePreview = ref(false)
@@ -236,6 +241,8 @@ const onSaveResolution = async () => {
       return
     }
 
+    successModalMessage.value = 'Report updated successfully.'
+    showSuccessModal.value = true
     await loadDetail(selectedReportId.value)
   } finally {
     isSaving.value = false
@@ -397,7 +404,7 @@ onUnmounted(() => {
               :key="sub.id"
               class="w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-2"
               :class="sub.id === selectedReportId ? 'bg-[#F8FAFC] border-[#003357]' : 'border-transparent'"
-              @click="onSelectReport(sub.id, sub.attachment_url)""
+              @click="onSelectReport(sub.id, sub.attachment_url)"
             >
               <h3 class="font-bold text-sm text-gray-900 line-clamp-1">
                 {{ sub.title }}
@@ -732,6 +739,14 @@ onUnmounted(() => {
         </div>
       </div>
     </SharedBaseModal>
+
+    <!-- Success Modal -->
+    <SharedSuccessModal
+      v-model="showSuccessModal"
+      title="Success"
+      :description="successModalMessage"
+      @complete="showSuccessModal = false"
+    />
 
     <!-- Error Modal -->
     <SharedErrorModal
