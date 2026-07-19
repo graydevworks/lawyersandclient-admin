@@ -37,6 +37,7 @@ const bannersListError = ref('')
 const hasBannersFetchError = ref(false)
 const featuredListError = ref('')
 const hasFeaturedFetchError = ref(false)
+const successModalTitle = ref('')
 
 const {
   getGeneralSettings
@@ -663,6 +664,7 @@ const submitBannerForm = async () => {
     return
   }
 
+  successModalTitle.value = editingBanner.value ? 'Banner updated' : 'Banner created'
   successModalMessage.value = editingBanner.value ? 'Banner updated successfully.' : 'Banner created successfully.'
   isSuccessModalOpen.value = true
   closeBannerModal()
@@ -732,6 +734,7 @@ const confirmBannerDelete = async () => {
   }
 
   // Show success modal
+  successModalTitle.value = 'Banner deleted'
   successModalMessage.value = `"${banner.title || 'Banner'}" has been removed successfully.`
   isSuccessModalOpen.value = true
 }
@@ -1786,7 +1789,7 @@ onMounted(() => {
     <!-- Banner Delete Success Modal -->
     <SharedSuccessModal
       v-model="isSuccessModalOpen"
-      title="Banner Deleted"
+      :title="successModalTitle"
       :description="successModalMessage"
     />
 

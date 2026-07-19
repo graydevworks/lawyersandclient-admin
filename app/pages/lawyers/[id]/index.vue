@@ -30,6 +30,7 @@ type Lawyer = {
   status?: string
   languages?: string[]
   bio?: string
+  barNumber?: string
   practiceAreas?: string[]
   verificationStatus?: string
   joinedAt?: string
@@ -155,6 +156,7 @@ const loadLawyer = async () => {
         status?: string
         practice_areas?: { name?: string }[] | null
         bio?: string
+        bar_number?: string
         activity?: Lawyer['activity']
         documents?: Lawyer['documents']
         reviews?: Lawyer['reviews']
@@ -181,6 +183,7 @@ const loadLawyer = async () => {
         isAvailable: d.is_available,
         languages: ['English'],
         bio: d.bio,
+        barNumber: d.bar_number,
         practiceAreas: d.practice_areas && d.practice_areas.length ? d.practice_areas.map((pa: { name?: string }) => pa.name) : ['N/A'],
         activity: d.activity,
         documents: d.documents,
@@ -864,6 +867,11 @@ const openInNewTab = () => {
                 <div class="flex items-center justify-between">
                   <span class="text-[13px] text-gray-500">Email</span>
                   <span class="text-[13px] font-bold text-gray-900">{{ lawyer.email }}</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] text-gray-500">SCN Number</span>
+                  <span class="text-[13px] font-bold text-gray-900">{{ lawyer.barNumber }}</span>
                 </div>
 
                 <div class="flex items-center justify-between">
