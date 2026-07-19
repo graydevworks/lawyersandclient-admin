@@ -769,7 +769,7 @@ const loadAdminSettings = async () => {
       name: acc.name || acc.full_name || '',
       email: acc.email || '',
       role: acc.role || '',
-      color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'success' as const : 'neutral' as const
+      color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'warning' as const : 'success' as const
     }))
   } else {
     listError.value = generalSettings.validationMessages[0]
