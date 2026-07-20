@@ -81,7 +81,7 @@ const navGroups = [
     </nav>
 
     <!-- Logout button -->
-    <!-- <div class="p-4 border-t border-gray-200">
+    <div class="p-4 border-t border-gray-200">
       <button
         class="flex items-center gap-3 w-full px-3 md:px-[13px] py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-[6px] transition-colors"
         @click="logout"
@@ -92,6 +92,6 @@ const navGroups = [
         />
         Logout
       </button>
-    </div> -->
+    </div>
   </aside>
 </template>
