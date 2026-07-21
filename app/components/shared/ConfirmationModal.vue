@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { modalContentClasses } from './modal/useModalLayout'
 
 const props = withDefaults(defineProps<{
@@ -52,7 +53,7 @@ const confirmClass = computed(() =>
     :ui="{ content: modalContentClasses(maxWidth), overlay: 'bg-black/40 z-[10]' }"
   >
     <template #content>
-      <div class="bg-white px-6 pt-6 pb-6 overflow-visible">
+      <div class="bg-white px-6 pt-6 pb-6 overflow-visible relative z-[100]">
         <div class="flex items-start justify-between mb-4">
           <div
             class="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center shrink-0"

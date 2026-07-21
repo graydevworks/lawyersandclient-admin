@@ -252,7 +252,7 @@ const handleSuccessComplete = () => {
     title="Suspend Account"
     max-width="max-w-[440px]"
   >
-    <div class="mt-2">
+    <div class="mt-2 overflow-visible relative z-[100]">
       <p class="text-[14px] text-gray-500 mb-5">
         Temporarily disable {{ userName }}'s access to the platform. You can reinstate the account anytime.
       </p>
