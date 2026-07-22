@@ -5,8 +5,8 @@ import { displayApiError } from '~/util/apiHelper'
 definePageMeta({ middleware: 'auth' })
 
 type DashboardQuery = {
-  from?: string
-  to?: string
+  date_from?: string
+  date_to?: string
 }
 
 // --- Fetch dashboard data on mount ---
@@ -170,10 +170,21 @@ const viewQueueItem = (id: string) => {
   router.push({ path: '/verification-queue', query: { id } })
 }
 
+const now = new Date()
+const currentDayOfWeek = now.getDay()
+
+const sunday = new Date(now)
+sunday.setDate(now.getDate() - currentDayOfWeek)
+const sundayString = sunday.toLocaleDateString('en-CA')
+
+const saturday = new Date(now)
+saturday.setDate(now.getDate() - currentDayOfWeek + 6)
+const saturdayString = saturday.toLocaleDateString('en-CA')
+
 const fetchDashboardData = async () => {
   const query: DashboardQuery = {
-    date_from: fromDate.value || undefined,
-    date_to: toDate.value || undefined
+    date_from: fromDate.value || sundayString || undefined,
+    date_to: toDate.value || saturdayString || undefined
   }
 
   listError.value = ''
