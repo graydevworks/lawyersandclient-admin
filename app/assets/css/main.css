@@ -1,8 +1,11 @@
+@import "./font.css";
 @import "tailwindcss";
 @import "@nuxt/ui";
 
 @theme static {
-  --font-sans: 'Public Sans', sans-serif;
+  --font-sans: 'Figtree', sans-serif;
+
+  --color-primary: #003357;
 
   --color-green-50: #EFFDF5;
   --color-green-100: #D9FBE8;
@@ -16,3 +19,8 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+body {
+  font-family: 'Figtree', sans-serif !important;
+}
+

@@ -1,9 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: [
-    '@nuxt/eslint',
-    '@nuxt/ui'
-  ],
+  modules: ['@nuxt/eslint', '@nuxt/ui', 'nuxt-auth-utils'],
 
   ssr: false,
 
@@ -11,7 +8,38 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/images/LC W@2x.png' }
+      ]
+    }
+  },
+
   css: ['~/assets/css/main.css'],
+
+  colorMode: {
+    preference: 'light', // 'system' | 'light' | 'dark' | 'sepia'
+    fallback: 'light'
+  },
+
+  runtimeConfig: {
+    apiSecret: '',
+    appEnv: '',
+    session: {
+      password: '',
+      maxAge: 60 * 60 * 24 * 30,
+      cookie: {
+        // @ts-expect-error process is available at Nuxt config evaluation time
+        secure: (process.env.NUXT_APP_ENV || 'production') === 'production'
+      }
+    },
+    public: {
+      apiBase: '',
+      encryptKey: '',
+      googleClientId: ''
+    }
+  },
 
   routeRules: {
     '/': { prerender: true }

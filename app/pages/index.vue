@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
   middleware: [
+    'auth',
     function () {
       return navigateTo('/dashboard')
     }
@@ -10,6 +11,9 @@ definePageMeta({
 
 <template>
   <div class="flex items-center justify-center min-h-screen">
-    <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-[#003357]" />
+    <UIcon
+      name="i-lucide-loader-2"
+      class="w-8 h-8 animate-spin text-[#003357]"
+    />
   </div>
 </template>
