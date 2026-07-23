@@ -23,16 +23,12 @@ const handleVerify = async () => {
     return
   }
 
-  console.log('[verify-2fa] Verification attempt for:', email.value)
   const result = await verifyTwoFactorLogin(email.value, otp.value)
-  console.log('[verify-2fa] Verification result:', result)
 
   if (result.success) {
-    console.log('[verify-2fa] 2FA verification successful for:', email.value)
     await refreshSession()
     await navigateTo('/dashboard')
   } else {
-    console.log('[verify-2fa] 2FA verification failed for:', email.value, 'Error:', result.error)
     errorTitle.value = 'Verification Failed'
     errorDescription.value = String(result.error)
     showErrorModal.value = true

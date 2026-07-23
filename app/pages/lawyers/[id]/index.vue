@@ -197,10 +197,9 @@ const loadLawyer = async () => {
       }
 
       // DEBUG: Log documents to see what we're working with
-      console.log('Lawyer documents:', JSON.stringify(lawyer.value.documents, null, 2))
     }
   } catch (e) {
-    console.log('[Lawyers Details] loadLawyer error:', e)
+    //
   } finally {
     isLoading.value = false
   }
@@ -404,14 +403,6 @@ const downloadAllDocs = async () => {
 const openDocPreview = (doc: { title: string, type: string, url: string, isMissing?: boolean }) => {
   const docUrl = getDocUrl(doc)
   if (!docUrl || doc.isMissing) return
-
-  // DEBUG: Log what we're setting for preview
-  console.log('Opening preview:', {
-    title: doc.title,
-    type: doc.type,
-    url: docUrl,
-    isImage: isImageDoc(doc.type, docUrl)
-  })
 
   previewDoc.value = { name: doc.title, type: doc.type, url: docUrl }
   showDocPreview.value = true

@@ -31,8 +31,6 @@ const handleLogin = async () => {
 
     if (!result.success && result.error) {
       errorMessage.value = result.error
-
-      console.log('[Login] Error 22:', result.error)
     }
   } catch (err) {
     errorMessage.value = 'Something went wrong. Please try again.'

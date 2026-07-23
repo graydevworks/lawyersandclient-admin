@@ -46,12 +46,6 @@ const updateConnectionQuality = () => {
     const effectiveType = connection.effectiveType?.toLowerCase()
     const downlink = connection.downlink
 
-    console.log('[NetworkStatus] Connection details:', {
-      effectiveType,
-      downlink,
-      rtt: connection.rtt
-    })
-
     if (effectiveType === '4g' && downlink >= 1.5) {
       connectionQuality.value = 'good'
     } else if (['slow-2g', '2g', '3g'].includes(effectiveType) || downlink < 1) {
@@ -68,7 +62,6 @@ const handleOnline = () => {
   isOnline.value = true
   showStatusBar.value = true
   updateConnectionQuality()
-  console.log('[NetworkStatus] Connection restored')
 
   setTimeout(() => {
     showStatusBar.value = false
@@ -79,12 +72,10 @@ const handleOffline = () => {
   isOnline.value = false
   showStatusBar.value = true
   connectionQuality.value = 'unknown'
-  console.log('[NetworkStatus] Connection lost')
 }
 
 const handleConnectionChange = () => {
   updateConnectionQuality()
-  console.log('[NetworkStatus] Connection quality changed:', connectionQuality.value)
 }
 
 onMounted(() => {

@@ -5,7 +5,6 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readBody(event)
-    console.log(body, 'id')
 
     const response = await $fetch(`${apiBase}/admin/clients/${event.context.params?.id}/reset-password`, {
       method: 'POST',

@@ -32,8 +32,6 @@ const swap = (x: number, y: number) => {
   return [x, y]
 }
 
-console.log(swap(1, 2)) // Output: [2, 1]
-
 const stats = ref<StatItem[]>([])
 const listError = ref('')
 const hasFetchError = ref(false)
@@ -194,7 +192,6 @@ const fetchDashboardData = async () => {
   const [result, queue] = await Promise.all([getDashboard(query), getVerificationQueue()])
 
   if (!result?.success) {
-    console.log(result)
     listError.value = displayApiError(result, 'Failed to load dashboard data.')
     hasFetchError.value = true
     return
@@ -258,8 +255,6 @@ const fetchDashboardData = async () => {
     // lawyersSignups.pop()
     // clientsSignups.unshift(clientsSignups[clientsSignups.length - 1])
     // clientsSignups.pop()
-
-    console.log(lawyersSignups, clientsSignups, 'hd')
 
     signUpsSeries.value = [
       {

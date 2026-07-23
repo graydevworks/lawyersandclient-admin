@@ -14,9 +14,6 @@ export default defineEventHandler(async (event) => {
 
   if (role === 'lawyers' || role === 'clients' || role === 'admin') {
     const endpoint = role === 'admin' ? 'admin/auth/login' : `${role}/auth/login`
-    console.log(`${apiBase}/${endpoint}`)
-
-    console.log(body, 'body')
 
     try {
       const response: {
@@ -42,8 +39,6 @@ export default defineEventHandler(async (event) => {
           'Accept-Language': 'en-US,en;q=0.9'
         }
       })
-
-      console.log('Login response:', response)
 
       const responseRecord = response as Record<string, unknown>
       const requires2fa = Boolean(

@@ -60,8 +60,6 @@ const loadAdminData = async () => {
 
     // As requested: console.log the matched admin
     if (admin) {
-      console.log('[account-details] admin matched by id:', admin)
-
       formData.name = admin.name || admin.full_name || ''
       formData.email = admin.email || ''
       formData.role = admin.role || 'operations_admin'
@@ -73,8 +71,6 @@ const loadAdminData = async () => {
 
 onMounted(() => {
   if (isEditMode.value) loadAdminData()
-
-  console.log(currentUser.value)
 
   if (route.query.isAdmin == 'true') {
     formData.name = currentUser.value.data.name

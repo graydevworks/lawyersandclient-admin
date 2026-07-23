@@ -6,8 +6,6 @@ export default defineEventHandler(async (event) => {
   try {
     const formData = await readFormData(event)
 
-    console.log(formData)
-
     const response = await $fetch(`${apiBase}/admin/settings/admins/${event.context.params?.id}`, {
       method: 'PUT',
       headers: {
@@ -23,7 +21,6 @@ export default defineEventHandler(async (event) => {
     })
 
     const responseData = response as Record<string, unknown>
-    console.log(formData)
 
     return {
       status: 200,

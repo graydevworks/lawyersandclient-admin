@@ -24,7 +24,6 @@ export default defineEventHandler(async (event) => {
     })
 
     const responseData = response as Record<string, unknown>
-    console.log(responseData)
 
     return {
       status: 200,
@@ -36,7 +35,7 @@ export default defineEventHandler(async (event) => {
     const statusCode = getErrorStatusCode(error, 400)
     const message = extractErrorMessage(error, 'Failed to disable 2FA')
 
-    console.log({ statusCode, message })
+    // console.log({ statusCode, message })
 
     throwApiError({
       status: statusCode,

@@ -290,7 +290,6 @@ const normalizeFeaturedLawyer = (lawyer: any): FeaturedLawyer => ({
 
 const loadFeatured = async () => {
   const result = await getFeaturedLawyers()
-  console.log('[Featured lawyers] API response:', result)
 
   featuredListError.value = ''
   hasFeaturedFetchError.value = false
@@ -415,8 +414,6 @@ const toggleFeaturedSelection = async (lawyerId: number, nextSelected: boolean) 
   // If nextIds is empty, send a single empty value so server can clear.
   if (nextIds.length === 0) {
     formData.append('lawyer_ids[]', selectedFeaturedIds.value[0])
-
-    console.log('hey')
   } else {
     nextIds.forEach(id => formData.append('lawyer_ids[]', String(id)))
   }
@@ -548,7 +545,6 @@ const normalizeBanner = (banner: any): AppBanner => ({
 
 const fetchAppBanners = async () => {
   const result = await getBanners()
-  console.log('[App banners] API response:', result)
 
   bannersListError.value = ''
   hasBannersFetchError.value = false
@@ -750,8 +746,6 @@ const permissions = [
 
 // Load admin settings data
 const loadAdminSettings = async () => {
-  console.log('[Settings] Loading admin settings...')
-
   listError.value = ''
   hasFetchError.value = false
 

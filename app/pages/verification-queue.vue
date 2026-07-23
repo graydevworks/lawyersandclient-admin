@@ -127,8 +127,6 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
     pending.value = statistics.total_pending || 0
     urgent.value = statistics.urgent || 0
 
-    console.log('Submissions', submissionList)
-
     const mappedSubmissions = submissionList.map((item: any) => ({
       id: item.id,
       name: item.full_name,
@@ -146,8 +144,6 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
         addedBy: note.added_by
       }))
     }))
-
-    console.log('Mapped Submissions', mappedSubmissions)
 
     // Append or replace submissions
     if (append) {
@@ -176,7 +172,6 @@ const fetchDetail = async (id: string) => {
     const result = await getVerification(id)
     if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
       const item = result.data.data.data as any
-      console.log('[Verification Detail]', result.data)
 
       selectedSubmission.value = {
         id: item.id as string,
@@ -251,7 +246,6 @@ const confirmApprove = async () => {
   if (!selectedSubmission.value) return
   showApproveConfirm.value = false
   const result = await approveVerification(selectedSubmission.value.id)
-  console.log('[Verification] Approve result:', result)
   if (result.success) {
     successTitle.value = 'Verification approved'
     successDescription.value = `${selectedSubmission.value.name}'s account has been verified successfully.`
