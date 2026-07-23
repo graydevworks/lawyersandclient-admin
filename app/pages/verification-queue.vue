@@ -38,6 +38,7 @@ interface Submission {
   email: string
   missing: string
   statusBg: string
+  barNumber: string
   avatar: string
   documents: { name: string, type: string, status: string, uploaded: boolean, url: string }[]
   history: { action: string, date: string }[]
@@ -192,6 +193,7 @@ const fetchDetail = async (id: string) => {
         email: item.applicant.email as string,
         missing: item.days_pending || '-' as string,
         statusBg: item.status_bg || '-' as string,
+        barNumber: item.applicant.bar_number || '-' as string,
         documents: item.documents.checklist.map((doc: any) => ({
           name: doc.label as string,
           type: doc.type as string,
@@ -747,6 +749,10 @@ onMounted(() => start())
                 <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
                   <span class="font-light text-[14px] text-[#3C475D]">Location</span>
                   <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.location || '-' }}</span>
+                </div>
+                <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">SCN Number</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.barNumber || '-' }}</span>
                 </div>
                 <div class="flex justify-between items-start items-center py-[12px]">
                   <span class="font-light text-[14px] text-[#3C475D] text-nowrap mr-2">Practice area</span>
