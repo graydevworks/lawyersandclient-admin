@@ -233,16 +233,11 @@ export const fetchApi = async ({
     })
 
     if (logResponse) {
-      console.log('Response:', response)
+      // console.log('Response:', response)
     }
     return response
   } catch (err: any) {
     if (logResponse) {
-      console.log('Actual Message:', err.data?.message || err.data)
-
-      // Standard properties if you need them
-      console.log('Status Code:', err.statusCode)
-      console.log('Status Message:', err.statusMessage)
 
       throw err.statusMessage
     }

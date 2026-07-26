@@ -4,7 +4,6 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    console.log('[API] Reinstating lawyer:', event.context.params?.id)
     const response = await $fetch(`${apiBase}/admin/lawyers/${event.context.params?.id}/reinstate`, {
       method: 'POST',
       headers: {

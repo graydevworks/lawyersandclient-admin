@@ -6,7 +6,6 @@ export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
 
-    console.log(query)
     const response = await $fetch(`${apiBase}/admin/lawyers`, {
       method: 'GET',
       query,

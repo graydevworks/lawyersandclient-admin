@@ -111,10 +111,8 @@ const loadDetail = async (id: number | string) => {
   const result = await getTicket(id)
 
   const payload = (result as any)?.data?.data ?? (result as any)?.data
-  console.log(payload)
   if ((result as any)?.success && payload) {
     selectedTicket.value = payload.ticket ?? payload.data ?? payload
-    console.log('hey')
     const s = selectedTicket.value.status
     if (s === 'open' || s === 'in_progress' || s === 'resolved' || s === 'closed') {
       ticketStatus.value = s
@@ -138,8 +136,6 @@ const loadDetail = async (id: number | string) => {
     } else {
       ticketImages.value = []
     }
-
-    console.log('Selected Ticket:', selectedTicket.value)
   }
 }
 

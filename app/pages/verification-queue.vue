@@ -38,6 +38,7 @@ interface Submission {
   email: string
   missing: string
   statusBg: string
+  barNumber: string
   avatar: string
   documents: { name: string, type: string, status: string, uploaded: boolean, url: string }[]
   history: { action: string, date: string }[]
@@ -126,8 +127,6 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
     pending.value = statistics.total_pending || 0
     urgent.value = statistics.urgent || 0
 
-    console.log('Submissions', submissionList)
-
     const mappedSubmissions = submissionList.map((item: any) => ({
       id: item.id,
       name: item.full_name,
@@ -145,8 +144,6 @@ const fetchQueue = async (page: number = 1, append: boolean = false) => {
         addedBy: note.added_by
       }))
     }))
-
-    console.log('Mapped Submissions', mappedSubmissions)
 
     // Append or replace submissions
     if (append) {
@@ -175,7 +172,6 @@ const fetchDetail = async (id: string) => {
     const result = await getVerification(id)
     if (result && result.data && (result.data as any).data && (result.data as any).data.success) {
       const item = result.data.data.data as any
-      console.log('[Verification Detail]', result.data)
 
       selectedSubmission.value = {
         id: item.id as string,
@@ -192,6 +188,7 @@ const fetchDetail = async (id: string) => {
         email: item.applicant.email as string,
         missing: item.days_pending || '-' as string,
         statusBg: item.status_bg || '-' as string,
+        barNumber: item.applicant.bar_number || '-' as string,
         documents: item.documents.checklist.map((doc: any) => ({
           name: doc.label as string,
           type: doc.type as string,
@@ -249,7 +246,6 @@ const confirmApprove = async () => {
   if (!selectedSubmission.value) return
   showApproveConfirm.value = false
   const result = await approveVerification(selectedSubmission.value.id)
-  console.log('[Verification] Approve result:', result)
   if (result.success) {
     successTitle.value = 'Verification approved'
     successDescription.value = `${selectedSubmission.value.name}'s account has been verified successfully.`
@@ -747,6 +743,10 @@ onMounted(() => start())
                 <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
                   <span class="font-light text-[14px] text-[#3C475D]">Location</span>
                   <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.location || '-' }}</span>
+                </div>
+                <div class="flex justify-between items-start border-b border-[#F0F1F3] py-[12px]">
+                  <span class="font-light text-[14px] text-[#3C475D]">SCN Number</span>
+                  <span class="text-[14px] font-medium text-gray-900">{{ selectedSubmission.barNumber || '-' }}</span>
                 </div>
                 <div class="flex justify-between items-start items-center py-[12px]">
                   <span class="font-light text-[14px] text-[#3C475D] text-nowrap mr-2">Practice area</span>

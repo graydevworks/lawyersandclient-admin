@@ -11,7 +11,6 @@ export const useAdmin = () => {
     loading.value = true
     try {
       const data = await $fetch('/api/admin', { query: params })
-      console.log('[useAdmin] getGeneralSettings response:', data)
       return { success: true, data }
     } catch (error) {
       const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to load getGeneralSettings.')
@@ -26,7 +25,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch('/api/admin/settings/general', { method: 'POST' as const, body: formData })
-      console.log('[useAdmin] updateGeneralSettings response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to update general settings.') }
@@ -40,7 +38,6 @@ export const useAdmin = () => {
     loading.value = true
     try {
       const data = await $fetch('/api/admin/settings/security', { query: params })
-      console.log('[useAdmin] getSecuritySettings response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to load security settings.') }
@@ -54,7 +51,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch('/api/admin/settings/security', { method: 'POST' as const, body: formData })
-      console.log('[useAdmin] updateSecuritySettings response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to update security settings.') }
@@ -81,7 +77,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch('/api/admin', { method: 'post', body: formData })
-      console.log('[useAdmin] createAdminAccount response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to create admin account.') }
@@ -95,7 +90,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch(`/api/admin/${id}`, { method: 'PUT', body: formData })
-      console.log('[useAdmin] updateAdminAccount response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to update admin account.') }
@@ -109,7 +103,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch(`/api/admin/accounts/${id}`, { method: 'DELETE' as const })
-      console.log('[useAdmin] deleteAdminAccount response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to delete admin account.') }
@@ -123,7 +116,6 @@ export const useAdmin = () => {
     loading.value = true
     try {
       const data = await $fetch('/api/admin/permissions', { query: params })
-      console.log('[useAdmin] getPermissions response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to load permissions.') }
@@ -137,7 +129,6 @@ export const useAdmin = () => {
     updating.value = true
     try {
       const data = await $fetch('/api/admin/permissions', { method: 'POST' as const, body: formData })
-      console.log('[useAdmin] updatePermissions response:', data)
       return { success: true, data }
     } catch (error) {
       return { success: false, ...resolveApiError(error, 'Failed to update permissions.') }

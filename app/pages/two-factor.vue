@@ -20,23 +20,18 @@ onMounted(() => {
 
 const handleToggle = async (value: boolean) => {
   if (value) {
-    console.log('[two-factor] Enabling 2FA for user')
     const result = await enableTwoFactor()
-    console.log('[two-factor] Enable 2FA result:', result)
 
     if (result.success) {
-      console.log('[two-factor] 2FA enabled successfully')
       successMessage.value = 'Two-factor authentication has been enabled.'
       showSuccess.value = true
       await refreshSession()
     } else {
-      console.log('[two-factor] Failed to enable 2FA:', result.error)
       isEnabled.value = false
       errorMessage.value = String(result.error)
       showError.value = true
     }
   } else {
-    console.log('[two-factor] User initiated 2FA disable')
     isEnabled.value = true
     disablePassword.value = ''
     showDisableModal.value = true
@@ -46,12 +41,9 @@ const handleToggle = async (value: boolean) => {
 const confirmDisable = async () => {
   if (!disablePassword.value) return
 
-  console.log('[two-factor] Disabling 2FA for user')
   const result = await disableTwoFactor(disablePassword.value)
-  console.log('[two-factor] Disable 2FA result:', result)
 
   if (result.success) {
-    console.log('[two-factor] 2FA disabled successfully')
     isEnabled.value = false
     showDisableModal.value = false
     disablePassword.value = ''
@@ -59,7 +51,6 @@ const confirmDisable = async () => {
     showSuccess.value = true
     await refreshSession()
   } else {
-    console.log('[two-factor] Failed to disable 2FA:', result.error)
     isEnabled.value = true
     errorMessage.value = String(result.error)
     showError.value = true

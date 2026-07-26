@@ -72,8 +72,6 @@ const fetchPracticeAreas = async (page: number = 1) => {
     hasFetchError.value = true
     return
   }
-
-  console.log(result, 'result')
   if (result && result.data && result.data.data && result.data.data.success) {
     const meta = result.data.data.meta
     currentPage.value = meta.current_page || 1
@@ -133,9 +131,6 @@ watch(searchQuery, (q) => {
       // requested: use per_page instead of limit, and q= for query
       const result = await searchPracticeArea({ q: query, per_page: 4, page: 1 })
 
-      console.log('[Practice Areas][Dropdown] searchPracticeArea result:', result)
-      console.log('[Practice Areas][Dropdown] search raw data:', result?.data.data.data.practice_areas)
-
       if (result && result.data && result.data.data && result.data.data.success) {
         searchResults.value = result.data.data.data.practice_areas.map((item: {
           id: number
@@ -173,7 +168,6 @@ const errorModalTitle = ref('Error')
 const errorModalDescription = ref('')
 
 const handleSavePracticeArea = async (name: string) => {
-  console.log('[Practice Area] New area:', name)
   const result = await createPracticeArea({ name })
   if (result.success) {
     lastAddedName.value = name
@@ -191,13 +185,11 @@ const handleSavePracticeArea = async (name: string) => {
 const handleDeleteClick = (id: number) => {
   deleteItemId.value = id
   isDeleteConfirmOpen.value = true
-  console.log(id)
 }
 
 const confirmDelete = async () => {
   if (deleteItemId.value === null) return
   const result = await deletePracticeArea(deleteItemId.value)
-  console.log(result, 'result -> 2')
   if (result.success) {
     searchQuery.value = ''
     isSearchDropdownOpen.value = false

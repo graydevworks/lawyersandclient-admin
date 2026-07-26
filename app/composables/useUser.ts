@@ -19,7 +19,6 @@ export const useUser = () => {
 
   const getRole = () => user.value?.role || 'lawyers'
 
-  console.log('getRole', getRole(), user.value)
   const getApiUrl = (path = '') => `/api/v1/${getRole()}${path}`
 
   const applyAvailabilityFromProfile = (profileResponse: { data?: Record<string, unknown> }) => {

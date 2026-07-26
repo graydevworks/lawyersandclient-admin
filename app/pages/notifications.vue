@@ -141,7 +141,6 @@ const fetchList = async (opts: { reset: boolean }) => {
         delivered: res.data.data.data.analytics.last_broadcast_performance.delivered,
         recipient_count: res.data.data.data.analytics.last_broadcast_performance.recipient_count
       }
-      console.log(stats.value, '=>')
 
       const mapped = mapForTemplate(list)
 
@@ -277,7 +276,6 @@ const submitNotification = async () => {
       body: payload
     })
 
-    console.log('[Notification] create response:', response)
 
     // success: refetch list with current filters
     await fetchList({ reset: true })

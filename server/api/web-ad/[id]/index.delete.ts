@@ -3,8 +3,6 @@ export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, 'auth_token')
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
-  console.log(`${apiBase}/clients/bookmarks/${event.context.params?.id}`)
-
   try {
     const response = await $fetch(`${apiBase}/admin/settings/website-ads/${event.context.params?.id}`, {
       method: 'DELETE',

@@ -209,7 +209,6 @@ const fetchAnalytics = async () => {
 
   if (result && result.data && (result.data as any).data && (result.data as any).data.success) { // eslint-disable-line @typescript-eslint/no-explicit-any
     const data = (result.data as any).data.data // eslint-disable-line @typescript-eslint/no-explicit-any
-    console.log(data, 'result')
     // Map real API data if available — for now the page uses static data
     // as the analytics API may not return all fields yet
     stats.value = [
@@ -257,8 +256,6 @@ const fetchAnalytics = async () => {
       practiceAreaSeries.value.push(area.pct)
       practiceAreaOptions.value.labels.push(area.name)
     })
-
-    console.log(practiceAreaSeries.value, practiceAreaOptions.value.labels)
 
     // categories
     categories.value = data.case_categories_distribution.items.map((category: {

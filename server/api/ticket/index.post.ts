@@ -6,8 +6,6 @@ export default defineEventHandler(async (event) => {
   try {
     const session = await getUserSession(event)
 
-    console.log((session.user as any)?.role)
-
     const role = (session.user as any)?.role || 'clients'
     const formData = await readFormData(event)
 

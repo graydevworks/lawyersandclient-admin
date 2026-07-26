@@ -25,17 +25,13 @@ export const useAuth = () => {
    */
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('[useAuth] Login attempt for:', credentials.email)
 
       const response: { status: number, message: string, data?: Record<string, unknown>, requires_2fa?: boolean } = await $fetch('/api/login', {
         method: 'POST',
         body: credentials
       })
 
-      console.log('[useAuth] Login response:', response)
-
       if (response.requires_2fa) {
-        console.log('[useAuth] 2FA required for:', credentials.email)
         await navigateTo({ path: '/verify-2fa', query: { email: credentials.email } })
         return { success: true, requires_2fa: true }
       }
@@ -70,14 +66,10 @@ export const useAuth = () => {
           color: 'error',
           duration: 4000
         })
-
-        console.log('[useAuth] Login error: ------->', response.message)
         return { success: false, error: errorMsg }
       }
     } catch (error) {
       const { error: message, validationMessages } = resolveApiError(error, 'Unable to connect to the server. Please check your internet connection and try again.')
-
-      console.log(message, 'hello')
 
       toast.add({
         title: 'Login failed',
