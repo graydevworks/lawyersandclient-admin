@@ -1,4 +1,4 @@
-import { extractErrorMessage, getErrorStatusCode } from "~/util/apiHelper"
+import { extractErrorMessage, getErrorStatusCode } from '~/util/apiHelper'
 
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
