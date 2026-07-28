@@ -31,7 +31,8 @@ const navGroups = [
       { label: 'Change Password', icon: 'i-lucide-key-round', to: '/change-password' },
       { label: 'Two-Factor Auth', icon: 'i-lucide-shield-check', to: '/two-factor' },
       { label: 'Notifications', icon: 'iconamoon:notification-thin', to: '/notifications' },
-      { label: 'Logs', icon: 'i-lucide-scroll-text', to: '/logs' }
+      { label: 'Logs', icon: 'i-lucide-scroll-text', to: '/logs' },
+      { label: 'App Version', icon: 'i-lucide-package', to: '/app-version' }
     ]
   }
 ]

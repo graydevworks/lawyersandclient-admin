@@ -414,7 +414,26 @@ onMounted(() => start())
               Share of verified lawyers
             </p>
           </template>
-          <div class="flex flex-col items-center">
+
+          <!-- Empty state -->
+          <template v-if="practiceAreaOptions.labels.length === 0">
+            <div class="flex flex-col items-center justify-center py-10 text-center">
+              <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <UIcon name="i-lucide-pie-chart" class="w-7 h-7 text-gray-400" />
+              </div>
+              <p class="text-[14px] font-semibold text-gray-900 mb-1">
+                No data available
+              </p>
+              <p class="text-[13px] text-gray-400 max-w-[200px]">
+                Practice area data will appear here once lawyers are verified.
+              </p>
+            </div>
+          </template>
+
+          <div
+            v-else
+            class="flex flex-col items-center"
+          >
             <div class="h-64 w-full">
               <ClientOnly>
                 <apexchart
@@ -438,7 +457,6 @@ onMounted(() => start())
                     class="w-2 h-2 rounded-full"
                   />
                   <span>{{ label }}</span>
-                  <!-- <span class="text-green-500 font-bold ml-1">(+12)</span> -->
                 </div>
                 <div class="flex-1 border-b border-dotted mx-2 border-gray-200" />
                 <span class="text-gray-900 font-bold">{{ practiceAreaSeries[i] }}%</span>
@@ -456,7 +474,27 @@ onMounted(() => start())
               Most searched categories
             </h3>
           </template>
-          <div class="space-y-6">
+
+          <!-- Empty state -->
+          <div
+            v-if="categories.length === 0"
+            class="flex flex-col items-center justify-center py-10 text-center"
+          >
+            <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <UIcon name="i-lucide-search-x" class="w-7 h-7 text-gray-400" />
+            </div>
+            <p class="text-[14px] font-semibold text-gray-900 mb-1">
+              No search data yet
+            </p>
+            <p class="text-[13px] text-gray-400 max-w-[200px]">
+              Category search data will appear once users start searching for legal services.
+            </p>
+          </div>
+
+          <div
+            v-else
+            class="space-y-6"
+          >
             <div
               v-for="cat in categories"
               :key="cat.label"
@@ -480,7 +518,27 @@ onMounted(() => start())
               Lawyers Years of Experience
             </h3>
           </template>
-          <div class="space-y-6">
+
+          <!-- Empty state -->
+          <div
+            v-if="experience.length === 0"
+            class="flex flex-col items-center justify-center py-10 text-center"
+          >
+            <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <UIcon name="i-lucide-briefcase" class="w-7 h-7 text-gray-400" />
+            </div>
+            <p class="text-[14px] font-semibold text-gray-900 mb-1">
+              No experience data yet
+            </p>
+            <p class="text-[13px] text-gray-400 max-w-[200px]">
+              Lawyer experience distribution will show once profiles are verified.
+            </p>
+          </div>
+
+          <div
+            v-else
+            class="space-y-6"
+          >
             <div
               v-for="exp in experience"
               :key="exp.label"

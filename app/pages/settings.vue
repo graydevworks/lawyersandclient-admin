@@ -736,6 +736,7 @@ const confirmBannerDelete = async () => {
 }
 
 const adminAccounts = ref<Array<{ id: number, name: string, email: string, role: string, color: 'primary' | 'success' | 'neutral' }>>([])
+const adminAccountsLoading = ref(true)
 
 const permissions = [
   { title: 'Operations Admin — suspend users', description: 'Allow Ops Admin to suspend and activate accounts' },
@@ -748,26 +749,31 @@ const permissions = [
 const loadAdminSettings = async () => {
   listError.value = ''
   hasFetchError.value = false
+  adminAccountsLoading.value = true
 
-  const [generalSettings] = await Promise.all([
-    getGeneralSettings()
-  ])
+  try {
+    const [generalSettings] = await Promise.all([
+      getGeneralSettings()
+    ])
 
-  // Process admin accounts
-  if (generalSettings.success) {
-    const data = generalSettings.data as any
-    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+    // Process admin accounts
+    if (generalSettings.success) {
+      const data = generalSettings.data as any
+      const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
 
-    adminAccounts.value = accounts.admins.map((acc: any) => ({
-      id: acc.id,
-      name: acc.name || acc.full_name || '',
-      email: acc.email || '',
-      role: acc.role || '',
-      color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'warning' as const : 'success' as const
-    }))
-  } else {
-    listError.value = generalSettings.validationMessages[0]
-    hasFetchError.value = true
+      adminAccounts.value = accounts.admins.map((acc: any) => ({
+        id: acc.id,
+        name: acc.name || acc.full_name || '',
+        email: acc.email || '',
+        role: acc.role || '',
+        color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'warning' as const : 'success' as const
+      }))
+    } else {
+      listError.value = generalSettings.validationMessages[0]
+      hasFetchError.value = true
+    }
+  } finally {
+    adminAccountsLoading.value = false
   }
 }
 
@@ -985,7 +991,27 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
+              <!-- Empty state when no featured lawyers -->
+              <div
+                v-if="featuredLawyers.length === 0"
+                class="border border-dashed border-gray-200 rounded-xl py-14 flex flex-col items-center justify-center text-center px-6"
+              >
+                <div class="w-16 h-16 rounded-full bg-[#003357]/8 flex items-center justify-center mb-4">
+                  <UIcon name="i-lucide-star" class="w-8 h-8 text-[#003357]/50" />
+                </div>
+                <h3 class="text-[16px] font-semibold text-gray-900 mb-1">
+                  No featured lawyers yet
+                </h3>
+                <p class="text-[14px] text-gray-400 max-w-[280px]">
+                  Use the search above to find and select up to 6 lawyers to feature on the app home screen.
+                </p>
+              </div>
+
+              <!-- Featured lawyers grid -->
+              <div
+                v-else
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8"
+              >
                 <div
                   v-for="lawyer in featuredLawyers"
                   :key="lawyer.id"
@@ -1561,8 +1587,27 @@ onMounted(() => {
             </div>
 
             <div class="space-y-4 p-6 md:p-[16px]">
+              <!-- Skeleton Loading -->
+              <div v-if="adminAccountsLoading" class="space-y-4">
+                <div
+                  v-for="i in 3"
+                  :key="i"
+                  class="flex items-center justify-between p-4 px-0"
+                >
+                  <div class="flex items-center gap-4 flex-1">
+                    <USkeleton class="w-10 h-10 rounded-full" />
+                    <div class="flex-1 space-y-2">
+                      <USkeleton class="h-4 w-32" />
+                      <USkeleton class="h-3 w-48" />
+                    </div>
+                  </div>
+                  <USkeleton class="h-8 w-16" />
+                </div>
+              </div>
+
+              <!-- Empty State -->
               <div
-                v-if="adminAccounts.length === 0"
+                v-else-if="adminAccounts.length === 0"
                 class="border border-dashed border-gray-200 rounded-2xl py-12"
               >
                 <SharedEmptyState
@@ -1574,6 +1619,7 @@ onMounted(() => {
                 />
               </div>
 
+              <!-- Admin List -->
               <div
                 v-for="admin in adminAccounts"
                 v-else
