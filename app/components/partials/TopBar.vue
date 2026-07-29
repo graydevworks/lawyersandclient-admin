@@ -262,8 +262,8 @@ const closeDropdown = () => {
               size="sm"
               class="size-[33px]"
             />
-            <div class="hidden sm:block text-left">
-              <p class="text-[12px] font-medium text-gray-900 leading-tight">
+            <div class="block text-left">
+              <p class="text-[12px] font-medium text-gray-900 truncate leading-tight">
                 {{ displayName }}
               </p>
               <p class="text-[10px] text-gray-500 uppercase tracking-wider font-normal">

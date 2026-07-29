@@ -311,7 +311,6 @@ const handleSubmit = async () => {
               size="lg"
               class="w-full"
               icon="i-lucide-shield"
-              :disabled="isEditMode || route.query.isAdmin == 'true'"
               :ui="{
                 base: 'rounded-sm border-0 focus:ring-2 focus:ring-[#E5E5E5] bg-transparent focus:border-transparent transition-all duration-200 h-[42px] w-full',
                 placeholder: 'text-gray-400'

@@ -40,7 +40,8 @@ const hasFeaturedFetchError = ref(false)
 const successModalTitle = ref('')
 
 const {
-  getGeneralSettings
+  getGeneralSettings,
+  suspendAdminAccount
   // getSecuritySettings,
   // getAdminAccounts
   // getPermissions
@@ -735,7 +736,50 @@ const confirmBannerDelete = async () => {
   isSuccessModalOpen.value = true
 }
 
-const adminAccounts = ref<Array<{ id: number, name: string, email: string, role: string, color: 'primary' | 'success' | 'neutral' }>>([])
+const adminAccounts = ref<Array<{ id: number, name: string, email: string, role: string, color: 'primary' | 'success' | 'neutral', status: string }>>([])
+const adminAccountsLoading = ref(true)
+
+// Suspend modal state
+const isSuspendModalOpen = ref(false)
+const adminToSuspend = ref<{ id: number, name: string, status: string } | null>(null)
+const isSuspendSubmitting = ref(false)
+
+// Suspend/Reinstate functions
+const openSuspendModal = (admin: { id: number, name: string, status: string }) => {
+  adminToSuspend.value = admin
+  isSuspendModalOpen.value = true
+}
+
+const closeSuspendModal = () => {
+  isSuspendModalOpen.value = false
+  // adminToSuspend.value = null
+}
+
+const confirmSuspend = async () => {
+  if (!adminToSuspend.value) return
+
+  isSuspendSubmitting.value = true
+  const result = await suspendAdminAccount(adminToSuspend.value.id)
+
+  if (result.success) {
+    const message = (result.data as Record<string, unknown>)?.message as string
+      || (adminToSuspend.value.status === 'suspended' ? 'Admin reinstated successfully!' : 'Admin suspended successfully!')
+    successModalTitle.value = 'Success'
+    successModalMessage.value = message
+    isSuccessModalOpen.value = true
+    closeSuspendModal()
+    await loadAdminSettings()
+  } else {
+    const errorMessage = (result.data as Record<string, unknown>)?.message as string || result.error
+      || (adminToSuspend.value.status === 'suspended' ? 'Failed to reinstate admin' : 'Failed to suspend admin')
+    errorModalTitle.value = 'Error'
+    errorModalDescription.value = String(errorMessage)
+    showErrorModal.value = true
+    closeSuspendModal()
+  }
+
+  isSuspendSubmitting.value = false
+}
 
 const permissions = [
   { title: 'Operations Admin — suspend users', description: 'Allow Ops Admin to suspend and activate accounts' },
@@ -748,26 +792,32 @@ const permissions = [
 const loadAdminSettings = async () => {
   listError.value = ''
   hasFetchError.value = false
+  adminAccountsLoading.value = true
 
-  const [generalSettings] = await Promise.all([
-    getGeneralSettings()
-  ])
+  try {
+    const [generalSettings] = await Promise.all([
+      getGeneralSettings()
+    ])
 
-  // Process admin accounts
-  if (generalSettings.success) {
-    const data = generalSettings.data as any
-    const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
+    // Process admin accounts
+    if (generalSettings.success) {
+      const data = generalSettings.data as any
+      const accounts = data?.data?.data ?? data?.data ?? data?.accounts ?? []
 
-    adminAccounts.value = accounts.admins.map((acc: any) => ({
-      id: acc.id,
-      name: acc.name || acc.full_name || '',
-      email: acc.email || '',
-      role: acc.role || '',
-      color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'warning' as const : 'success' as const
-    }))
-  } else {
-    listError.value = generalSettings.validationMessages[0]
-    hasFetchError.value = true
+      adminAccounts.value = accounts.admins.map((acc: any) => ({
+        id: acc.id,
+        name: acc.name || acc.full_name || '',
+        email: acc.email || '',
+        role: acc.role || '',
+        color: acc.role === 'operations_admin' ? 'info' as const : acc.role === 'support_admin' ? 'warning' as const : 'success' as const,
+        status: acc.status || ''
+      }))
+    } else {
+      listError.value = generalSettings.validationMessages[0]
+      hasFetchError.value = true
+    }
+  } finally {
+    adminAccountsLoading.value = false
   }
 }
 
@@ -985,7 +1035,30 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8">
+              <!-- Empty state when no featured lawyers -->
+              <div
+                v-if="featuredLawyers.length === 0"
+                class="border border-dashed border-gray-200 rounded-xl py-14 flex flex-col items-center justify-center text-center px-6"
+              >
+                <div class="w-16 h-16 rounded-full bg-[#003357]/8 flex items-center justify-center mb-4">
+                  <UIcon
+                    name="i-lucide-star"
+                    class="w-8 h-8 text-[#003357]/50"
+                  />
+                </div>
+                <h3 class="text-[16px] font-semibold text-gray-900 mb-1">
+                  No featured lawyers yet
+                </h3>
+                <p class="text-[14px] text-gray-400 max-w-[280px]">
+                  Use the search above to find and select up to 6 lawyers to feature on the app home screen.
+                </p>
+              </div>
+
+              <!-- Featured lawyers grid -->
+              <div
+                v-else
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-8"
+              >
                 <div
                   v-for="lawyer in featuredLawyers"
                   :key="lawyer.id"
@@ -1308,10 +1381,10 @@ onMounted(() => {
                   </p>
                 </div>
                 <UButton
+                  v-if="userRole == 'super_admin'"
                   icon="i-lucide-plus"
                   class="bg-[#003357] hover:bg-[#004474] text-white rounded-lg px-4 font-bold"
                   @click="openCreateBannerModal"
-                  v-if="userRole == 'super_admin'"
                 >
                   Add banner
                 </UButton>
@@ -1549,20 +1622,42 @@ onMounted(() => {
                 </p>
               </div>
               <UButton
+                v-if="userRole == 'super_admin'"
                 icon="i-lucide-plus"
                 color="primary"
                 class="bg-[#003357] h-[34px] text-[12px] hover:bg-[#002244] rounded-[8px]"
                 :ui="{ leadingIcon: 'size-[14px]' }"
                 @click="navigateTo('/account-details')"
-                v-if="userRole == 'super_admin'"
               >
                 Create admin
               </UButton>
             </div>
 
             <div class="space-y-4 p-6 md:p-[16px]">
+              <!-- Skeleton Loading -->
               <div
-                v-if="adminAccounts.length === 0"
+                v-if="adminAccountsLoading"
+                class="space-y-4"
+              >
+                <div
+                  v-for="i in 3"
+                  :key="i"
+                  class="flex items-center justify-between p-4 px-0"
+                >
+                  <div class="flex items-center gap-4 flex-1">
+                    <USkeleton class="w-10 h-10 rounded-full" />
+                    <div class="flex-1 space-y-2">
+                      <USkeleton class="h-4 w-32" />
+                      <USkeleton class="h-3 w-48" />
+                    </div>
+                  </div>
+                  <USkeleton class="h-8 w-16" />
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div
+                v-else-if="adminAccounts.length === 0"
                 class="border border-dashed border-gray-200 rounded-2xl py-12"
               >
                 <SharedEmptyState
@@ -1574,6 +1669,7 @@ onMounted(() => {
                 />
               </div>
 
+              <!-- Admin List -->
               <div
                 v-for="admin in adminAccounts"
                 v-else
@@ -1600,6 +1696,16 @@ onMounted(() => {
                     >
                       {{ admin.role }}
                     </UBadge>
+                    <UButton
+                      v-if="userRole == 'super_admin' && admin.role !== 'super_admin'"
+                      :color="admin.status == 'active' ? 'error' : 'primary'"
+                      variant="subtle"
+                      size="sm"
+                      class="px-4 block md:hidden mt-3"
+                      @click="openSuspendModal(admin)"
+                    >
+                      {{ admin.status == 'active' ? 'Suspend' : 'Reinstate' }}
+                    </UButton>
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -1618,6 +1724,16 @@ onMounted(() => {
                     @click="navigateTo(`/account-details?id=${admin.id}`)"
                   >
                     Edit
+                  </UButton>
+                  <UButton
+                    v-if="userRole == 'super_admin' && admin.role !== 'super_admin'"
+                    :color="admin.status == 'active' ? 'error' : 'primary'"
+                    variant="subtle"
+                    size="sm"
+                    class="px-4 hidden md:block"
+                    @click="openSuspendModal(admin)"
+                  >
+                    {{ admin.status == 'active' ? 'Suspend' : 'Reinstate' }}
                   </UButton>
                 </div>
               </div>
@@ -1929,5 +2045,57 @@ onMounted(() => {
         </div>
       </div>
     </SharedBaseModal>
+
+    <!-- Suspend/Reinstate Admin Confirmation Modal -->
+    <UModal
+      :open="isSuspendModalOpen"
+      @update:open="() => closeSuspendModal()"
+    >
+      <template #content>
+        <UCard class="rounded-xl">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">
+                {{ adminToSuspend?.status === 'suspended' ? 'Reinstate Admin Account' : 'Suspend Admin Account' }}
+              </h3>
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark-20-solid"
+                class="-my-1"
+                @click="closeSuspendModal"
+              />
+            </div>
+          </template>
+          <div class="space-y-4">
+            <p
+              class="text-gray-600"
+              v-html="adminToSuspend?.status == 'suspended'
+                ? `Are you sure you want to reinstate <strong>${adminToSuspend?.name}</strong>? This will restore their access to the admin panel.`
+                : `Are you sure you want to suspend <strong>${adminToSuspend?.name}</strong>? This will prevent them from accessing the admin panel.`"
+            />
+          </div>
+          <template #footer>
+            <div class="flex gap-3">
+              <UButton
+                color="neutral"
+                @click="closeSuspendModal"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                :color="adminToSuspend?.status === 'suspended' ? 'primary' : 'error'"
+                variant="solid"
+                :class="adminToSuspend?.status === 'suspended' ? 'bg-[#003357] hover:bg-[#004474] text-white' : 'bg-red-600 hover:bg-red-700 text-white'"
+                :loading="isSuspendSubmitting"
+                @click="confirmSuspend"
+              >
+                {{ adminToSuspend?.status === 'suspended' ? 'Reinstate' : 'Suspend' }}
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
   </div>
 </template>

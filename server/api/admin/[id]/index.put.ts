@@ -17,7 +17,14 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
-      body: formData
+      body: {
+        id: event.context.params?.id,
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password') || undefined,
+        password_confirmation: formData.get('password_confirmation') || undefined,
+        role: formData.get('role')
+      }
     })
 
     const responseData = response as Record<string, unknown>

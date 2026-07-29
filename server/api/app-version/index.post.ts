@@ -1,4 +1,4 @@
-import { extractErrorMessage, getErrorStatusCode } from "~/util/apiHelper"
+import { extractErrorMessage, getErrorStatusCode } from '~/util/apiHelper'
 
 export default defineEventHandler(async (event) => {
   const { public: { apiBase } } = useRuntimeConfig(event)
@@ -6,8 +6,10 @@ export default defineEventHandler(async (event) => {
   const auth_type = getCookie(event, 'auth_type') || 'bearer'
 
   try {
-    const response = await $fetch(`${apiBase}/admin/settings/admins/${event.context.params?.id}/toggle-status`, {
-      method: 'PATCH',
+    const data = await readBody(event)
+
+    const response = await $fetch(`${apiBase}/admin/settings/app-version`, {
+      method: 'POST',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
@@ -17,16 +19,14 @@ export default defineEventHandler(async (event) => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Authorization': `${auth_type} ${auth_token}`
       },
-      body: {
-        id: event.context.params?.id
-      }
+      body: data
     })
 
     const responseData = response as Record<string, unknown>
 
     return {
       status: 200,
-      message: (responseData.message as string) || 'Web ad updated successfully',
+      message: (responseData.message as string) || 'App Version created successfully.',
       data: response
     }
   } catch (error) {

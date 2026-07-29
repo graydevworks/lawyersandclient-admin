@@ -111,6 +111,20 @@ export const useAdmin = () => {
     }
   }
 
+  // Suspend admin account
+  const suspendAdminAccount = async (id: number) => {
+    updating.value = true
+    try {
+      const data = await $fetch(`/api/admin/${id}/toggle`, { method: 'PATCH' })
+      return { success: true, data }
+    } catch (error) {
+      const { error: errMsg, validationMessages } = resolveApiError(error, 'Failed to suspend admin account.')
+      return { success: false, error: errMsg, validationMessages }
+    } finally {
+      updating.value = false
+    }
+  }
+
   // Get permissions
   const getPermissions = async (params: AdminQuery = {}) => {
     loading.value = true
@@ -148,6 +162,7 @@ export const useAdmin = () => {
     createAdminAccount,
     updateAdminAccount,
     deleteAdminAccount,
+    suspendAdminAccount,
     getPermissions,
     updatePermissions
   }
