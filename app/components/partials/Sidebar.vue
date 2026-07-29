@@ -37,7 +37,7 @@ const navGroups = [
 </script>
 
 <template>
-  <aside class="w-full lg:w-64 bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-[12px] lg:top-[95px] rounded-[12px] z-50 h-full lg:h-auto">
+  <aside class="w-full lg:w-64 bg-white border-r border-gray-200 flex flex-col lg:fixed lg:left-[12px] lg:top-[95px] rounded-[12px] z-50 h-full lg:h-[80dvh]">
     <!-- Close button for mobile/tablet -->
     <div class="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
       <h2 class="text-lg font-semibold text-gray-900">
@@ -51,7 +51,7 @@ const navGroups = [
         @click="$emit('close')"
       />
     </div>
-    <nav class="flex-1 overflow-y-auto p-3 md:p-4">
+    <nav class="flex-1 overflow-y-auto p-3 md:p-4 h-[20px]! overflow-hidden">
       <div
         v-for="(group, index) in navGroups"
         :key="group.label"
