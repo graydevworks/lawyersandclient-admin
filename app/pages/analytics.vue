@@ -122,7 +122,7 @@ const practiceAreaOptions = computed(() => {
 
               formatter: () => {
                 const total = practiceAreaSeries.value.reduce((a, b) => a + b, 0)
-                return String(total) || '0'
+                return String(total.toFixed(1)) || '0'
               }
             }
           }
