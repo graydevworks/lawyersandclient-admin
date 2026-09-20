@@ -366,7 +366,7 @@ onMounted(() => {
 
           <!-- Form -->
           <div class="space-y-4 mb-6">
-            <div>
+            <div class="w-full">
               <label class="text-[13px] font-semibold text-gray-700 mb-1.5 block">
                 App Version <span class="text-red-500">*</span>
               </label>
@@ -374,8 +374,8 @@ onMounted(() => {
                 v-model="formData.appVersion"
                 placeholder="e.g. 2.5.0"
                 size="lg"
-                :ui="{ base: `rounded-[8px] w-full ${formErrors.appVersion ? 'ring-red-500' : ''}` }"
-                :class="{ 'ring-0 w-full': formErrors.appVersion }"
+                :ui="{ base: `rounded-[8px] w-full! ${formErrors.appVersion ? 'ring-red-500' : ''}` }"
+                :class="{ 'ring-0': formErrors.appVersion }"
                 @update:model-value="formErrors.appVersion = ''"
               />
               <p
